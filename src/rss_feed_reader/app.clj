@@ -23,8 +23,10 @@
   (fn [request]
     (let [response (handler request)
           resp-body (:body response)]
-      (->> (maps/->unq-map resp-body)
-           (assoc request :body)))))
+      (if (nil? resp-body)
+        response
+        (->> (maps/->unq-map resp-body)
+             (assoc response :body))))))
 
 (def app
   (ring/ring-handler

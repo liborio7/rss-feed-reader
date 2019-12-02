@@ -34,8 +34,9 @@
   (let [affected-rows (jdbc/insert! db table feed {:qualifier "feed"})]
     (if (empty? affected-rows)
       (throw (ex-info "no rows has been inserted"
-                      {:cause  :dao-insert
-                       :reason :no-rows-affected}))
+                      {:cause   :feed-dao-insert
+                       :reason  :no-rows-affected
+                       :details [db table feed]}))
       (first affected-rows))))
 
 (s/fdef insert
@@ -50,10 +51,6 @@
 (s/fdef get-by-id
         :args (s/cat :id :feed/id)
         :ret ::model)
-
-;; update
-
-;; TODO
 
 ;; delete
 

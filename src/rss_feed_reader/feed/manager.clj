@@ -1,5 +1,6 @@
 (ns rss-feed-reader.feed.manager
   (:require [rss-feed-reader.feed.dao :as dao]
+            [rss-feed-reader.utils.spec :as specs]
             [clojure.spec.alpha :as s]
             [clj-time.core :as t]
             [clj-time.coerce :as tc]
@@ -18,14 +19,14 @@
 (s/def :feed.logic/version int?)
 (s/def :feed.logic/insert-time inst?)
 (s/def :feed.logic/update-time inst?)
-(s/def :feed.logic/title string?)
-(s/def :feed.logic/link string?)
-(s/def :feed.logic/description string?)
+(s/def :feed.logic/title (s/and string? #(< (count %) 200)))
+(s/def :feed.logic/link (s/and string? #(< (count %) 400)))
+(s/def :feed.logic/description (s/and string? #(< (count %) 600)))
 
-(s/def ::create-req (s/keys :req [:feed.logic/id
-                                  :feed.logic/title
+(s/def ::create-req (s/keys :req [:feed.logic/title
                                   :feed.logic/link]
-                            :opt [:feed.logic/version
+                            :opt [:feed.logic/id
+                                  :feed.logic/version
                                   :feed.logic/insert-time
                                   :feed.logic/update-time
                                   :feed.logic/description]))
@@ -44,10 +45,7 @@
          :or              {id          (java.util.UUID/randomUUID)
                            version     0
                            insert-time (tc/to-long (t/now))}
-         } req
-        title (sanitize-string title 200)
-        link (sanitize-string link 400)
-        description (sanitize-string description 600)]
+         } req]
     {:feed/id          id
      :feed/version     version
      :feed/insert_time insert-time
@@ -57,6 +55,9 @@
      :feed/description description}))
 
 (defn get-by-id-req->model [req]
+  {:feed/id (:feed.logic/id req)})
+
+(defn delete-req->model [req]
   {:feed/id (:feed.logic/id req)})
 
 (defn model->response [model]
@@ -70,10 +71,18 @@
 
 (defn create [req]
   (log/info "create" req)
-  (-> req
-      (create-req->model)
-      (dao/insert)
-      (model->response)))
+  (let [errors (specs/errors ::create-req req)]
+    (if (not-empty errors)
+      (do
+        (log/warn "invalid request" errors)
+        (throw (ex-info "invalid request"
+                        {:cause   :feed-manager-create
+                         :reason  :invalid-spec
+                         :details errors})))
+      (-> req
+          (create-req->model)
+          (dao/insert)
+          (model->response)))))
 
 (s/fdef create
         :args (s/cat :req ::create-req)
@@ -91,3 +100,10 @@
 (s/fdef get-by-id
         :args (s/cat :req ::get-by-id-req)
         :ret ::resp)
+
+;; delete
+
+(defn delete [req]
+  (log/info "delete" req)
+  (-> (delete-req->model req)
+      (dao/delete)))

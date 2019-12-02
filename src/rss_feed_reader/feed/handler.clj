@@ -1,11 +1,10 @@
 (ns rss-feed-reader.feed.handler
   (:require [clojure.spec.alpha :as s]
             [clojure.tools.logging :as log]
-            [ring.util.response :as r]
+            [rss-feed-reader.feed.manager :as mgr]
             [rss-feed-reader.utils.map :as maps]
             [rss-feed-reader.utils.uuid :as uuids]
-            [rss-feed-reader.handler.utils :as h]
-            [rss-feed-reader.feed.manager :as mgr]))
+            [rss-feed-reader.utils.response :as r]))
 
 ;; spec
 
@@ -15,8 +14,8 @@
 (s/def :feed.api/description string?)
 
 ;(s/def ::post-req-body (s/keys :req [:feed.api/title
-;                                :feed.api/link]
-;                          :opt [:feed.api/description]))
+;                                     :feed.api/link]
+;                               :opt [:feed.api/description]))
 ;
 ;(s/def ::post-req (s/keys :req [::post-req-body]))
 ;
@@ -47,23 +46,44 @@
 
 (defn post [req]
   (let [req-body (:body req)]
-    (log/info "handle post" req-body)
-    (->> req-body
-         (maps/->q-map "feed.api")
-         (post-api->logic)
-         (mgr/create)
-         (logic->response)
-         (r/response))))
+    (log/info "post" req-body)
+    (try
+      (->> req-body
+           (maps/->q-map "feed.api")
+           (post-api->logic)
+           (mgr/create)
+           (logic->response)
+           (r/ok))
+      (catch Exception e
+        (let [data (ex-data e)
+              cause (:cause data)]
+          (case cause
+            :feed-manager-create (r/bad-request {:message "invalid request"})
+            (r/server-error))))
+      )))
+
 
 ;; get
 
 (defn get-by-id [req]
   (let [req-path (:path-params req)
         id (uuids/from-string (:id req-path))]
-    (log/info "handle get" req-path)
+    (log/info "get" req-path)
     (if (nil? id)
-      (r/not-found "")
+      (r/not-found)
       (let [feed (mgr/get-by-id {:feed.logic/id id})]
         (if (nil? feed)
-          (r/not-found "")
-          (r/response feed))))))
+          (r/not-found)
+          (r/ok feed))))))
+
+;; delete
+
+(defn delete [req]
+  (let [req-path (:path-params req)
+        id (uuids/from-string (:id req-path))]
+    (log/info "delete" req-path)
+    (if (nil? id)
+      (r/no-content)
+      (do
+        (mgr/delete {:feed.logic/id id})
+        (r/no-content)))))

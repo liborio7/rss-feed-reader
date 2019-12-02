@@ -3,8 +3,9 @@
 
 (def routes
   [["/feeds"
-    ["" {:name  ::feeds
-         :post  h/post}]
-    ["/:id" {:name ::feeds-id
-             :get  h/get-by-id
+    ["" {:name ::feeds
+         :post h/post}]
+    ["/:id" {:name   ::feeds-id
+             :get    h/get-by-id
+             :delete h/delete
              }]]])
