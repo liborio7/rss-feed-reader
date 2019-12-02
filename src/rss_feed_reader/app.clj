@@ -5,9 +5,10 @@
             [clojure.tools.logging :as log]
             [clj-time.core :as t]
             [clj-time.coerce :as tc]
+            [rss-feed-reader.utils.map :as maps]
             [rss-feed-reader.feed.router :as feed]))
 
-(defn wrap-for-log [handler]
+(defn wrap-logger [handler]
   (fn [request]
     (let [{:keys [uri request-method body]} request
           from (tc/to-long (t/now))]
@@ -18,14 +19,22 @@
         (log/info (format "[RES]") (format "%dms" (- to from)) status body)
         response))))
 
+(defn wrap-json-response-body [handler]
+  (fn [request]
+    (let [response (handler request)
+          resp-body (:body response)]
+      (->> (maps/->unq-map resp-body)
+           (assoc request :body)))))
+
 (def app
   (ring/ring-handler
     (ring/router [feed/routes])
     (ring/create-default-handler)
     {:middleware [
+                  [wrap-logger]
                   [json/wrap-json-body {:keywords? true :bigdecimals? true}]
                   [json/wrap-json-response {:pretty true}]
-                  [wrap-for-log]
+                  [wrap-json-response-body]
                   ]}))
 
 (defn -main [& _args]

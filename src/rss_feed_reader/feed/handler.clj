@@ -2,6 +2,8 @@
   (:require [clojure.spec.alpha :as s]
             [clojure.tools.logging :as log]
             [ring.util.response :as r]
+            [rss-feed-reader.utils.map :as maps]
+            [rss-feed-reader.utils.uuid :as uuids]
             [rss-feed-reader.handler.utils :as h]
             [rss-feed-reader.feed.manager :as mgr]))
 
@@ -43,23 +45,21 @@
 
 ;; post
 
-(defn handle-post [req]
+(defn post [req]
   (let [req-body (:body req)]
     (log/info "handle post" req-body)
     (->> req-body
+         (maps/->q-map "feed.api")
          (post-api->logic)
          (mgr/create)
          (logic->response)
          (r/response))))
 
-(defn post [req]
-  (h/wrap-body-ns "feed.api" handle-post req))
-
 ;; get
 
-(defn handle-get-by-id [req]
+(defn get-by-id [req]
   (let [req-path (:path-params req)
-        id (h/string->uuid (:id req-path))]
+        id (uuids/from-string (:id req-path))]
     (log/info "handle get" req-path)
     (if (nil? id)
       (r/not-found "")
@@ -67,6 +67,3 @@
         (if (nil? feed)
           (r/not-found "")
           (r/response feed))))))
-
-(defn get-by-id [req]
-  (h/wrap-resp-body-ns handle-get-by-id req))
