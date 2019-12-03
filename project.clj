@@ -18,7 +18,6 @@
                  [ring/ring-jetty-adapter "1.6.3"]
 
                  [metosin/reitit "0.3.10"]
-                 [metosin/reitit-middleware "0.3.9"]
 
                  [org.clojure/java.jdbc "0.7.10"]
                  [org.postgresql/postgresql "42.2.2"]

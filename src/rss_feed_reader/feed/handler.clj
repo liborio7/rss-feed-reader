@@ -4,6 +4,7 @@
             [rss-feed-reader.feed.manager :as mgr]
             [rss-feed-reader.utils.map :as maps]
             [rss-feed-reader.utils.uuid :as uuids]
+            [rss-feed-reader.utils.uri :as uris]
             [rss-feed-reader.utils.response :as r]))
 
 ;; spec
@@ -13,33 +14,19 @@
 (s/def :feed.api/link string?)
 (s/def :feed.api/description string?)
 
-;(s/def ::post-req-body (s/keys :req [:feed.api/title
-;                                     :feed.api/link]
-;                               :opt [:feed.api/description]))
-;
-;(s/def ::post-req (s/keys :req [::post-req-body]))
-;
-;(s/def ::resp-body (s/keys :req [:feed.api/id
-;                                 :feed.api/title
-;                                 :feed.api/link]
-;                           :opt [:feed.api/description]))
-;
-;(s/def ::resp (s/keys :req [:status]
-;                      :opt [::resp-body]))
-
 ;; conversion
 
 (defn post-api->logic [req]
   (let [{:feed.api/keys [title link description]} req]
     {:feed.logic/title       title
-     :feed.logic/link        link
+     :feed.logic/link        (uris/from-string link)
      :feed.logic/description description}))
 
 (defn logic->response [logic]
   (let [{:feed.logic/keys [id title link description]} logic]
     {:feed.api/id          id
      :feed.api/title       title
-     :feed.api/link        link
+     :feed.api/link        (str link)
      :feed.api/description description}))
 
 ;; post
@@ -58,9 +45,8 @@
         (let [data (ex-data e)
               cause (:cause data)]
           (case cause
-            :feed-manager-create (r/bad-request {:message "invalid request"})
-            (r/server-error))))
-      )))
+            :feed-manager-create (r/bad-request {:code    1
+                                                 :message "invalid feed"})))))))
 
 
 ;; get

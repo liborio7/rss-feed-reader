@@ -6,6 +6,7 @@
             [clj-time.core :as t]
             [clj-time.coerce :as tc]
             [rss-feed-reader.utils.map :as maps]
+            [rss-feed-reader.utils.response :as r]
             [rss-feed-reader.feed.router :as feed]))
 
 (defn wrap-logger [handler]
@@ -18,6 +19,14 @@
             to (tc/to-long (t/now))]
         (log/info (format "[RES]") (format "%dms" (- to from)) status body)
         response))))
+
+(defn wrap-server-error [handler]
+  (fn [request]
+    (try
+      (handler request)
+      (catch Exception e
+        (log/error e)
+        (r/server-error)))))
 
 (defn wrap-json-response-body [handler]
   (fn [request]
@@ -34,6 +43,7 @@
     (ring/create-default-handler)
     {:middleware [
                   [wrap-logger]
+                  [wrap-server-error]
                   [json/wrap-json-body {:keywords? true :bigdecimals? true}]
                   [json/wrap-json-response {:pretty true}]
                   [wrap-json-response-body]
