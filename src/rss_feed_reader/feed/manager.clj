@@ -9,57 +9,70 @@
 
 ;; spec
 
-(s/def :feed.logic/id uuid?)
-(s/def :feed.logic/version int?)
-(s/def :feed.logic/insert-time inst?)
-(s/def :feed.logic/update-time inst?)
-(s/def :feed.logic/title (s/and string? #(< 0 (count %) 200)))
-(s/def :feed.logic/link uri?)
-(s/def :feed.logic/description (s/and string? #(< 0 (count %) 600)))
+(s/def :feed.manager/id uuid?)
+(s/def :feed.manager/version int?)
+(s/def :feed.manager/insert-time inst?)
+(s/def :feed.manager/update-time inst?)
+(s/def :feed.manager/link uri?)
 
-(s/def ::create-req (s/keys :req [:feed.logic/title
-                                  :feed.logic/link]
-                            :opt [:feed.logic/id
-                                  :feed.logic/version
-                                  :feed.logic/insert-time
-                                  :feed.logic/update-time
-                                  :feed.logic/description]))
 
-(s/def ::get-by-id-req (s/keys :req [:feed.logic/id]))
+(s/def ::get-by-id-req (s/keys :req [:feed.manager/id]))
 
-(s/def ::resp (s/keys :req [:feed.logic/id
-                            :feed.logic/title
-                            :feed.logic/link]
-                      :opt [:feed.logic/description]))
+(s/def ::get-by-link-req (s/keys :req [:feed.manager/link]))
+
+(s/def ::create-req (s/keys :req [:feed.manager/link]
+                            :opt [:feed.manager/id
+                                  :feed.manager/version
+                                  :feed.manager/insert-time
+                                  :feed.manager/update-time]))
+
+(s/def ::delete-req (s/keys :req [:feed.manager/id]))
+
+(s/def ::resp (s/keys :req [:feed.manager/id
+                            :feed.manager/link]))
 
 ;; conversion
 
-(defn create-req->model [req]
-  (let [{:feed.logic/keys [id version insert-time update-time title link description]
+(defn create-req->model [m]
+  (let [{:feed.manager/keys [id version insert-time update-time link]
          :or              {id          (java.util.UUID/randomUUID)
                            version     0
                            insert-time (tc/to-long (t/now))}
-         } req]
+         } m]
     {:feed/id          id
      :feed/version     version
      :feed/insert_time insert-time
      :feed/update_time update-time
-     :feed/title       title
-     :feed/link        (str link)
-     :feed/description description}))
+     :feed/link        (str link)}))
 
-(defn get-by-id-req->model [req]
-  {:feed/id (:feed.logic/id req)})
+(defn model->response [m]
+  (let [{:feed/keys [id link]} m]
+    {:feed.manager/id   id
+     :feed.manager/link (uris/from-string link)}))
 
-(defn delete-req->model [req]
-  {:feed/id (:feed.logic/id req)})
+;; get
 
-(defn model->response [model]
-  (let [{:feed/keys [id title link description]} model]
-    {:feed.logic/id          id
-     :feed.logic/title       title
-     :feed.logic/link        (uris/from-string link)
-     :feed.logic/description description}))
+(defn get-by-id [req]
+  (log/info "get by id" req)
+  (let [id (:feed.manager/id req)
+        model (dao/get-by-id {:feed/id id})]
+    (if-not (nil? model)
+      (model->response model))))
+
+(s/fdef get-by-id
+        :args (s/cat :req ::get-by-id-req)
+        :ret (s/or :ok ::rest :err nil?))
+
+(defn get-by-link [req]
+  (log/info "get by link" req)
+  (let [link (str (:feed.manager/link req))
+        model (dao/get-by-link {:feed/link link})]
+    (if-not (nil? model)
+      (model->response model))))
+
+(s/fdef get-by-link
+        :args (s/cat :req ::get-by-link-req)
+        :ret (s/or :ok ::rest :err nil?))
 
 ;; create
 
@@ -73,31 +86,24 @@
                         {:cause   :feed-manager-create
                          :reason  :invalid-spec
                          :details errors})))
-      (-> req
-          (create-req->model)
-          (dao/insert)
-          (model->response)))))
+      (if-let [feed (get-by-link req)]
+        feed
+        (-> req
+            (create-req->model)
+            (dao/insert)
+            (model->response))))))
 
 (s/fdef create
         :args (s/cat :req ::create-req)
-        :ret ::resp)
-
-;; get
-
-(defn get-by-id [req]
-  (log/info "get" req)
-  (let [model (-> (get-by-id-req->model req)
-                  (dao/get-by-id))]
-    (if-not (nil? model)
-      (model->response model))))
-
-(s/fdef get-by-id
-        :args (s/cat :req ::get-by-id-req)
         :ret ::resp)
 
 ;; delete
 
 (defn delete [req]
   (log/info "delete" req)
-  (-> (delete-req->model req)
-      (dao/delete)))
+  (let [id (:feed.manager/id req)]
+    (dao/delete {:feed/id id})))
+
+(s/fdef create
+        :args (s/cat :req ::delete-req)
+        :ret int?)

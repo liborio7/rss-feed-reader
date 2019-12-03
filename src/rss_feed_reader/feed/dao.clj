@@ -7,7 +7,7 @@
 ;; utils
 
 (def db db/connection)
-(def table "feeds")
+(def table "feed")
 
 ;; spec
 
@@ -15,47 +15,51 @@
 (s/def :feed/version int?)
 (s/def :feed/insert_time inst-ms)
 (s/def :feed/update_time inst?)
-(s/def :feed/title string?)
 (s/def :feed/link string?)
-(s/def :feed/description string?)
 
 (s/def ::model (s/keys :req [:feed/id
                              :feed/version
                              :feed/insert_time
                              :feed/update_time
-                             :feed/title
-                             :feed/link]
-                       :opt [:feed/description]))
+                             :feed/link]))
 
-;; insert
-
-(defn insert [feed]
-  (log/info "insert" feed)
-  (let [affected-rows (jdbc/insert! db table feed {:qualifier "feed"})]
-    (if (empty? affected-rows)
-      (throw (ex-info "no rows has been inserted"
-                      {:cause   :feed-dao-insert
-                       :reason  :no-rows-affected
-                       :details [db table feed]}))
-      (first affected-rows))))
-
-(s/fdef insert
-        :args (s/cat :feed ::model)
-        :ret ::model)
-
-;; get by id
+;; get
 
 (defn get-by-id [{:feed/keys [id]}]
-  (jdbc/get-by-id db table id :feed/id {:qualifier "feed"}))
+  (jdbc/get-by-id db table id :feed/id {:qualifier table}))
 
 (s/fdef get-by-id
         :args (s/cat :id :feed/id)
         :ret ::model)
 
+(defn get-by-link [{:feed/keys [link]}]
+  (-> (jdbc/find-by-keys db table {:feed/link link} {:qualifier table})
+      (first)))
+
+(s/fdef get-by-link
+        :args (s/cat :link :feed/link)
+        :ret ::model)
+
+;; insert
+
+(defn insert [model]
+  (log/info "insert" model)
+  (let [affected-rows (jdbc/insert! db table model {:qualifier table})]
+    (if (empty? affected-rows)
+      (throw (ex-info "no rows has been inserted"
+                      {:cause   :feed-dao-insert
+                       :reason  :no-rows-affected
+                       :details [db table model]}))
+      (first affected-rows))))
+
+(s/fdef insert
+        :args (s/cat :model ::model)
+        :ret ::model)
+
 ;; delete
 
 (defn delete [{:feed/keys [id]}]
-  (jdbc/delete! db table ["id = ?", id] {:qualifier "feed"}))
+  (jdbc/delete! db table ["id = ?", id] {:qualifier table}))
 
 (s/fdef delete
         :args (s/cat :id :feed/id)

@@ -25,6 +25,8 @@
                  ]
   :plugins [[lein-ring "0.12.5"]
             [lein-environ "1.1.0"]]
+  :aliases {"migrate"  ["run" "-m" "rss-feed-reader.postgres.migrations/migrate"]
+            "rollback" ["run" "-m" "rss-feed-reader.postgres.migrations/rollback"]}
   :repl-options {:init-ns rss-feed-reader.app}
   :main rss-feed-reader.core
   :profiles {

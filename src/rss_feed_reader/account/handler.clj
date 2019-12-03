@@ -1,27 +1,26 @@
-(ns rss-feed-reader.feed.handler
+(ns rss-feed-reader.account.handler
   (:require [clojure.spec.alpha :as s]
             [clojure.tools.logging :as log]
-            [rss-feed-reader.feed.manager :as mgr]
+            [rss-feed-reader.account.manager :as mgr]
             [rss-feed-reader.utils.map :as maps]
             [rss-feed-reader.utils.uuid :as uuids]
-            [rss-feed-reader.utils.uri :as uris]
             [rss-feed-reader.utils.response :as r]))
 
 ;; spec
 
-(s/def :feed.api/id uuid?)
-(s/def :feed.api/link string?)
+(s/def :account.api/id uuid?)
+(s/def :account.api/username string?)
 
 ;; conversion
 
 (defn post-api->manager [m]
-  (let [{:feed.api/keys [link]} m]
-    {:feed.manager/link (uris/from-string link)}))
+  (let [{:account.api/keys [username]} m]
+    {:account.manager/username username}))
 
 (defn manager->response [m]
-  (let [{:feed.manager/keys [id link]} m]
-    {:feed.api/id   id
-     :feed.api/link (str link)}))
+  (let [{:account.manager/keys [id username]} m]
+    {:account.api/id       id
+     :account.api/username username}))
 
 ;; get
 
@@ -31,10 +30,10 @@
     (log/info "get" req-path)
     (if (nil? id)
       (r/not-found)
-      (let [feed (mgr/get-by-id {:feed.manager/id id})]
-        (if (nil? feed)
+      (let [account (mgr/get-by-id {:account.manager/id id})]
+        (if (nil? account)
           (r/not-found)
-          (-> feed
+          (-> account
               (manager->response)
               (r/ok)))))))
 
@@ -45,7 +44,7 @@
     (log/info "post" req-body)
     (try
       (->> req-body
-           (maps/->q-map "feed.api")
+           (maps/->q-map "account.api")
            (post-api->manager)
            (mgr/create)
            (manager->response)
@@ -54,9 +53,8 @@
         (let [data (ex-data e)
               cause (:cause data)]
           (case cause
-            :feed-manager-create (r/bad-request {:code    1
-                                                 :message "invalid feed"})
-            (throw e)))))))
+            :account-manager-create (r/bad-request {:code    2
+                                                    :message "invalid account"})))))))
 
 ;; delete
 
@@ -67,5 +65,5 @@
     (if (nil? id)
       (r/no-content)
       (do
-        (mgr/delete {:feed.manager/id id})
+        (mgr/delete {:account.manager/id id})
         (r/no-content)))))
