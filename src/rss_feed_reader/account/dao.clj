@@ -32,6 +32,14 @@
         :args (s/cat :id :account/id)
         :ret ::model)
 
+(defn get-by-username [{:account/keys [username]}]
+  (-> (jdbc/find-by-keys db table {:account/username username} {:qualifier table})
+      (first)))
+
+(s/fdef get-by-username
+        :args (s/cat :link :account/username)
+        :ret ::model)
+
 ;; insert
 
 (defn insert [model]

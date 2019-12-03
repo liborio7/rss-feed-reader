@@ -17,6 +17,8 @@
 
 (s/def ::get-by-id-req (s/keys :req [:account.manager/id]))
 
+(s/def ::get-by-username-req (s/keys :req [:account.manager/id]))
+
 (s/def ::delete-req (s/keys :req [:account.manager/id]))
 
 (s/def ::create-req (s/keys :req [:account.manager/username]
@@ -50,7 +52,7 @@
 ;; get
 
 (defn get-by-id [req]
-  (log/info "get" req)
+  (log/info "get by id" req)
   (let [id (:account.manager/id req)
         model (dao/get-by-id {:account/id id})]
     (if-not (nil? model)
@@ -59,6 +61,17 @@
 (s/fdef get-by-id
         :args (s/cat :req ::get-by-id-req)
         :ret (s/or :ok ::resp :err nil?))
+
+(defn get-by-username [req]
+  (log/info "get by username" req)
+  (let [username (:account.manager/username req)
+        model (dao/get-by-username {:account/username username})]
+    (if-not (nil? model)
+      (model->response model))))
+
+(s/fdef get-by-username
+        :args (s/cat :req ::get-by-username-req)
+        :ret (s/or :ok ::rest :err nil?))
 
 ;; create
 
@@ -72,10 +85,12 @@
                         {:cause   :account-manager-create
                          :reason  :invalid-spec
                          :details errors})))
-      (-> req
-          (create-req->model)
-          (dao/insert)
-          (model->response)))))
+      (if-let [feed (get-by-username req)]
+        feed
+        (-> req
+            (create-req->model)
+            (dao/insert)
+            (model->response))))))
 
 (s/fdef create
         :args (s/cat :req ::create-req)
