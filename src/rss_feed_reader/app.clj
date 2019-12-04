@@ -7,8 +7,8 @@
             [clj-time.coerce :as tc]
             [rss-feed-reader.utils.map :as maps]
             [rss-feed-reader.utils.response :as r]
-            [rss-feed-reader.feed.router :as feed]
-            [rss-feed-reader.account.router :as account]))
+            [rss-feed-reader.api.feeds.router :as feeds]
+            [rss-feed-reader.api.accounts.router :as accounts]))
 
 (defn wrap-logger [handler]
   (fn [request]
@@ -40,8 +40,8 @@
 
 (def app
   (ring/ring-handler
-    (ring/router [feed/routes
-                  account/routes])
+    (ring/router [feeds/routes
+                  accounts/routes])
     (ring/create-default-handler)
     {:middleware [
                   [wrap-logger]

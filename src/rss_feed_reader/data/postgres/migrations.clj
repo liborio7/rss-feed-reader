@@ -1,7 +1,7 @@
-(ns rss-feed-reader.postgres.migrations
+(ns rss-feed-reader.data.postgres.migrations
   (:require [ragtime.jdbc :as jdbc]
             [ragtime.repl :as repl]
-            [rss-feed-reader.postgres.db :as db]))
+            [rss-feed-reader.data.postgres.db :as db]))
 
 (defn config []
   {:datastore  (jdbc/sql-database db/connection)

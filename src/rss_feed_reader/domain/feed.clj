@@ -1,5 +1,5 @@
-(ns rss-feed-reader.feed.manager
-  (:require [rss-feed-reader.feed.dao :as dao]
+(ns rss-feed-reader.domain.feed
+  (:require [rss-feed-reader.data.feed :as dao]
             [rss-feed-reader.utils.spec :as specs]
             [rss-feed-reader.utils.uri :as uris]
             [clojure.spec.alpha :as s]
@@ -35,9 +35,9 @@
 
 (defn create-req->model [m]
   (let [{:feed.domain/keys [id version insert-time update-time link]
-         :or              {id          (java.util.UUID/randomUUID)
-                           version     0
-                           insert-time (tc/to-long (t/now))}
+         :or               {id          (java.util.UUID/randomUUID)
+                            version     0
+                            insert-time (tc/to-long (t/now))}
          } m]
     {:feed/id          id
      :feed/version     version
@@ -104,6 +104,6 @@
   (let [id (:feed.domain/id req)]
     (dao/delete {:feed/id id})))
 
-(s/fdef create
+(s/fdef delete
         :args (s/cat :req ::delete-req)
         :ret int?)

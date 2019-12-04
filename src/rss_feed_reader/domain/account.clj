@@ -1,5 +1,5 @@
-(ns rss-feed-reader.account.manager
-  (:require [rss-feed-reader.account.dao :as dao]
+(ns rss-feed-reader.domain.account
+  (:require [rss-feed-reader.data.account :as dao]
             [rss-feed-reader.utils.spec :as specs]
             [clojure.spec.alpha :as s]
             [clj-time.core :as t]
@@ -103,6 +103,6 @@
   (let [id (:account.domain/id req)]
     (dao/delete {:account/id id})))
 
-(s/fdef get-by-id
+(s/fdef delete
         :args (s/cat :req ::delete-req)
         :ret (s/or :ok ::resp :err nil?))

@@ -1,4 +1,4 @@
-(ns rss-feed-reader.postgres.db
+(ns rss-feed-reader.data.postgres.db
   (:require [clojure.edn :as edn]
             [environ.core :refer [env]]))
 

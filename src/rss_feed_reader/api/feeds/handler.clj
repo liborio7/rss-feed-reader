@@ -1,7 +1,7 @@
-(ns rss-feed-reader.feed.handler
+(ns rss-feed-reader.api.feeds.handler
   (:require [clojure.spec.alpha :as s]
             [clojure.tools.logging :as log]
-            [rss-feed-reader.feed.manager :as mgr]
+            [rss-feed-reader.domain.feed :as mgr]
             [rss-feed-reader.utils.map :as maps]
             [rss-feed-reader.utils.uuid :as uuids]
             [rss-feed-reader.utils.uri :as uris]
@@ -14,18 +14,18 @@
 
 ;; conversion
 
-(defn post-api->manager [m]
+(defn create-feed-req->domain [m]
   (let [{:feed.api/keys [link]} m]
     {:feed.domain/link (uris/from-string link)}))
 
-(defn manager->response [m]
+(defn domain->response [m]
   (let [{:feed.domain/keys [id link]} m]
     {:feed.api/id   id
      :feed.api/link (str link)}))
 
 ;; get
 
-(defn get-by-id [req]
+(defn get-feed [req]
   (let [req-path (:path-params req)
         id (uuids/from-string (:id req-path))]
     (log/info "get" req-path)
@@ -35,20 +35,20 @@
         (if (nil? feed)
           (r/not-found)
           (-> feed
-              (manager->response)
+              (domain->response)
               (r/ok)))))))
 
 ;; post
 
-(defn post [req]
+(defn create-feed [req]
   (let [req-body (:body req)]
     (log/info "post" req-body)
     (try
       (->> req-body
            (maps/->q-map "feed.api")
-           (post-api->manager)
+           (create-feed-req->domain)
            (mgr/create)
-           (manager->response)
+           (domain->response)
            (r/ok))
       (catch Exception e
         (let [data (ex-data e)
@@ -60,7 +60,7 @@
 
 ;; delete
 
-(defn delete [req]
+(defn delete-feed [req]
   (let [req-path (:path-params req)
         id (uuids/from-string (:id req-path))]
     (log/info "delete" req-path)

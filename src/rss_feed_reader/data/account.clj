@@ -1,5 +1,5 @@
-(ns rss-feed-reader.account.dao
-  (:require [rss-feed-reader.postgres.db :as db]
+(ns rss-feed-reader.data.account
+  (:require [rss-feed-reader.data.postgres.db :as db]
             [clojure.java.jdbc :as jdbc]
             [clojure.spec.alpha :as s]
             [clojure.tools.logging :as log]))
@@ -38,7 +38,7 @@
       (first)))
 
 (s/fdef get-by-username
-        :args (s/cat :link :account/username)
+        :args (s/cat :username :account/username)
         :ret ::model)
 
 ;; insert
