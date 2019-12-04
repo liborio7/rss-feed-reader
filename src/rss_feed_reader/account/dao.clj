@@ -8,6 +8,7 @@
 
 (def db db/connection)
 (def table "account")
+(def opts {:qualifier table})
 
 ;; spec
 
@@ -26,14 +27,14 @@
 ;; get by id
 
 (defn get-by-id [{:account/keys [id]}]
-  (jdbc/get-by-id db table id :account/id {:qualifier table}))
+  (jdbc/get-by-id db table id :account/id opts))
 
 (s/fdef get-by-id
         :args (s/cat :id :account/id)
         :ret ::model)
 
 (defn get-by-username [{:account/keys [username]}]
-  (-> (jdbc/find-by-keys db table {:account/username username} {:qualifier table})
+  (-> (jdbc/find-by-keys db table {:account/username username} opts)
       (first)))
 
 (s/fdef get-by-username
@@ -44,7 +45,7 @@
 
 (defn insert [model]
   (log/info "insert" model)
-  (let [affected-rows (jdbc/insert! db table model {:qualifier table})]
+  (let [affected-rows (jdbc/insert! db table model opts)]
     (if (empty? affected-rows)
       (throw (ex-info "no rows has been inserted"
                       {:cause   :account-dao-insert
@@ -59,7 +60,7 @@
 ;; delete
 
 (defn delete [{:account/keys [id]}]
-  (jdbc/delete! db table ["id = ?", id] {:qualifier table}))
+  (jdbc/delete! db table ["id = ?", id] opts))
 
 (s/fdef delete
         :args (s/cat :id :account/id)

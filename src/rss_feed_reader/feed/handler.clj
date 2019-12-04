@@ -16,10 +16,10 @@
 
 (defn post-api->manager [m]
   (let [{:feed.api/keys [link]} m]
-    {:feed.manager/link (uris/from-string link)}))
+    {:feed.domain/link (uris/from-string link)}))
 
 (defn manager->response [m]
-  (let [{:feed.manager/keys [id link]} m]
+  (let [{:feed.domain/keys [id link]} m]
     {:feed.api/id   id
      :feed.api/link (str link)}))
 
@@ -31,7 +31,7 @@
     (log/info "get" req-path)
     (if (nil? id)
       (r/not-found)
-      (let [feed (mgr/get-by-id {:feed.manager/id id})]
+      (let [feed (mgr/get-by-id {:feed.domain/id id})]
         (if (nil? feed)
           (r/not-found)
           (-> feed
@@ -67,5 +67,5 @@
     (if (nil? id)
       (r/no-content)
       (do
-        (mgr/delete {:feed.manager/id id})
+        (mgr/delete {:feed.domain/id id})
         (r/no-content)))))

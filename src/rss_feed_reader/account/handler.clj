@@ -15,10 +15,10 @@
 
 (defn post-api->manager [m]
   (let [{:account.api/keys [username]} m]
-    {:account.manager/username username}))
+    {:account.domain/username username}))
 
 (defn manager->response [m]
-  (let [{:account.manager/keys [id username]} m]
+  (let [{:account.domain/keys [id username]} m]
     {:account.api/id       id
      :account.api/username username}))
 
@@ -30,7 +30,7 @@
     (log/info "get" req-path)
     (if (nil? id)
       (r/not-found)
-      (let [account (mgr/get-by-id {:account.manager/id id})]
+      (let [account (mgr/get-by-id {:account.domain/id id})]
         (if (nil? account)
           (r/not-found)
           (-> account
@@ -65,5 +65,5 @@
     (if (nil? id)
       (r/no-content)
       (do
-        (mgr/delete {:account.manager/id id})
+        (mgr/delete {:account.domain/id id})
         (r/no-content)))))

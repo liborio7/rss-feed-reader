@@ -9,32 +9,32 @@
 
 ;; spec
 
-(s/def :feed.manager/id uuid?)
-(s/def :feed.manager/version int?)
-(s/def :feed.manager/insert-time inst?)
-(s/def :feed.manager/update-time inst?)
-(s/def :feed.manager/link uri?)
+(s/def :feed.domain/id uuid?)
+(s/def :feed.domain/version int?)
+(s/def :feed.domain/insert-time inst?)
+(s/def :feed.domain/update-time inst?)
+(s/def :feed.domain/link uri?)
 
 
-(s/def ::get-by-id-req (s/keys :req [:feed.manager/id]))
+(s/def ::get-by-id-req (s/keys :req [:feed.domain/id]))
 
-(s/def ::get-by-link-req (s/keys :req [:feed.manager/link]))
+(s/def ::get-by-link-req (s/keys :req [:feed.domain/link]))
 
-(s/def ::create-req (s/keys :req [:feed.manager/link]
-                            :opt [:feed.manager/id
-                                  :feed.manager/version
-                                  :feed.manager/insert-time
-                                  :feed.manager/update-time]))
+(s/def ::create-req (s/keys :req [:feed.domain/link]
+                            :opt [:feed.domain/id
+                                  :feed.domain/version
+                                  :feed.domain/insert-time
+                                  :feed.domain/update-time]))
 
-(s/def ::delete-req (s/keys :req [:feed.manager/id]))
+(s/def ::delete-req (s/keys :req [:feed.domain/id]))
 
-(s/def ::resp (s/keys :req [:feed.manager/id
-                            :feed.manager/link]))
+(s/def ::resp (s/keys :req [:feed.domain/id
+                            :feed.domain/link]))
 
 ;; conversion
 
 (defn create-req->model [m]
-  (let [{:feed.manager/keys [id version insert-time update-time link]
+  (let [{:feed.domain/keys [id version insert-time update-time link]
          :or              {id          (java.util.UUID/randomUUID)
                            version     0
                            insert-time (tc/to-long (t/now))}
@@ -47,14 +47,14 @@
 
 (defn model->response [m]
   (let [{:feed/keys [id link]} m]
-    {:feed.manager/id   id
-     :feed.manager/link (uris/from-string link)}))
+    {:feed.domain/id   id
+     :feed.domain/link (uris/from-string link)}))
 
 ;; get
 
 (defn get-by-id [req]
   (log/info "get by id" req)
-  (let [id (:feed.manager/id req)
+  (let [id (:feed.domain/id req)
         model (dao/get-by-id {:feed/id id})]
     (if-not (nil? model)
       (model->response model))))
@@ -65,7 +65,7 @@
 
 (defn get-by-link [req]
   (log/info "get by link" req)
-  (let [link (str (:feed.manager/link req))
+  (let [link (str (:feed.domain/link req))
         model (dao/get-by-link {:feed/link link})]
     (if-not (nil? model)
       (model->response model))))
@@ -101,7 +101,7 @@
 
 (defn delete [req]
   (log/info "delete" req)
-  (let [id (:feed.manager/id req)]
+  (let [id (:feed.domain/id req)]
     (dao/delete {:feed/id id})))
 
 (s/fdef create

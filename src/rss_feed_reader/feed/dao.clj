@@ -8,6 +8,7 @@
 
 (def db db/connection)
 (def table "feed")
+(def opts {:qualifier table})
 
 ;; spec
 
@@ -26,14 +27,14 @@
 ;; get
 
 (defn get-by-id [{:feed/keys [id]}]
-  (jdbc/get-by-id db table id :feed/id {:qualifier table}))
+  (jdbc/get-by-id db table id :feed/id opts))
 
 (s/fdef get-by-id
         :args (s/cat :id :feed/id)
         :ret ::model)
 
 (defn get-by-link [{:feed/keys [link]}]
-  (-> (jdbc/find-by-keys db table {:feed/link link} {:qualifier table})
+  (-> (jdbc/find-by-keys db table {:feed/link link} opts)
       (first)))
 
 (s/fdef get-by-link
@@ -44,7 +45,7 @@
 
 (defn insert [model]
   (log/info "insert" model)
-  (let [affected-rows (jdbc/insert! db table model {:qualifier table})]
+  (let [affected-rows (jdbc/insert! db table model opts)]
     (if (empty? affected-rows)
       (throw (ex-info "no rows has been inserted"
                       {:cause   :feed-dao-insert
@@ -59,7 +60,7 @@
 ;; delete
 
 (defn delete [{:feed/keys [id]}]
-  (jdbc/delete! db table ["id = ?", id] {:qualifier table}))
+  (jdbc/delete! db table ["id = ?", id] opts))
 
 (s/fdef delete
         :args (s/cat :id :feed/id)

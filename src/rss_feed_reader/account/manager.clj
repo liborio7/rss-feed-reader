@@ -8,35 +8,35 @@
 
 ;; spec
 
-(s/def :account.manager/id uuid?)
-(s/def :account.manager/version int?)
-(s/def :account.manager/insert-time inst?)
-(s/def :account.manager/update-time inst?)
-(s/def :account.manager/username string?)
+(s/def :account.domain/id uuid?)
+(s/def :account.domain/version int?)
+(s/def :account.domain/insert-time inst?)
+(s/def :account.domain/update-time inst?)
+(s/def :account.domain/username string?)
 
 
-(s/def ::get-by-id-req (s/keys :req [:account.manager/id]))
+(s/def ::get-by-id-req (s/keys :req [:account.domain/id]))
 
-(s/def ::get-by-username-req (s/keys :req [:account.manager/id]))
+(s/def ::get-by-username-req (s/keys :req [:account.domain/id]))
 
-(s/def ::delete-req (s/keys :req [:account.manager/id]))
+(s/def ::delete-req (s/keys :req [:account.domain/id]))
 
-(s/def ::create-req (s/keys :req [:account.manager/username]
-                            :opt [:account.manager/id
-                                  :account.manager/version
-                                  :account.manager/insert-time
-                                  :account.manager/update-time]))
+(s/def ::create-req (s/keys :req [:account.domain/username]
+                            :opt [:account.domain/id
+                                  :account.domain/version
+                                  :account.domain/insert-time
+                                  :account.domain/update-time]))
 
-(s/def ::resp (s/keys :req [:account.manager/id
-                            :account.manager/username]))
+(s/def ::resp (s/keys :req [:account.domain/id
+                            :account.domain/username]))
 
 ;; conversion
 
 (defn create-req->model [m]
-  (let [{:account.manager/keys [id version insert-time update-time username]
-         :or                   {id          (java.util.UUID/randomUUID)
-                                version     0
-                                insert-time (tc/to-long (t/now))}
+  (let [{:account.domain/keys [id version insert-time update-time username]
+         :or                  {id          (java.util.UUID/randomUUID)
+                               version     0
+                               insert-time (tc/to-long (t/now))}
          } m]
     {:account/id          id
      :account/version     version
@@ -46,14 +46,14 @@
 
 (defn model->response [m]
   (let [{:account/keys [id username]} m]
-    {:account.manager/id       id
-     :account.manager/username username}))
+    {:account.domain/id       id
+     :account.domain/username username}))
 
 ;; get
 
 (defn get-by-id [req]
   (log/info "get by id" req)
-  (let [id (:account.manager/id req)
+  (let [id (:account.domain/id req)
         model (dao/get-by-id {:account/id id})]
     (if-not (nil? model)
       (model->response model))))
@@ -64,7 +64,7 @@
 
 (defn get-by-username [req]
   (log/info "get by username" req)
-  (let [username (:account.manager/username req)
+  (let [username (:account.domain/username req)
         model (dao/get-by-username {:account/username username})]
     (if-not (nil? model)
       (model->response model))))
@@ -100,7 +100,7 @@
 
 (defn delete [req]
   (log/info "delete" req)
-  (let [id (:account.manager/id req)]
+  (let [id (:account.domain/id req)]
     (dao/delete {:account/id id})))
 
 (s/fdef get-by-id
