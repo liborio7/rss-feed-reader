@@ -1,4 +1,4 @@
-(ns rss-feed-reader.api.feeds.handler
+(ns rss-feed-reader.api.feed.handler
   (:require [clojure.spec.alpha :as s]
             [clojure.tools.logging :as log]
             [rss-feed-reader.domain.feed :as mgr]
@@ -14,10 +14,6 @@
 
 ;; conversion
 
-(defn create-feed-req->domain [m]
-  (let [{:feed.api/keys [link]} m]
-    {:feed.domain/link (uris/from-string link)}))
-
 (defn domain->response [m]
   (let [{:feed.domain/keys [id link]} m]
     {:feed.api/id   id
@@ -28,7 +24,7 @@
 (defn get-feed [req]
   (let [req-path (:path-params req)
         id (uuids/from-string (:id req-path))]
-    (log/info "get" req-path)
+    (log/info "get feed" req-path)
     (if (nil? id)
       (r/not-found)
       (let [feed (mgr/get-by-id {:feed.domain/id id})]
@@ -41,21 +37,19 @@
 ;; post
 
 (defn create-feed [req]
-  (let [req-body (:body req)]
-    (log/info "post" req-body)
+  (let [req-body (:body req)
+        link (uris/from-string (:link req-body))]
+    (log/info "create feed" req-body)
     (try
-      (->> req-body
-           (maps/->q-map "feed.api")
-           (create-feed-req->domain)
-           (mgr/create)
-           (domain->response)
-           (r/ok))
+      (-> {:feed.domain/link link}
+          (mgr/create)
+          (domain->response)
+          (r/ok))
       (catch Exception e
         (let [data (ex-data e)
-              cause (:cause data)]
-          (case cause
-            :feed-manager-create (r/bad-request {:code    1
-                                                 :message "invalid feed"})
+              {:keys [cause reason]} data]
+          (case [cause reason]
+            [:feed-domain-create :invalid-spec] (r/bad-request {:code 1 :message "invalid request"})
             (throw e)))))))
 
 ;; delete
@@ -63,7 +57,7 @@
 (defn delete-feed [req]
   (let [req-path (:path-params req)
         id (uuids/from-string (:id req-path))]
-    (log/info "delete" req-path)
+    (log/info "delete feed" req-path)
     (if (nil? id)
       (r/no-content)
       (do

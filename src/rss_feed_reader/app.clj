@@ -7,14 +7,14 @@
             [clj-time.coerce :as tc]
             [rss-feed-reader.utils.map :as maps]
             [rss-feed-reader.utils.response :as r]
-            [rss-feed-reader.api.feeds.router :as feeds]
-            [rss-feed-reader.api.accounts.router :as accounts]))
+            [rss-feed-reader.api.feed.router :as feed]
+            [rss-feed-reader.api.account.router :as account]))
 
 (defn wrap-logger [handler]
   (fn [request]
-    (let [{:keys [uri request-method body]} request
+    (let [{:keys [uri request-method]} request
           from (tc/to-long (t/now))]
-      (log/info "[REQ]" request-method uri body)
+      (log/info "[REQ]" request-method uri)
       (let [response (handler request)
             {:keys [status body]} response
             to (tc/to-long (t/now))]
@@ -40,8 +40,8 @@
 
 (def app
   (ring/ring-handler
-    (ring/router [feeds/routes
-                  accounts/routes])
+    (ring/router [feed/routes
+                  account/routes])
     (ring/create-default-handler)
     {:middleware [
                   [wrap-logger]

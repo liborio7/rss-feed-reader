@@ -8,7 +8,7 @@
 
 (def db db/connection)
 (def table "feed")
-(def opts {:qualifier table})
+(def opts {:qualifier (clojure.string/replace table "_" ".")})
 
 ;; spec
 
@@ -27,15 +27,21 @@
 ;; get
 
 (defn get-by-id [{:feed/keys [id]}]
-  (jdbc/get-by-id db table id :feed/id opts))
+  (log/info "get by id" id)
+  (let [result (jdbc/get-by-id db table id :feed/id opts)]
+    (log/info "result" result)
+    result))
 
 (s/fdef get-by-id
         :args (s/cat :id :feed/id)
         :ret ::model)
 
 (defn get-by-link [{:feed/keys [link]}]
-  (-> (jdbc/find-by-keys db table {:feed/link link} opts)
-      (first)))
+  (log/info "get by link" link)
+  (let [result (-> (jdbc/find-by-keys db table {:feed/link link} opts)
+                   (first))]
+    (log/info "result" result)
+    result))
 
 (s/fdef get-by-link
         :args (s/cat :link :feed/link)
@@ -46,9 +52,10 @@
 (defn insert [model]
   (log/info "insert" model)
   (let [affected-rows (jdbc/insert! db table model opts)]
+    (log/info "inserted rows" affected-rows)
     (if (empty? affected-rows)
       (throw (ex-info "no rows has been inserted"
-                      {:cause   :feed-dao-insert
+                      {:cause   :feed-data-insert
                        :reason  :no-rows-affected
                        :details [db table model]}))
       (first affected-rows))))
@@ -60,7 +67,10 @@
 ;; delete
 
 (defn delete [{:feed/keys [id]}]
-  (jdbc/delete! db table ["id = ?", id] opts))
+  (log/info "delete" id)
+  (let [affected-rows (jdbc/delete! db table ["id = ?", id] opts)]
+    (log/info "affected rows" affected-rows)
+    affected-rows))
 
 (s/fdef delete
         :args (s/cat :id :feed/id)

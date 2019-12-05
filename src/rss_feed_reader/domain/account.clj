@@ -82,7 +82,7 @@
       (do
         (log/warn "invalid request" errors)
         (throw (ex-info "invalid request"
-                        {:cause   :account-manager-create
+                        {:cause   :account-domain-create
                          :reason  :invalid-spec
                          :details errors})))
       (if-let [feed (get-by-username req)]
