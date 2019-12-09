@@ -10,6 +10,7 @@
 
 (s/def :account.domain/id uuid?)
 (s/def :account.domain/version int?)
+(s/def :account.domain/order-id int?)
 (s/def :account.domain/insert-time inst?)
 (s/def :account.domain/update-time inst?)
 (s/def :account.domain/username string?)
@@ -24,6 +25,7 @@
 (s/def ::create-req (s/keys :req [:account.domain/username]
                             :opt [:account.domain/id
                                   :account.domain/version
+                                  :account.domain/order-id
                                   :account.domain/insert-time
                                   :account.domain/update-time]))
 
@@ -33,13 +35,16 @@
 ;; conversion
 
 (defn create-req->model [m]
-  (let [{:account.domain/keys [id version insert-time update-time username]
+  (let [now (tc/to-long (t/now))
+        {:account.domain/keys [id version order-id insert-time update-time username]
          :or                  {id          (java.util.UUID/randomUUID)
                                version     0
-                               insert-time (tc/to-long (t/now))}
+                               order-id    now
+                               insert-time now}
          } m]
     {:account/id          id
      :account/version     version
+     :account/order_id    order-id
      :account/insert_time insert-time
      :account/update_time update-time
      :account/username    username}))

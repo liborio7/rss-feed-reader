@@ -14,6 +14,7 @@
 
 (s/def :account.feed/id uuid?)
 (s/def :account.feed/version int?)
+(s/def :account.feed/order_id int?)
 (s/def :account.feed/insert_time inst?)
 (s/def :account.feed/update_time inst?)
 (s/def :account.feed/account_id uuid?)
@@ -21,6 +22,7 @@
 
 (s/def ::model (s/keys :req [:account.feed/id
                              :account.feed/version
+                             :account.feed/order_id
                              :account.feed/insert_time
                              :account.feed/update_time
                              :account.feed/account_id

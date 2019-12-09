@@ -14,12 +14,14 @@
 
 (s/def :account/id uuid?)
 (s/def :account/version int?)
+(s/def :account/order_id int?)
 (s/def :account/insert_time inst-ms)
 (s/def :account/update_time inst?)
 (s/def :account/username string?)
 
 (s/def ::model (s/keys :req [:account/id
                              :account/version
+                             :account/order_id
                              :account/insert_time
                              :account/update_time
                              :account/username]))

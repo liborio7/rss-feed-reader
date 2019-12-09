@@ -12,6 +12,7 @@
 
 (s/def :account.feed.domain/id uuid?)
 (s/def :account.feed.domain/version int?)
+(s/def :account.feed.domain/order-id int?)
 (s/def :account.feed.domain/insert-time inst?)
 (s/def :account.feed.domain/update-time inst?)
 (s/def :account.feed.domain/account-id :account.domain/id)
@@ -32,6 +33,7 @@
                                   :account.feed.domain/feed]
                             :opt [:account.feed.domain/id
                                   :account.feed.domain/version
+                                  :account.feed.domain/order-id
                                   :account.feed.domain/insert-time
                                   :account.feed.domain/update-time]))
 
@@ -42,13 +44,16 @@
 ;; conversion
 
 (defn create-req->model [m]
-  (let [{:account.feed.domain/keys [id version insert-time update-time account feed]
+  (let [now (tc/to-long (t/now))
+        {:account.feed.domain/keys [id version order-id insert-time update-time account feed]
          :or                       {id          (java.util.UUID/randomUUID)
                                     version     0
-                                    insert-time (tc/to-long (t/now))}
+                                    order-id    now
+                                    insert-time now}
          } m]
     {:account.feed/id          id
      :account.feed/version     version
+     :account.feed/order_id    order-id
      :account.feed/insert_time insert-time
      :account.feed/update_time update-time
      :account.feed/account_id  (:account.domain/id account)

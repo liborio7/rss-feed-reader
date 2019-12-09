@@ -14,12 +14,14 @@
 
 (s/def :feed/id uuid?)
 (s/def :feed/version int?)
+(s/def :feed/order_id int?)
 (s/def :feed/insert_time inst-ms)
 (s/def :feed/update_time inst?)
 (s/def :feed/link string?)
 
 (s/def ::model (s/keys :req [:feed/id
                              :feed/version
+                             :feed/order_id
                              :feed/insert_time
                              :feed/update_time
                              :feed/link]))

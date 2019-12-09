@@ -1,5 +1,7 @@
 (ns rss-feed-reader.app
   (:require [ring.adapter.jetty :as jetty]
+            [ring.middleware.params :as params]
+            [ring.middleware.keyword-params :as kw-params]
             [ring.middleware.json :as json]
             [reitit.ring :as ring]
             [clojure.tools.logging :as log]
@@ -46,6 +48,8 @@
     {:middleware [
                   [wrap-logger]
                   [wrap-server-error]
+                  [params/wrap-params]
+                  [kw-params/wrap-keyword-params]
                   [json/wrap-json-body {:keywords? true :bigdecimals? true}]
                   [json/wrap-json-response {:pretty true}]
                   [wrap-json-response-body]

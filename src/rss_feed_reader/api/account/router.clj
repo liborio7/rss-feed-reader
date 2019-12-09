@@ -11,6 +11,7 @@
                      }]
     ["/:account-id/feeds" {:name ::account-feeds
                            :post h/create-account-feed
+                           :get  h/get-account-feeds
                            }]
     ["/:account-id/feeds/:account-feed-id" {:name   ::account-feed
                                             :get    h/get-account-feed

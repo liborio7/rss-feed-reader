@@ -5,6 +5,7 @@
             [rss-feed-reader.domain.account_feed :as account-feed-mgr]
             [rss-feed-reader.domain.feed :as feed-mgr]
             [rss-feed-reader.utils.uuid :as uuids]
+            [rss-feed-reader.utils.int :as ints]
             [rss-feed-reader.utils.response :as r]
             [rss-feed-reader.utils.uri :as uris]))
 
@@ -99,16 +100,31 @@
                 [:account-feed-domain-create :invalid-spec] (r/bad-request {:code 1 :message "invalid request"})
                 (throw e)))))))))
 
+
+(defn get-account-feeds [req]
+  (let [req-path (:path-params req)
+        req-query (:params req)
+        account-id (uuids/from-string (:account-id req-path))
+        starting-after (uuids/from-string (:starting-after req-query))
+        limit (ints/parse-int (:limit req-query))]
+    (log/info "get accounts feeds" req-path req-query)
+    (if (nil? account-id)
+      (r/not-found)
+      (do
+        ;; TODO
+        []
+        ))))
+
 ;; delete
 
 (defn delete-account [req]
   (let [req-path (:path-params req)
-        id (uuids/from-string (:account-id req-path))]
+        account-id (uuids/from-string (:account-id req-path))]
     (log/info "delete account" req-path)
-    (if (nil? id)
+    (if (nil? account-id)
       (r/no-content)
       (do
-        (account-mgr/delete {:account.domain/id id})
+        (account-mgr/delete {:account.domain/id account-id})
         (r/no-content)))))
 
 (defn delete-account-feed [req]
