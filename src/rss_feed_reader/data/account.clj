@@ -2,13 +2,14 @@
   (:require [rss-feed-reader.data.postgres.db :as db]
             [clojure.java.jdbc :as jdbc]
             [clojure.spec.alpha :as s]
-            [clojure.tools.logging :as log]))
+            [clojure.tools.logging :as log]
+            [honeysql.core :as sql]))
 
 ;; utils
 
 (def db db/connection)
-(def table "account")
-(def opts {:qualifier (clojure.string/replace table "_" ".")})
+(def table :account)
+(def opts {:qualifier (clojure.string/replace (name table) "_" ".")})
 
 ;; spec
 
@@ -30,9 +31,15 @@
 
 (defn get-by-id [{:account/keys [id]}]
   (log/info "get by id" id)
-  (let [result (jdbc/get-by-id db table id :account/id opts)]
-    (log/info "result" result)
-    result))
+  (let [query (-> (sql/build :select :*
+                             :from table
+                             :where [:= :account/id id])
+                  (sql/format))
+        result (jdbc/query db query opts)]
+    (log/info query "returns" result)
+    (if (> 1 (count result))
+      (log/warn "unexpected multiple results"))
+    (first result)))
 
 (s/fdef get-by-id
         :args (s/cat :id :account/id)
@@ -40,10 +47,15 @@
 
 (defn get-by-username [{:account/keys [username]}]
   (log/info "get by username" username)
-  (let [result (-> (jdbc/find-by-keys db table {:account/username username} opts)
-                   (first))]
-    (log/info "result" result)
-    result))
+  (let [query (-> (sql/build :select :*
+                             :from table
+                             :where [:= :account/username username])
+                  (sql/format))
+        result (jdbc/query db query opts)]
+    (log/info query "returns" result)
+    (if (> 1 (count result))
+      (log/warn "unexpected multiple results"))
+    (first result)))
 
 (s/fdef get-by-username
         :args (s/cat :username :account/username)
@@ -53,14 +65,19 @@
 
 (defn insert [model]
   (log/info "insert" model)
-  (let [affected-rows (jdbc/insert! db table model opts)]
-    (log/info "affected rows" affected-rows)
+  (let [query (-> (sql/build :insert-into table
+                             :values [model])
+                  (sql/format))
+        affected-rows (jdbc/execute! db query opts)]
+    (log/info query "affects" affected-rows "row(s)")
     (if (empty? affected-rows)
       (throw (ex-info "no rows has been inserted"
                       {:cause   :account-data-insert
                        :reason  :no-rows-affected
-                       :details [db table model]}))
-      (first affected-rows))))
+                       :details [db table model]})))
+    (if (> 1 (count affected-rows))
+      (log/warn "unexpected multiple results"))
+    (get-by-id model)))
 
 (s/fdef insert
         :args (s/cat :model ::model)
@@ -70,8 +87,13 @@
 
 (defn delete [{:account/keys [id]}]
   (log/info "delete" id)
-  (let [affected-rows (jdbc/delete! db table ["id = ?", id] opts)]
-    (log/info "affected rows" affected-rows)
+  (let [query (-> (sql/build :delete-from table
+                             :where [:= :account/id id])
+                  (sql/format))
+        affected-rows (jdbc/execute! db query opts)]
+    (log/info query "affects" affected-rows "row(s)")
+    (if (> 1 (count affected-rows))
+      (log/warn "unexpected multiple results"))
     affected-rows))
 
 (s/fdef delete

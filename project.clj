@@ -19,9 +19,10 @@
 
                  [metosin/reitit "0.3.10"]
 
+                 [clj-time "0.15.2"]
                  [org.clojure/java.jdbc "0.7.10"]
                  [org.postgresql/postgresql "42.2.2"]
-                 [clj-time "0.15.2"]
+                 [honeysql/honeysql "0.9.8"]
                  ]
   :plugins [[lein-ring "0.12.5"]
             [lein-environ "1.1.0"]]
