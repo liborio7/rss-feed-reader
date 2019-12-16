@@ -14,9 +14,9 @@
 ;; spec
 
 (s/def :account/id uuid?)
-(s/def :account/version int?)
-(s/def :account/order_id int?)
-(s/def :account/insert_time inst-ms)
+(s/def :account/version pos-int?)
+(s/def :account/order_id pos-int?)
+(s/def :account/insert_time inst?)
 (s/def :account/update_time inst?)
 (s/def :account/username string?)
 

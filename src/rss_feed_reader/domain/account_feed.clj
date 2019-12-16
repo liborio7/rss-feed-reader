@@ -11,8 +11,8 @@
 ;; spec
 
 (s/def :account.feed.domain/id uuid?)
-(s/def :account.feed.domain/version int?)
-(s/def :account.feed.domain/order-id int?)
+(s/def :account.feed.domain/version pos-int?)
+(s/def :account.feed.domain/order-id pos-int?)
 (s/def :account.feed.domain/insert-time inst?)
 (s/def :account.feed.domain/update-time inst?)
 (s/def :account.feed.domain/account-id :account.domain/id)
@@ -20,9 +20,14 @@
 (s/def :account.feed.domain/account (s/keys :req [:account.domain/id]))
 (s/def :account.feed.domain/feed (s/keys :req [:feed.domain/id]))
 
+(s/def :account.feed.domain/starting-after :feed.domain/order-id)
+(s/def :account.feed.domain/limit pos-int?)
+
 (s/def ::get-by-id-req (s/keys :req [:account.feed.domain/id]))
 
-(s/def ::get-by-account-id-req (s/keys :req [:account.feed.domain/account-id]))
+(s/def ::get-by-account-id-req (s/keys :req [:account.feed.domain/account-id]
+                                       :opt [:account.feed.domain/starting-after
+                                             :account.feed.domain/limit]))
 
 (s/def ::get-by-account-id-and-feed-id-req (s/keys :req [:account.feed.domain/account-id
                                                          :account.feed.domain/feed-id]))
@@ -79,6 +84,19 @@
 (s/fdef get-by-id
         :args (s/cat :req ::get-by-id-req)
         :ret (s/or :ok ::resp :err nil?))
+
+(defn get-by-account-id [req]
+  (log/info "get by account id" req)
+  (let [{:account.feed.domain/keys [account-id starting-after limit]
+         :or                       {starting-after 0 limit 20}} req
+        models (dao/get-by-account-id {:account.feed/account_id     account-id
+                                       :account.feed/starting-after starting-after
+                                       :account.feed/limit          limit})]
+    (map model->response models)))
+
+(s/fdef get-by-account-id
+        :args (s/cat :req ::get-by-account-id-req)
+        :ret (s/or :ok ::resp :err empty?))
 
 (defn get-by-account-id-and-feed-id [req]
   (log/info "get by account id and feed id" req)

@@ -16,6 +16,11 @@
 
 (s/def :account.feed.api/id uuid?)
 (s/def :account.feed.api/link string?)
+(s/def :account.feed.api/data (s/coll-of ::resp))
+(s/def :account.feed.api/has-more boolean?)
+
+(s/def ::resp (s/keys :req [:account.feed.api/id
+                            :account.feed.api/link]))
 
 ;; conversion
 
@@ -43,6 +48,31 @@
           (-> account
               (domain->account-response)
               (r/ok)))))))
+
+(defn get-account-feeds [req]
+  (let [req-path (:path-params req)
+        req-query (:params req)
+        account-id (uuids/from-string (:account-id req-path))
+        starting-after-id (uuids/from-string (:starting-after req-query))
+        limit (ints/parse-int (:limit req-query))]
+    (log/info "get accounts feeds" req-path req-query)
+    (if (nil? account-id)
+      (r/not-found)
+      (let [starting-after-account-feed (if-not (nil? starting-after-id)
+                                          (account-feed-mgr/get-by-id {:account.feed.domain/id starting-after-id}))
+            starting-after (if-not (nil? starting-after-account-feed)
+                             (:account.feed.domain/order-id starting-after-account-feed)
+                             0)
+            limit (if-not (nil? limit)
+                    (max 0 (min 20 limit))
+                    20)
+            account-feeds (account-feed-mgr/get-by-account-id {:account.feed.domain/account-id     account-id
+                                                               :account.feed.domain/starting-after starting-after
+                                                               :account.feed.domain/limit          (+ 1 limit)})]
+        (r/ok {:account.feed.api/data     (->> account-feeds
+                                               (map domain->account-feed-response)
+                                               (take limit))
+               :account.feed.api/has-more (> (count account-feeds) limit)})))))
 
 (defn get-account-feed [req]
   (let [req-path (:path-params req)
@@ -99,21 +129,6 @@
                 [:feed-domain-create :invalid-spec] (r/bad-request {:code 1 :message "invalid request"})
                 [:account-feed-domain-create :invalid-spec] (r/bad-request {:code 1 :message "invalid request"})
                 (throw e)))))))))
-
-
-(defn get-account-feeds [req]
-  (let [req-path (:path-params req)
-        req-query (:params req)
-        account-id (uuids/from-string (:account-id req-path))
-        starting-after (uuids/from-string (:starting-after req-query))
-        limit (ints/parse-int (:limit req-query))]
-    (log/info "get accounts feeds" req-path req-query)
-    (if (nil? account-id)
-      (r/not-found)
-      (do
-        ;; TODO
-        []
-        ))))
 
 ;; delete
 

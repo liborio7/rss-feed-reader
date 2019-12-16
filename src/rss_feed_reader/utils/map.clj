@@ -10,7 +10,12 @@
         :ret map?)
 
 (defn ->unq-map [m]
-  (->> (map (fn [[key value]] [(keyword (name key)) value]) m)
+  (->> (map (fn [[key value]]
+              [(keyword (name key))
+               (cond
+                 (map? value) (->unq-map value)
+                 (coll? value) (map (fn [el] (if (map? el) (->unq-map el) el)) value)
+                 :else value)]) m)
        (into {})))
 
 (s/fdef ->unq-map

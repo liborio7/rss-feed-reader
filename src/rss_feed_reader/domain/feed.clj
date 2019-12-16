@@ -10,8 +10,8 @@
 ;; spec
 
 (s/def :feed.domain/id uuid?)
-(s/def :feed.domain/version int?)
-(s/def :feed.domain/order-id int?)
+(s/def :feed.domain/version pos-int?)
+(s/def :feed.domain/order-id pos-int?)
 (s/def :feed.domain/insert-time inst?)
 (s/def :feed.domain/update-time inst?)
 (s/def :feed.domain/link uri?)

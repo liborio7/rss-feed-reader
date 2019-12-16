@@ -14,9 +14,9 @@
 ;; spec
 
 (s/def :feed/id uuid?)
-(s/def :feed/version int?)
-(s/def :feed/order_id int?)
-(s/def :feed/insert_time inst-ms)
+(s/def :feed/version pos-int?)
+(s/def :feed/order_id pos-int?)
+(s/def :feed/insert_time inst?)
 (s/def :feed/update_time inst?)
 (s/def :feed/link string?)
 

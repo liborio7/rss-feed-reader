@@ -9,8 +9,8 @@
 ;; spec
 
 (s/def :account.domain/id uuid?)
-(s/def :account.domain/version int?)
-(s/def :account.domain/order-id int?)
+(s/def :account.domain/version pos-int?)
+(s/def :account.domain/order-id pos-int?)
 (s/def :account.domain/insert-time inst?)
 (s/def :account.domain/update-time inst?)
 (s/def :account.domain/username string?)
