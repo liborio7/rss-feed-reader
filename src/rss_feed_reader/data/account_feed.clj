@@ -67,18 +67,21 @@
     result))
 
 (s/fdef get-by-account-id
-        :args (s/cat :account_id :account.feed/account_id)
+        :args (s/cat :account_id :account.feed/account_id
+                     :starting-after :account.feed/starting-after
+                     :limit :account.feed/limit)
         :ret (s/coll-of ::model))
 
 (defn get-by-feed-id [{:account.feed/keys [feed_id]}
                       & {:keys [starting-after limit]
-                         :or   {starting-after 0 limit 100}}]
+                         :or   {starting-after 0 limit 50}}]
   (log/info "get by feed id" feed_id)
   (let [query (-> (sql/build :select :*
                              :from table
                              :where [:and
                                      [:= :account.feed/feed_id feed_id]
                                      [:> :account.feed/order_id starting-after]]
+                             :order-by [[:account.feed/order_id :desc]]
                              :limit limit)
                   (sql/format))
         result (jdbc/query db query opts)]
@@ -86,7 +89,9 @@
     result))
 
 (s/fdef get-by-feed-id
-        :args (s/cat :feed_id :account.feed/feed_id)
+        :args (s/cat :feed_id :account.feed/feed_id
+                     :starting-after :account.feed/starting-after
+                     :limit :account.feed/limit)
         :ret (s/coll-of ::model))
 
 (defn get-by-account-id-and-feed-id [{:account.feed/keys [account_id feed_id]}]

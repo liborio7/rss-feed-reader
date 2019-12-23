@@ -15,8 +15,6 @@
 (s/def :account.feed.domain/order-id pos-int?)
 (s/def :account.feed.domain/insert-time inst?)
 (s/def :account.feed.domain/update-time inst?)
-(s/def :account.feed.domain/account-id :account.domain/id)
-(s/def :account.feed.domain/feed-id :feed.domain/id)
 (s/def :account.feed.domain/account (s/keys :req [:account.domain/id]))
 (s/def :account.feed.domain/feed (s/keys :req [:feed.domain/id]))
 
@@ -25,12 +23,12 @@
 
 (s/def ::get-by-id-req (s/keys :req [:account.feed.domain/id]))
 
-(s/def ::get-by-account-id-req (s/keys :req [:account.feed.domain/account-id]
-                                       :opt [:account.feed.domain/starting-after
-                                             :account.feed.domain/limit]))
+(s/def ::get-by-account-req (s/keys :req [:account.feed.domain/account]
+                                    :opt [:account.feed.domain/starting-after
+                                          :account.feed.domain/limit]))
 
-(s/def ::get-by-account-id-and-feed-id-req (s/keys :req [:account.feed.domain/account-id
-                                                         :account.feed.domain/feed-id]))
+(s/def ::get-by-account-and-feed-req (s/keys :req [:account.feed.domain/account
+                                                   :account.feed.domain/feed]))
 
 (s/def ::delete-req (s/keys :req [:account.feed.domain/id]))
 
@@ -85,30 +83,30 @@
         :args (s/cat :req ::get-by-id-req)
         :ret (s/or :ok ::resp :err nil?))
 
-(defn get-by-account-id [req]
-  (log/info "get by account id" req)
-  (let [{:account.feed.domain/keys [account-id starting-after limit]
+(defn get-by-account [req]
+  (log/info "get by account" req)
+  (let [{:account.feed.domain/keys [account starting-after limit]
          :or                       {starting-after 0 limit 20}} req
-        models (dao/get-by-account-id {:account.feed/account_id     account-id
+        models (dao/get-by-account-id {:account.feed/account_id     (:account.domain/id account)
                                        :account.feed/starting-after starting-after
                                        :account.feed/limit          limit})]
     (map model->response models)))
 
-(s/fdef get-by-account-id
-        :args (s/cat :req ::get-by-account-id-req)
+(s/fdef get-by-account
+        :args (s/cat :req ::get-by-account-req)
         :ret (s/or :ok ::resp :err empty?))
 
-(defn get-by-account-id-and-feed-id [req]
-  (log/info "get by account id and feed id" req)
-  (let [account-id (:account.feed.domain/account-id req)
-        feed-id (:account.feed.domain/feed-id req)
+(defn get-by-account-and-feed [req]
+  (log/info "get by account and feed" req)
+  (let [account-id (:account.domain/id (:account.feed.domain/account req))
+        feed-id (:feed.domain/id (:account.feed.domain/feed req))
         model (dao/get-by-account-id-and-feed-id {:account.feed/account_id account-id
                                                   :account.feed/feed_id    feed-id})]
     (if-not (nil? model)
       (model->response model))))
 
-(s/fdef get-by-account-id-and-feed-id
-        :args (s/cat :req ::get-by-account-id-and-feed-id-req)
+(s/fdef get-by-account-and-feed
+        :args (s/cat :req ::get-by-account-and-feed-req)
         :ret (s/or :ok ::resp :err nil?))
 
 ;; create
@@ -123,10 +121,10 @@
                         {:cause   :account-feed-domain-create
                          :reason  :invalid-spec
                          :details errors})))
-      (let [account-id (:account.domain/id (:account.feed.domain/account req))
-            feed-id (:feed.domain/id (:account.feed.domain/feed req))
-            account-feed (get-by-account-id-and-feed-id {:account.feed.domain/account-id account-id
-                                                         :account.feed.domain/feed-id    feed-id})]
+      (let [account (:account.feed.domain/account req)
+            feed (:account.feed.domain/feed req)
+            account-feed (get-by-account-and-feed {:account.feed.domain/account account
+                                                   :account.feed.domain/feed    feed})]
         (if-not (nil? account-feed)
           account-feed
           (-> req

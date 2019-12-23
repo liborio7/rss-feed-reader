@@ -55,24 +55,28 @@
         account-id (uuids/from-string (:account-id req-path))
         starting-after-id (uuids/from-string (:starting-after req-query))
         limit (ints/parse-int (:limit req-query))]
-    (log/info "get accounts feeds" req-path req-query)
+    (log/info "get account feeds" req-path req-query)
     (if (nil? account-id)
       (r/not-found)
-      (let [starting-after-account-feed (if-not (nil? starting-after-id)
-                                          (account-feed-mgr/get-by-id {:account.feed.domain/id starting-after-id}))
-            starting-after (if-not (nil? starting-after-account-feed)
-                             (:account.feed.domain/order-id starting-after-account-feed)
-                             0)
-            limit (if-not (nil? limit)
-                    (max 0 (min 20 limit))
-                    20)
-            account-feeds (account-feed-mgr/get-by-account-id {:account.feed.domain/account-id     account-id
-                                                               :account.feed.domain/starting-after starting-after
-                                                               :account.feed.domain/limit          (+ 1 limit)})]
-        (r/ok {:account.feed.api/data     (->> account-feeds
-                                               (map domain->account-feed-response)
-                                               (take limit))
-               :account.feed.api/has-more (> (count account-feeds) limit)})))))
+      (let [account (account-mgr/get-by-id {:account.domain/id account-id})]
+        (if (nil? account)
+          (r/not-found)
+          (let [starting-after-account-feed (if-not (nil? starting-after-id)
+                                              (account-feed-mgr/get-by-id {:account.feed.domain/id starting-after-id}))
+                starting-after (if-not (nil? starting-after-account-feed)
+                                 (:account.feed.domain/order-id starting-after-account-feed)
+                                 0)
+                limit (if-not (nil? limit)
+                        (max 0 (min 20 limit))
+                        20)
+                account-feeds (account-feed-mgr/get-by-account {:account.feed.domain/account        account
+                                                                :account.feed.domain/starting-after starting-after
+                                                                :account.feed.domain/limit          (+ 1 limit)})]
+            (r/ok {:account.feed.api/data     (->> account-feeds
+                                                   (map domain->account-feed-response)
+                                                   (take limit))
+                   :account.feed.api/has-more (> (count account-feeds) limit)}))
+          )))))
 
 (defn get-account-feed [req]
   (let [req-path (:path-params req)

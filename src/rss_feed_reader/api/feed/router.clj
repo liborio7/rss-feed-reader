@@ -5,7 +5,11 @@
   [["/feeds"
     ["" {:name ::feeds
          :post h/create-feed}]
-    ["/:id" {:name   ::feeds-id
-             :get    h/get-feed
-             :delete h/delete-feed
-             }]]])
+    ["/:feed-id" {:name   ::feeds-id
+                  :get    h/get-feed
+                  :delete h/delete-feed
+                  }]
+    ["/:feed-id/items" {:name ::feed-items
+                        :get  h/get-feed-items
+                        }]
+    ]])
