@@ -1,7 +1,6 @@
 (ns rss-feed-reader.data.feed_item
   (:require [rss-feed-reader.data.postgres.db :as db]
             [rss-feed-reader.utils.sql :as sql]
-            [clojure.tools.logging :as log]
             [clojure.spec.alpha :as s]))
 ;; utils
 
@@ -42,9 +41,7 @@
         :ret ::model)
 
 (defn get-by-link [{:feed.item/keys [link]}]
-  (log/info "get by link" link)
-  (let [clause {:where [:= :feed.item/link link]}]
-    (sql/get-by-query db table clause)))
+  (sql/get-by-query db table {:where [:= :feed.item/link link]}))
 
 (s/fdef get-by-link
         :args (s/cat :link :feed.item/link)
@@ -53,13 +50,11 @@
 (defn get-by-feed-id [{:feed.item/keys [feed_id]}
                       & {:keys [starting-after limit]
                          :or   {starting-after 0 limit 50}}]
-  (log/info "get by feed id" feed_id)
-  (let [clause {:where    [:and
-                           [:= :feed.item/feed_id feed_id]
-                           [:> :feed.item/order_id starting-after]]
-                :order-by [[:feed.item/order_id :desc]]
-                :limit    limit}]
-    (sql/get-by-query-multi db table clause)))
+  (sql/get-by-query-multi db table {:where    [:and
+                                               [:= :feed.item/feed_id feed_id]
+                                               [:> :feed.item/order_id starting-after]]
+                                    :order-by [[:feed.item/order_id :desc]]
+                                    :limit    limit}))
 
 (s/fdef get-by-feed-id
         :args (s/cat :feed_id :feed.item/feed_id
