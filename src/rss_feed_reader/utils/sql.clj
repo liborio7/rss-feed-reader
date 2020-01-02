@@ -6,32 +6,28 @@
 (defn default-opts [table]
   {:qualifier (clojure.string/replace (name table) "_" ".")})
 
+;; select
+
+(defn get-by-id-multi
+  ([db table id-keyword models] (get-by-id-multi db table id-keyword models {}))
+  ([db table id-keyword models opts]
+   (log/debug "get by id multi" table id-keyword models)
+   (let [ids (->> models
+                  (map id-keyword)
+                  (apply conj []))
+         query (-> (q/build :select :*
+                            :from table
+                            :where [:in id-keyword ids])
+                   (q/format))
+         opts (merge (default-opts table) opts)
+         result (jdbc/query db query opts)]
+     (log/debug query "returns" result)
+     result)))
+
 (defn get-by-id
   ([db table id-keyword model] (get-by-id db table id-keyword model {}))
   ([db table id-keyword model opts]
-   (log/info "select from" table id-keyword model)
-   (let [query (-> (q/build :select :*
-                            :from table
-                            :where [:= id-keyword (id-keyword model)])
-                   (q/format))
-         opts (merge (default-opts table) opts)
-         result (jdbc/query db query opts)]
-     (log/info query "returns" result)
-     (if (> 1 (count result))
-       (log/warn "unexpected multiple results"))
-     (first result))))
-
-(defn get-by-query
-  ([db table clause] (get-by-query db table clause {}))
-  ([db table clause opts]
-   (log/info "select from" table clause)
-   (let [query (-> (q/build :select :*
-                            :from table)
-                   (merge clause)
-                   (q/format))
-         opts (merge (default-opts table) opts)
-         result (jdbc/query db query opts)]
-     (log/info query "returns" result)
+   (let [result (get-by-id-multi db table id-keyword (conj [] model) opts)]
      (if (> 1 (count result))
        (log/warn "unexpected multiple results"))
      (first result))))
@@ -39,46 +35,64 @@
 (defn get-by-query-multi
   ([db table clause] (get-by-query-multi db table clause {}))
   ([db table clause opts]
-   (log/info "select multiple from" table clause)
+   (log/debug "get by query" table clause)
    (let [query (-> (q/build :select :*
                             :from table)
                    (merge clause)
                    (q/format))
          opts (merge (default-opts table) opts)
          result (jdbc/query db query opts)]
-     (log/info query "returns" (count result) "results")
+     (log/debug query "returns" (count result) "results")
      result)))
 
-(defn insert
-  ([db table id-keyword model] (insert db table id-keyword model {}))
-  ([db table id-keyword model opts]
-   (log/info "insert into" table id-keyword model)
+(defn get-by-query
+  ([db table clause] (get-by-query db table clause {}))
+  ([db table clause opts]
+   (let [result (get-by-query-multi db table clause opts)]
+     (if (> 1 (count result))
+       (log/warn "unexpected multiple results"))
+     (first result))))
+
+;; insert
+
+(defn insert-multi
+  ([db table id-keyword models] (insert-multi db table id-keyword models {}))
+  ([db table id-keyword models opts]
+   (log/debug "insert " table id-keyword models)
    (let [query (-> (q/build :insert-into table
-                            :values [model])
+                            :values (apply conj [] models))
                    (q/format))
          opts (merge (default-opts table) opts)
          affected-rows (jdbc/execute! db query opts)]
-     (log/info query "affects" affected-rows "row(s)")
+     (log/debug query "affects" affected-rows "row(s)")
      (if (empty? affected-rows)
        (throw (ex-info "no rows has been inserted"
                        {:cause   :sql-insert
                         :reason  :no-rows-affected
-                        :details [db table model]})))
-     (if (> 1 (count affected-rows))
-       (log/warn "unexpected multiple results"))
-     (get-by-id db table id-keyword model))))
+                        :details [db table models]})))
+     (get-by-id-multi db table id-keyword models))))
 
+
+(defn insert
+  ([db table id-keyword model] (insert db table id-keyword model {}))
+  ([db table id-keyword model opts]
+   (let [result (insert-multi db table id-keyword (conj [] model) opts)]
+     (if (> 1 (count result))
+       (log/warn "unexpected multiple results"))
+     (first result))))
+
+;; delete
 
 (defn delete
   ([db table id-keyword model] (delete db table id-keyword model {}))
   ([db table id-keyword model opts]
-   (log/info "delete from" table id-keyword model)
+   (log/debug "delete" table id-keyword model)
    (let [query (-> (q/build :delete-from table
                             :where [:= id-keyword (id-keyword model)])
                    (q/format))
          opts (merge (default-opts table) opts)
          affected-rows (jdbc/execute! db query opts)]
-     (log/info query "affects" affected-rows "row(s)")
+     (log/debug query "affects" affected-rows "row(s)")
      (if (> 1 (count affected-rows))
        (log/warn "unexpected multiple results"))
      affected-rows)))

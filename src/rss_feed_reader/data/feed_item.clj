@@ -40,6 +40,13 @@
         :args (s/cat :id :feed.item/id)
         :ret ::model)
 
+(defn get-by-id-multi [models]
+  (sql/get-by-id-multi db table :feed.item/id models))
+
+(s/fdef get-by-id-multi
+        :args (s/cat :id (s/coll-of :feed.item/id))
+        :ret (s/coll-of ::model))
+
 (defn get-by-link [{:feed.item/keys [link]}]
   (sql/get-by-query db table {:where [:= :feed.item/link link]}))
 
@@ -70,6 +77,13 @@
 (s/fdef insert
         :args (s/cat :model ::model)
         :ret ::model)
+
+(defn insert-multi [models]
+  (sql/insert-multi db table :feed.item/id models))
+
+(s/fdef insert-multi
+        :args (s/cat :model (s/coll-of ::model))
+        :ret (s/coll-of ::model))
 
 ;; delete
 

@@ -6,7 +6,7 @@
             [rss-feed-reader.utils.uuid :as uuids]
             [rss-feed-reader.utils.uri :as uris]
             [rss-feed-reader.utils.response :as r]
-            [rss-feed-reader.utils.dates :as dates]
+            [rss-feed-reader.utils.date :as dates]
             [rss-feed-reader.utils.int :as ints]
             [rss-feed-reader.domain.account_feed :as account-feed-mgr]))
 

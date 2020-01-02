@@ -1,5 +1,6 @@
 (ns rss-feed-reader.data.postgres.db
-  (:require [clojure.edn :as edn]
+  (:require [clj-time.jdbc]
+            [clojure.edn :as edn]
             [environ.core :refer [env]]))
 
 (def connection

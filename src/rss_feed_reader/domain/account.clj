@@ -30,16 +30,17 @@
                                   :account.domain/update-time]))
 
 (s/def ::resp (s/keys :req [:account.domain/id
+                            :account.domain/order-id
                             :account.domain/username]))
 
 ;; conversion
 
 (defn create-req->model [m]
-  (let [now (tc/to-long (t/now))
+  (let [now (t/now)
         {:account.domain/keys [id version order-id insert-time update-time username]
          :or                  {id          (java.util.UUID/randomUUID)
                                version     0
-                               order-id    now
+                               order-id    (tc/to-long now)
                                insert-time now}
          } m]
     {:account/id          id
@@ -50,8 +51,9 @@
      :account/username    username}))
 
 (defn model->response [m]
-  (let [{:account/keys [id username]} m]
+  (let [{:account/keys [id order_id username]} m]
     {:account.domain/id       id
+     :account.domain/order-id order_id
      :account.domain/username username}))
 
 ;; get

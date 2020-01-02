@@ -3,14 +3,16 @@
             [ring.middleware.params :as params]
             [ring.middleware.keyword-params :as kw-params]
             [ring.middleware.json :as json]
-            [reitit.ring :as ring]
             [clojure.tools.logging :as log]
-            [clj-time.core :as t]
             [clj-time.coerce :as tc]
-            [rss-feed-reader.utils.map :as maps]
+            [clj-time.core :as t]
+            [reitit.ring :as ring]
             [rss-feed-reader.utils.response :as r]
+            [rss-feed-reader.utils.map :as maps]
             [rss-feed-reader.api.feed.router :as feed]
-            [rss-feed-reader.api.account.router :as account]))
+            [rss-feed-reader.api.account.router :as account]
+            [rss-feed-reader.job.feed_item :as feed-item-job]
+            [overtone.at-at :as j]))
 
 (defn wrap-logger [handler]
   (fn [request]
@@ -20,7 +22,7 @@
       (let [response (handler request)
             {:keys [status body]} response
             to (tc/to-long (t/now))]
-        (log/info (format "[RES]") (format "%dms" (- to from)) status body)
+        (log/info "[RES]" (format "%dms" (- to from)) status body)
         response))))
 
 (defn wrap-server-error [handler]
@@ -39,6 +41,9 @@
         response
         (->> (maps/->unq-map resp-body)
              (assoc response :body))))))
+
+(def my-pool (j/mk-pool))
+(j/every 5000 feed-item-job/run my-pool)
 
 (def app
   (ring/ring-handler

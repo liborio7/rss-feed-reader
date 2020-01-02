@@ -41,17 +41,18 @@
                                   :account.feed.domain/update-time]))
 
 (s/def ::resp (s/keys :req [:account.feed.domain/id
+                            :account.feed.domain/order-id
                             :account.feed.domain/account
                             :account.feed.domain/feed]))
 
 ;; conversion
 
 (defn create-req->model [m]
-  (let [now (tc/to-long (t/now))
+  (let [now (t/now)
         {:account.feed.domain/keys [id version order-id insert-time update-time account feed]
          :or                       {id          (java.util.UUID/randomUUID)
                                     version     0
-                                    order-id    now
+                                    order-id    (tc/to-long now)
                                     insert-time now}
          } m]
     {:account.feed/id          id
@@ -63,12 +64,13 @@
      :account.feed/feed_id     (:feed.domain/id feed)}))
 
 (defn model->response [m]
-  (let [{:account.feed/keys [id account_id feed_id]} m
+  (let [{:account.feed/keys [id order_id account_id feed_id]} m
         account (account-mgr/get-by-id {:account.domain/id account_id})
         feed (feed-mgr/get-by-id {:feed.domain/id feed_id})]
-    {:account.feed.domain/id      id
-     :account.feed.domain/account account
-     :account.feed.domain/feed    feed}))
+    {:account.feed.domain/id       id
+     :account.feed.domain/order-id order_id
+     :account.feed.domain/account  account
+     :account.feed.domain/feed     feed}))
 
 ;; get
 

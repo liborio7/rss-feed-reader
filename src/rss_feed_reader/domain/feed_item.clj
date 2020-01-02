@@ -5,7 +5,8 @@
             [clojure.spec.alpha :as s]
             [clj-time.core :as t]
             [clj-time.coerce :as tc]
-            [clojure.tools.logging :as log]))
+            [clojure.tools.logging :as log]
+            [rss-feed-reader.utils.uri :as uris]))
 
 ;; spec
 
@@ -16,7 +17,7 @@
 (s/def :feed.item.domain/update-time inst?)
 (s/def :feed.item.domain/feed (s/keys :req [:feed.domain/id]))
 (s/def :feed.item.domain/title string?)
-(s/def :feed.item.domain/link string?)
+(s/def :feed.item.domain/link uri?)
 (s/def :feed.item.domain/pub-time inst?)
 (s/def :feed.item.domain/description string?)
 
@@ -42,7 +43,10 @@
                                   :feed.item.domain/update-time
                                   :feed.item.domain/description]))
 
+(s/def ::create-multi-req (s/coll-of ::create-req))
+
 (s/def ::resp (s/keys :req [:feed.item.domain/id
+                            :feed.item.domain/order-id
                             :feed.item.domain/feed
                             :feed.item.domain/title
                             :feed.item.domain/link
@@ -51,34 +55,43 @@
 
 ;; conversion
 
-(defn create-req->model [m]
-  (let [now (tc/to-long (t/now))
-        {:feed.item.domain/keys [id version order-id insert-time update-time feed title link pub-time description]
-         :or                    {id          (java.util.UUID/randomUUID)
-                                 version     0
-                                 order-id    (:feed.item.domain/pub-time m)
-                                 insert-time now}
-         } m]
-    {:feed.item/id          id
-     :feed.item/version     version
-     :feed.item/order_id    order-id
-     :feed.item/insert_time insert-time
-     :feed.item/update_time update-time
-     :feed.item/feed_id     (:feed.domain/id feed)
-     :feed.item/title       title
-     :feed.item/link        link
-     :feed.item/pub_time    pub-time
-     :feed.item/description description}))
+(defn create-req->model
+  ([m] (create-req->model m (t/now)))
+  ([m time]
+   (let [{:feed.item.domain/keys [id version order-id insert-time update-time feed title link pub-time description]
+          :or                    {id          (java.util.UUID/randomUUID)
+                                  version     0
+                                  order-id    (tc/to-long (:feed.item.domain/pub-time m))
+                                  insert-time time}
+          } m]
+     {:feed.item/id          id
+      :feed.item/version     version
+      :feed.item/order_id    order-id
+      :feed.item/insert_time insert-time
+      :feed.item/update_time update-time
+      :feed.item/feed_id     (:feed.domain/id feed)
+      :feed.item/title       title
+      :feed.item/link        (str link)
+      :feed.item/pub_time    pub-time
+      :feed.item/description description})))
 
-(defn model->response [m]
-  (let [{:feed.item/keys [id feed_id title link pub-time description]} m
-        feed (feed-mgr/get-by-id {:feed.domain/id feed_id})]
-    {:feed.item.domain/id          id
-     :feed.item.domain/feed        feed
-     :feed.item.domain/title       title
-     :feed.item.domain/link        link
-     :feed.item.domain/pub-time    pub-time
-     :feed.item.domain/description description}))
+(defn create-multi-req->models [req]
+  (let [time (t/now)]
+    (->> req
+         (map #(create-req->model % time))
+         (reduce conj []))))
+
+(defn model->response
+  ([m] (model->response m (feed-mgr/get-by-id {:feed.domain/id (:feed.item/feed_id m)})))
+  ([m feed]
+   (let [{:feed.item/keys [id order_id title link pub-time description]} m]
+     {:feed.item.domain/id          id
+      :feed.item.domain/order-id    order_id
+      :feed.item.domain/feed        feed
+      :feed.item.domain/title       title
+      :feed.item.domain/link        (uris/from-string link)
+      :feed.item.domain/pub-time    (tc/from-long pub-time)
+      :feed.item.domain/description description})))
 
 ;; get
 
@@ -126,6 +139,30 @@
 (s/fdef create
         :args (s/cat :req ::create-req)
         :ret ::resp)
+
+(defn create-multi [req]
+  (log/info "create multi" req)
+  (let [errors (specs/errors ::create-multi-req req)]
+    (if (not-empty errors)
+      (do
+        (log/warn "invalid request" errors)
+        (throw (ex-info "invalid request"
+                        {:cause   :feed-item-domain-create
+                         :reason  :invalid-spec
+                         :details errors})))
+      (let [feeds-map (->> req
+                           (group-by #(:feed.domain/id (:feed.item.domain/feed %)))
+                           (map (fn [[k _]] [k (feed-mgr/get-by-id {:feed.domain/id k})]))
+                           (into {}))]
+        (->> req
+             (create-multi-req->models)
+             (dao/insert-multi)
+             (map #(model->response % (get feeds-map (:feed.item/feed_id %))))
+             (reduce conj []))))))
+
+(s/fdef create-multi
+        :args (s/cat :req ::create-multi-req)
+        :ret (s/coll-of ::resp))
 
 ;; delete
 

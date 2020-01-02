@@ -16,10 +16,15 @@
 (s/def :feed.domain/update-time inst?)
 (s/def :feed.domain/link uri?)
 
+(s/def :feed.domain/starting-after :feed.domain/order-id)
+(s/def :feed.domain/limit pos-int?)
 
 (s/def ::get-by-id-req (s/keys :req [:feed.domain/id]))
 
 (s/def ::get-by-link-req (s/keys :req [:feed.domain/link]))
+
+(s/def ::get-all (s/keys :opt [:feed.domain/starting-after
+                               :feed.domain/limit]))
 
 (s/def ::create-req (s/keys :req [:feed.domain/link]
                             :opt [:feed.domain/id
@@ -31,30 +36,32 @@
 (s/def ::delete-req (s/keys :req [:feed.domain/id]))
 
 (s/def ::resp (s/keys :req [:feed.domain/id
-                            :feed.domain/link]))
+                            :feed.domain/link
+                            :feed.domain/order-id]))
 
 ;; conversion
 
 (defn create-req->model [m]
-  (let [now (tc/to-long (t/now))
+  (let [now (t/now)
         {:feed.domain/keys [id version order-id insert-time update-time link]
          :or               {id          (java.util.UUID/randomUUID)
                             version     0
-                            order-id    now
+                            order-id    (tc/to-long now)
                             insert-time now
                             }
          } m]
     {:feed/id          id
      :feed/version     version
      :feed/order_id    order-id
-     :feed/insert_time insert-time
-     :feed/update_time update-time
+     :feed/insert_time (tc/to-long insert-time)
+     :feed/update_time (tc/to-long update-time)
      :feed/link        (str link)}))
 
 (defn model->response [m]
-  (let [{:feed/keys [id link]} m]
-    {:feed.domain/id   id
-     :feed.domain/link (uris/from-string link)}))
+  (let [{:feed/keys [id order_id link]} m]
+    {:feed.domain/id       id
+     :feed.domain/order-id order_id
+     :feed.domain/link     (uris/from-string link)}))
 
 ;; get
 
@@ -67,7 +74,7 @@
 
 (s/fdef get-by-id
         :args (s/cat :req ::get-by-id-req)
-        :ret (s/or :ok ::rest :err nil?))
+        :ret (s/or :ok ::resp :err nil?))
 
 (defn get-by-link [req]
   (log/info "get by link" req)
@@ -78,7 +85,19 @@
 
 (s/fdef get-by-link
         :args (s/cat :req ::get-by-link-req)
-        :ret (s/or :ok ::rest :err nil?))
+        :ret (s/or :ok ::resp :err nil?))
+
+(defn get-all [req]
+  (log/info "get all" req)
+  (let [{:feed.domain/keys [starting-after limit]
+         :or               {starting-after 0 limit 20}} req
+        models (dao/get-all {:feed/starting-after starting-after
+                             :feed/limit          limit})]
+    (map model->response models)))
+
+(s/fdef get-all
+        :args (s/cat :req ::get-all)
+        :ret (s/or :ok (s/coll-of ::resp) :err nil?))
 
 ;; create
 

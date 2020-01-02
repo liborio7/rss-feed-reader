@@ -19,7 +19,9 @@
 
                  [metosin/reitit "0.3.10"]
 
+                 [overtone/at-at "1.2.0"]
                  [clj-time "0.15.2"]
+
                  [org.clojure/java.jdbc "0.7.10"]
                  [org.postgresql/postgresql "42.2.2"]
                  [honeysql/honeysql "0.9.8"]
@@ -29,7 +31,7 @@
   :aliases {"migrate"  ["run" "-m" "rss-feed-reader.data.postgres.migrations/migrate"]
             "rollback" ["run" "-m" "rss-feed-reader.data.postgres.migrations/rollback"]}
   :repl-options {:init-ns rss-feed-reader.app}
-  :main rss-feed-reader.core
+  :main rss-feed-reader.app
   :profiles {
              :dev {:env          {:environment "dev"}
                    :dependencies [[org.clojure/test.check "0.9.0"]]}
