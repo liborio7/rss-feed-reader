@@ -8,8 +8,8 @@
 
 ;; select
 
-(defn get-by-id-multi
-  ([db table id-keyword models] (get-by-id-multi db table id-keyword models {}))
+(defn get-multi-by-id
+  ([db table id-keyword models] (get-multi-by-id db table id-keyword models {}))
   ([db table id-keyword models opts]
    (log/debug "get by id multi" table id-keyword models)
    (let [ids (->> models
@@ -27,13 +27,13 @@
 (defn get-by-id
   ([db table id-keyword model] (get-by-id db table id-keyword model {}))
   ([db table id-keyword model opts]
-   (let [result (get-by-id-multi db table id-keyword (conj [] model) opts)]
+   (let [result (get-multi-by-id db table id-keyword (conj [] model) opts)]
      (if (> 1 (count result))
        (log/warn "unexpected multiple results"))
      (first result))))
 
-(defn get-by-query-multi
-  ([db table clause] (get-by-query-multi db table clause {}))
+(defn get-multi-by-query
+  ([db table clause] (get-multi-by-query db table clause {}))
   ([db table clause opts]
    (log/debug "get by query" table clause)
    (let [query (-> (q/build :select :*
@@ -48,7 +48,7 @@
 (defn get-by-query
   ([db table clause] (get-by-query db table clause {}))
   ([db table clause opts]
-   (let [result (get-by-query-multi db table clause opts)]
+   (let [result (get-multi-by-query db table clause opts)]
      (if (> 1 (count result))
        (log/warn "unexpected multiple results"))
      (first result))))
@@ -70,8 +70,7 @@
                        {:cause   :sql-insert
                         :reason  :no-rows-affected
                         :details [db table models]})))
-     (get-by-id-multi db table id-keyword models))))
-
+     (get-multi-by-id db table id-keyword models))))
 
 (defn insert
   ([db table id-keyword model] (insert db table id-keyword model {}))
@@ -83,16 +82,25 @@
 
 ;; delete
 
-(defn delete
-  ([db table id-keyword model] (delete db table id-keyword model {}))
-  ([db table id-keyword model opts]
-   (log/debug "delete" table id-keyword model)
-   (let [query (-> (q/build :delete-from table
-                            :where [:= id-keyword (id-keyword model)])
+(defn delete-multi
+  ([db table id-keyword models] (delete-multi db table id-keyword models {}))
+  ([db table id-keyword models opts]
+   (log/debug "delete " table id-keyword models)
+   (let [ids (->> models
+                  (map id-keyword)
+                  (apply conj []))
+         query (-> (q/build :delete-from table
+                            :where [:in id-keyword ids])
                    (q/format))
          opts (merge (default-opts table) opts)
          affected-rows (jdbc/execute! db query opts)]
      (log/debug query "affects" affected-rows "row(s)")
-     (if (> 1 (count affected-rows))
+     affected-rows)))
+
+(defn delete
+  ([db table id-keyword model] (delete db table id-keyword model {}))
+  ([db table id-keyword model opts]
+   (let [affected-rows (delete-multi db table id-keyword (conj [] model) opts)]
+     (if (> 1 affected-rows)
        (log/warn "unexpected multiple results"))
      affected-rows)))

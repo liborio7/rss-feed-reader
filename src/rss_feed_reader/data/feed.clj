@@ -42,7 +42,7 @@
 
 (defn get-all [{:feed/keys [starting-after limit]
                 :or        {starting-after 0 limit 50}}]
-  (sql/get-by-query-multi db table {:where    [:> :feed/order_id starting-after]
+  (sql/get-multi-by-query db table {:where    [:> :feed/order_id starting-after]
                                     :order-by [[:feed/order_id :desc]]
                                     :limit    limit}))
 

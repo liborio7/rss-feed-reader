@@ -34,7 +34,7 @@
         :ret ::model)
 
 (defn get-by-username [{:account/keys [username]}]
-  (sql/get-by-query-multi db table {:where [:= :account/username username]}))
+  (sql/get-multi-by-query db table {:where [:= :account/username username]}))
 
 (s/fdef get-by-username
         :args (s/cat :username :account/username)

@@ -41,7 +41,7 @@
         :ret ::model)
 
 (defn get-by-id-multi [models]
-  (sql/get-by-id-multi db table :feed.item/id models))
+  (sql/get-multi-by-id db table :feed.item/id models))
 
 (s/fdef get-by-id-multi
         :args (s/cat :id (s/coll-of :feed.item/id))
@@ -57,7 +57,7 @@
 (defn get-by-feed-id [{:feed.item/keys [feed_id]}
                       & {:keys [starting-after limit]
                          :or   {starting-after 0 limit 50}}]
-  (sql/get-by-query-multi db table {:where    [:and
+  (sql/get-multi-by-query db table {:where    [:and
                                                [:= :feed.item/feed_id feed_id]
                                                [:> :feed.item/order_id starting-after]]
                                     :order-by [[:feed.item/order_id :desc]]
