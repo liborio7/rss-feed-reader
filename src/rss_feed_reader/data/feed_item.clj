@@ -7,7 +7,7 @@
 (def db db/connection)
 (def table :feed_item)
 
-;; spec
+;; model
 
 (s/def :feed.item/id uuid?)
 (s/def :feed.item/version pos-int?)
@@ -16,7 +16,7 @@
 (s/def :feed.item/update_time inst?)
 (s/def :feed.item/feed_id uuid?)
 (s/def :feed.item/title string?)
-(s/def :feed.item/link uri?)
+(s/def :feed.item/link string?)
 (s/def :feed.item/pub_time inst?)
 (s/def :feed.item/description string?)
 
@@ -37,21 +37,21 @@
   (sql/get-by-id db table :feed.item/id model))
 
 (s/fdef get-by-id
-        :args (s/cat :id :feed.item/id)
+        :args (s/cat :model (s/keys :req [:feed.item/id]))
         :ret ::model)
 
 (defn get-by-id-multi [models]
   (sql/get-multi-by-id db table :feed.item/id models))
 
 (s/fdef get-by-id-multi
-        :args (s/cat :id (s/coll-of :feed.item/id))
+        :args (s/cat :models (s/coll-of (s/keys :req [:feed.item/id])))
         :ret (s/coll-of ::model))
 
 (defn get-by-link [{:feed.item/keys [link]}]
   (sql/get-by-query db table {:where [:= :feed.item/link link]}))
 
 (s/fdef get-by-link
-        :args (s/cat :link :feed.item/link)
+        :args (s/cat :model (s/keys :req [:feed.item/link]))
         :ret ::model)
 
 (defn get-by-feed-id [{:feed.item/keys [feed_id]}
@@ -60,13 +60,13 @@
   (sql/get-multi-by-query db table {:where    [:and
                                                [:= :feed.item/feed_id feed_id]
                                                [:> :feed.item/order_id starting-after]]
-                                    :order-by [[:feed.item/order_id :desc]]
+                                    :order-by [[:feed.item/order_id :asc]]
                                     :limit    limit}))
 
 (s/fdef get-by-feed-id
-        :args (s/cat :feed_id :feed.item/feed_id
-                     :starting-after :feed.item/starting-after
-                     :limit :feed.item/limit)
+        :args (s/cat :model (s/keys :req [:feed.item/feed_id])
+                     :starting-after :feed.item/order_id
+                     :limit (s/int-in 0 100))
         :ret (s/coll-of ::model))
 
 ;; insert
@@ -91,5 +91,5 @@
   (sql/delete db table :feed.item/id model))
 
 (s/fdef delete
-        :args (s/cat :id :feed.item/id)
+        :args (s/cat :model (s/keys :req [:feed.item/id]))
         :ret (s/and int?))

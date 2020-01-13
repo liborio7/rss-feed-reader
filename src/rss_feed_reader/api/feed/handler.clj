@@ -7,28 +7,42 @@
             [rss-feed-reader.utils.uri :as uris]
             [rss-feed-reader.utils.response :as r]
             [rss-feed-reader.utils.date :as dates]
-            [rss-feed-reader.utils.int :as ints]
-            [rss-feed-reader.domain.account_feed :as account-feed-mgr]))
+            [rss-feed-reader.utils.int :as ints]))
 
-;; spec
+;; model
 
 (s/def :feed.api/id uuid?)
 (s/def :feed.api/link string?)
 
+(s/def ::feed-model (s/keys :req [:feed.api/id
+                                  :feed.api/link]))
+
+(s/def :feed.item.api/id uuid?)
+(s/def :feed.item.api/title string?)
+(s/def :feed.item.api/link string?)
+(s/def :feed.item.api/pub-time string?)
+(s/def :feed.item.api/description string?)
+
+(s/def ::feed-item-model (s/keys :req [:feed.item.api/id
+                                       :feed.item.api/title
+                                       :feed.item.api/link]
+                                 :opt [:feed.item.api/pub-time
+                                       :feed.item.api/description]))
+
 ;; conversion
 
-(defn domain->feed-response [m]
-  (let [{:feed.domain/keys [id link]} m]
+(defn feed-domain-model->api-model [model]
+  (let [{:feed.domain/keys [id link]} model]
     {:feed.api/id   id
      :feed.api/link (str link)}))
 
-(defn domain->feed-item-response [m]
-  (let [{:feed.item.domain/keys [id title link pub-time description]} m]
-    {:feed.api/id          id
-     :feed.api/title       title
-     :feed.api/link        link
-     :feed.api/pub-time    (dates/unparse-date pub-time)
-     :feed.api/description description}))
+(defn feed-item-domain-model->api-model [model]
+  (let [{:feed.item.domain/keys [id title link pub-time description]} model]
+    {:feed.item.api/id          id
+     :feed.item.api/title       title
+     :feed.item.api/link        (str link)
+     :feed.item.api/pub-time    (dates/unparse-date pub-time)
+     :feed.item.api/description description}))
 
 ;; get
 
@@ -42,7 +56,7 @@
         (if (nil? feed)
           (r/not-found)
           (-> feed
-              (domain->feed-response)
+              (feed-domain-model->api-model)
               (r/ok)))))))
 
 (defn get-feed-items [req]
@@ -65,13 +79,11 @@
                 limit (if-not (nil? limit)
                         (max 0 (min 20 limit))
                         20)
-                feed-items (feed-item-mgr/get-by-feed {:feed.item.domain/feed           feed
-                                                       :feed.item.domain/starting-after starting-after
-                                                       :feed.item.domain/limit          (+ 1 limit)})]
-            (r/ok {:feed.item.api/data     (->> feed-items
-                                                (map domain->feed-item-response)
-                                                (take limit))
-                   :feed.item.api/has-more (> (count feed-items) limit)})))))))
+                feed-items (feed-item-mgr/get-by-feed {:feed.item.domain/feed feed}
+                                                      :starting-after starting-after
+                                                      :limit (+ 1 limit))]
+            (-> (r/paginate feed-items feed-item-domain-model->api-model limit)
+                (r/ok))))))))
 
 ;; post
 
@@ -82,7 +94,7 @@
     (try
       (-> {:feed.domain/link link}
           (feed-mgr/create)
-          (domain->feed-response)
+          (feed-domain-model->api-model)
           (r/ok))
       (catch Exception e
         (let [data (ex-data e)

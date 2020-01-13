@@ -6,7 +6,7 @@
             [clj-time.coerce :as tc]
             [clojure.tools.logging :as log]))
 
-;; spec
+;; model
 
 (s/def :account.domain/id uuid?)
 (s/def :account.domain/version pos-int?)
@@ -15,34 +15,59 @@
 (s/def :account.domain/update-time inst?)
 (s/def :account.domain/username string?)
 
-
-(s/def ::get-by-id-req (s/keys :req [:account.domain/id]))
-
-(s/def ::get-by-username-req (s/keys :req [:account.domain/id]))
-
-(s/def ::delete-req (s/keys :req [:account.domain/id]))
-
-(s/def ::create-req (s/keys :req [:account.domain/username]
-                            :opt [:account.domain/id
-                                  :account.domain/version
-                                  :account.domain/order-id
-                                  :account.domain/insert-time
-                                  :account.domain/update-time]))
-
-(s/def ::resp (s/keys :req [:account.domain/id
-                            :account.domain/order-id
-                            :account.domain/username]))
+(s/def ::model (s/keys :req [:account.domain/id
+                             :account.domain/order-id
+                             :account.domain/username]))
 
 ;; conversion
 
-(defn create-req->model [m]
+(defn data-model->domain-model [model]
+  (let [{:account/keys [id order_id username]} model]
+    {:account.domain/id       id
+     :account.domain/order-id order_id
+     :account.domain/username username}))
+
+;; get
+
+(defn get-by-id [model]
+  (log/info "get by id" model)
+  (let [id (:account.domain/id model)
+        data-model (dao/get-by-id {:account/id id})]
+    (if-not (nil? data-model)
+      (data-model->domain-model data-model))))
+
+(s/fdef get-by-id
+        :args (s/cat :model (s/keys :req [:account.domain/id]))
+        :ret (s/or :ok ::model :err nil?))
+
+(defn get-by-username [model]
+  (log/info "get by username" model)
+  (let [username (:account.domain/username model)
+        data-model (dao/get-by-username {:account/username username})]
+    (if-not (nil? data-model)
+      (data-model->domain-model data-model))))
+
+(s/fdef get-by-username
+        :args (s/cat :model (s/keys :req [:account.domain/id]))
+        :ret (s/or :ok ::rest :err nil?))
+
+;; create
+
+(s/def ::create-model (s/keys :req [:account.domain/username]
+                              :opt [:account.domain/id
+                                    :account.domain/version
+                                    :account.domain/order-id
+                                    :account.domain/insert-time
+                                    :account.domain/update-time]))
+
+(defn domain-create-model->data-model [model]
   (let [now (t/now)
         {:account.domain/keys [id version order-id insert-time update-time username]
          :or                  {id          (java.util.UUID/randomUUID)
                                version     0
                                order-id    (tc/to-long now)
                                insert-time now}
-         } m]
+         } model]
     {:account/id          id
      :account/version     version
      :account/order_id    order-id
@@ -50,41 +75,9 @@
      :account/update_time update-time
      :account/username    username}))
 
-(defn model->response [m]
-  (let [{:account/keys [id order_id username]} m]
-    {:account.domain/id       id
-     :account.domain/order-id order_id
-     :account.domain/username username}))
-
-;; get
-
-(defn get-by-id [req]
-  (log/info "get by id" req)
-  (let [id (:account.domain/id req)
-        model (dao/get-by-id {:account/id id})]
-    (if-not (nil? model)
-      (model->response model))))
-
-(s/fdef get-by-id
-        :args (s/cat :req ::get-by-id-req)
-        :ret (s/or :ok ::resp :err nil?))
-
-(defn get-by-username [req]
-  (log/info "get by username" req)
-  (let [username (:account.domain/username req)
-        model (dao/get-by-username {:account/username username})]
-    (if-not (nil? model)
-      (model->response model))))
-
-(s/fdef get-by-username
-        :args (s/cat :req ::get-by-username-req)
-        :ret (s/or :ok ::rest :err nil?))
-
-;; create
-
-(defn create [req]
-  (log/info "create" req)
-  (let [errors (specs/errors ::create-req req)]
+(defn create [model]
+  (log/info "create" model)
+  (let [errors (specs/errors ::create-model model)]
     (if (not-empty errors)
       (do
         (log/warn "invalid request" errors)
@@ -92,24 +85,24 @@
                         {:cause   :account-domain-create
                          :reason  :invalid-spec
                          :details errors})))
-      (if-let [feed (get-by-username req)]
-        feed
-        (-> req
-            (create-req->model)
+      (if-let [account (get-by-username model)]
+        account
+        (-> model
+            (domain-create-model->data-model)
             (dao/insert)
-            (model->response))))))
+            (data-model->domain-model))))))
 
 (s/fdef create
-        :args (s/cat :req ::create-req)
-        :ret ::resp)
+        :args (s/cat :model ::create-model)
+        :ret ::model)
 
 ;; delete
 
-(defn delete [req]
-  (log/info "delete" req)
-  (let [id (:account.domain/id req)]
+(defn delete [model]
+  (log/info "delete" model)
+  (let [id (:account.domain/id model)]
     (dao/delete {:account/id id})))
 
 (s/fdef delete
-        :args (s/cat :req ::delete-req)
-        :ret (s/or :ok ::resp :err nil?))
+        :args (s/cat :model (s/keys :req [:account.domain/id]))
+        :ret (s/or :ok ::model :err nil?))

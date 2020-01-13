@@ -1,5 +1,13 @@
 (ns rss-feed-reader.utils.response)
 
+;; pagination
+
+(defn paginate [seq fn limit]
+  {:data     (->> seq
+                  (map fn)
+                  (take limit))
+   :has-more (> (count seq) limit)})
+
 ;; 2xx
 
 (defn ok [body]

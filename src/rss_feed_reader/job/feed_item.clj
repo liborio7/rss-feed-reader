@@ -15,8 +15,7 @@
   {:feed.item.domain/feed        feed
    :feed.item.domain/title       (first (:title item))
    :feed.item.domain/link        (uris/from-string (first (:link item)))
-   :feed.item.domain/pub-time    (dates/parse-date (first (:pubDate item))
-                                                   date-formatter)
+   :feed.item.domain/pub-time    (dates/parse-date (first (:pubDate item)) date-formatter)
    :feed.item.domain/description (first (:description item))})
 
 (defn- fetch-feed-items [feed]
@@ -34,8 +33,7 @@
 (defn- fetch-feeds [batch-size]
   (loop [starting-after 0
          result 0]
-    (let [feeds (feed-mgr/get-all {:feed.domain/starting-after starting-after
-                                   :feed.domain/limit          batch-size})
+    (let [feeds (feed-mgr/get-all :starting-after starting-after :limit batch-size)
           feeds-len (count feeds)
           items (->> feeds
                      (map fetch-feed-items)

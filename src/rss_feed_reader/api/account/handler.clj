@@ -9,28 +9,29 @@
             [rss-feed-reader.utils.response :as r]
             [rss-feed-reader.utils.uri :as uris]))
 
-;; spec
+;; model
 
 (s/def :account.api/id uuid?)
 (s/def :account.api/username string?)
 
+(s/def ::account-model (s/cat :req [:account.api/id
+                                    :account.api/username]))
+
 (s/def :account.feed.api/id uuid?)
 (s/def :account.feed.api/link string?)
-(s/def :account.feed.api/data (s/coll-of ::resp))
-(s/def :account.feed.api/has-more boolean?)
 
-(s/def ::resp (s/keys :req [:account.feed.api/id
-                            :account.feed.api/link]))
+(s/def ::account-feed-model (s/cat :req [:account.feed.api/id
+                                         :account.feed.api/link]))
 
 ;; conversion
 
-(defn domain->account-response [m]
-  (let [{:account.domain/keys [id username]} m]
+(defn account-domain-model->api-model [model]
+  (let [{:account.domain/keys [id username]} model]
     {:account.api/id       id
      :account.api/username username}))
 
-(defn domain->account-feed-response [m]
-  (let [{:account.feed.domain/keys [id feed]} m]
+(defn account-feed-domain-model->api-model [model]
+  (let [{:account.feed.domain/keys [id feed]} model]
     {:account.feed.api/id   id
      :account.feed.api/link (str (:feed.domain/link feed))}))
 
@@ -46,7 +47,7 @@
         (if (nil? account)
           (r/not-found)
           (-> account
-              (domain->account-response)
+              (account-domain-model->api-model)
               (r/ok)))))))
 
 (defn get-account-feeds [req]
@@ -69,14 +70,11 @@
                 limit (if-not (nil? limit)
                         (max 0 (min 20 limit))
                         20)
-                account-feeds (account-feed-mgr/get-by-account {:account.feed.domain/account        account
-                                                                :account.feed.domain/starting-after starting-after
-                                                                :account.feed.domain/limit          (+ 1 limit)})]
-            (r/ok {:account.feed.api/data     (->> account-feeds
-                                                   (map domain->account-feed-response)
-                                                   (take limit))
-                   :account.feed.api/has-more (> (count account-feeds) limit)}))
-          )))))
+                account-feeds (account-feed-mgr/get-by-account {:account.feed.domain/account account}
+                                                               :starting-after starting-after
+                                                               :limit (+ 1 limit))]
+            (-> (r/paginate account-feeds account-feed-domain-model->api-model limit)
+                (r/ok))))))))
 
 (defn get-account-feed [req]
   (let [req-path (:path-params req)
@@ -89,7 +87,7 @@
         (if (not= account-id (:account.domain/id (:account.feed.domain/account account-feed)))
           (r/not-found)
           (-> account-feed
-              (domain->account-feed-response)
+              (account-feed-domain-model->api-model)
               (r/ok)))))))
 
 ;; post
@@ -101,7 +99,7 @@
     (try
       (-> {:account.domain/username username}
           (account-mgr/create)
-          (domain->account-response)
+          (account-domain-model->api-model)
           (r/ok))
       (catch Exception e
         (let [data (ex-data e)
@@ -124,7 +122,7 @@
             (-> {:account.feed.domain/account account
                  :account.feed.domain/feed    feed}
                 (account-feed-mgr/create)
-                (domain->account-feed-response)
+                (account-feed-domain-model->api-model)
                 (r/ok)))
           (catch Exception e
             (let [data (ex-data e)

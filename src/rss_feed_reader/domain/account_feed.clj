@@ -8,7 +8,7 @@
             [clj-time.coerce :as tc]
             [clojure.tools.logging :as log]))
 
-;; spec
+;; model
 
 (s/def :account.feed.domain/id uuid?)
 (s/def :account.feed.domain/version pos-int?)
@@ -18,53 +18,15 @@
 (s/def :account.feed.domain/account (s/keys :req [:account.domain/id]))
 (s/def :account.feed.domain/feed (s/keys :req [:feed.domain/id]))
 
-(s/def :account.feed.domain/starting-after :feed.domain/order-id)
-(s/def :account.feed.domain/limit pos-int?)
-
-(s/def ::get-by-id-req (s/keys :req [:account.feed.domain/id]))
-
-(s/def ::get-by-account-req (s/keys :req [:account.feed.domain/account]
-                                    :opt [:account.feed.domain/starting-after
-                                          :account.feed.domain/limit]))
-
-(s/def ::get-by-account-and-feed-req (s/keys :req [:account.feed.domain/account
-                                                   :account.feed.domain/feed]))
-
-(s/def ::delete-req (s/keys :req [:account.feed.domain/id]))
-
-(s/def ::create-req (s/keys :req [:account.feed.domain/account
-                                  :account.feed.domain/feed]
-                            :opt [:account.feed.domain/id
-                                  :account.feed.domain/version
-                                  :account.feed.domain/order-id
-                                  :account.feed.domain/insert-time
-                                  :account.feed.domain/update-time]))
-
-(s/def ::resp (s/keys :req [:account.feed.domain/id
-                            :account.feed.domain/order-id
-                            :account.feed.domain/account
-                            :account.feed.domain/feed]))
+(s/def ::model (s/keys :req [:account.feed.domain/id
+                             :account.feed.domain/order-id
+                             :account.feed.domain/account
+                             :account.feed.domain/feed]))
 
 ;; conversion
 
-(defn create-req->model [m]
-  (let [now (t/now)
-        {:account.feed.domain/keys [id version order-id insert-time update-time account feed]
-         :or                       {id          (java.util.UUID/randomUUID)
-                                    version     0
-                                    order-id    (tc/to-long now)
-                                    insert-time now}
-         } m]
-    {:account.feed/id          id
-     :account.feed/version     version
-     :account.feed/order_id    order-id
-     :account.feed/insert_time insert-time
-     :account.feed/update_time update-time
-     :account.feed/account_id  (:account.domain/id account)
-     :account.feed/feed_id     (:feed.domain/id feed)}))
-
-(defn model->response [m]
-  (let [{:account.feed/keys [id order_id account_id feed_id]} m
+(defn data-model->domain-model [model]
+  (let [{:account.feed/keys [id order_id account_id feed_id]} model
         account (account-mgr/get-by-id {:account.domain/id account_id})
         feed (feed-mgr/get-by-id {:feed.domain/id feed_id})]
     {:account.feed.domain/id       id
@@ -74,48 +36,75 @@
 
 ;; get
 
-(defn get-by-id [req]
-  (log/info "get by id" req)
-  (let [id (:account.feed.domain/id req)
-        model (dao/get-by-id {:account.feed/id id})]
-    (if-not (nil? model)
-      (model->response model))))
+(defn get-by-id [model]
+  (log/info "get by id" model)
+  (let [id (:account.feed.domain/id model)
+        data-model (dao/get-by-id {:account.feed/id id})]
+    (if-not (nil? data-model)
+      (data-model->domain-model data-model))))
 
 (s/fdef get-by-id
-        :args (s/cat :req ::get-by-id-req)
-        :ret (s/or :ok ::resp :err nil?))
+        :args (s/cat :model (s/keys :req [:account.feed.domain/id]))
+        :ret (s/or :ok ::model :err nil?))
 
-(defn get-by-account [req]
-  (log/info "get by account" req)
-  (let [{:account.feed.domain/keys [account starting-after limit]
-         :or                       {starting-after 0 limit 20}} req
-        models (dao/get-by-account-id {:account.feed/account_id     (:account.domain/id account)
-                                       :account.feed/starting-after starting-after
-                                       :account.feed/limit          limit})]
-    (map model->response models)))
+(defn get-by-account [model & {:keys [starting-after limit]
+                               :or   {starting-after 0 limit 20}}]
+  (log/info "get by account" model "starting after" starting-after "limit" limit)
+  (let [account-id (:account.domain/id (:account.feed.domain/account model))
+        data-models (dao/get-by-account-id {:account.feed/account_id account-id}
+                                           :starting-after starting-after
+                                           :limit limit)]
+    (map data-model->domain-model data-models)))
 
 (s/fdef get-by-account
-        :args (s/cat :req ::get-by-account-req)
-        :ret (s/or :ok ::resp :err empty?))
+        :args (s/cat :model (s/keys :req [:account.feed.domain/account])
+                     :starting-after :account.feed.domain/order-id
+                     :limit (s/int-in 0 100))
+        :ret (s/or :ok ::model :err empty?))
 
-(defn get-by-account-and-feed [req]
-  (log/info "get by account and feed" req)
-  (let [account-id (:account.domain/id (:account.feed.domain/account req))
-        feed-id (:feed.domain/id (:account.feed.domain/feed req))
-        model (dao/get-by-account-id-and-feed-id {:account.feed/account_id account-id
-                                                  :account.feed/feed_id    feed-id})]
-    (if-not (nil? model)
-      (model->response model))))
+(defn get-by-account-and-feed [model]
+  (log/info "get by account and feed" model)
+  (let [account-id (:account.domain/id (:account.feed.domain/account model))
+        feed-id (:feed.domain/id (:account.feed.domain/feed model))
+        data-model (dao/get-by-account-id-and-feed-id {:account.feed/account_id account-id
+                                                       :account.feed/feed_id    feed-id})]
+    (if-not (nil? data-model)
+      (data-model->domain-model data-model))))
 
 (s/fdef get-by-account-and-feed
-        :args (s/cat :req ::get-by-account-and-feed-req)
-        :ret (s/or :ok ::resp :err nil?))
+        :args (s/cat :model (s/keys :req [:account.feed.domain/account
+                                          :account.feed.domain/feed]))
+        :ret (s/or :ok ::model :err nil?))
 
 ;; create
 
-(defn create [req]
-  (log/info "create" req)
-  (let [errors (specs/errors ::create-req req)]
+(s/def ::create-model (s/keys :req [:account.feed.domain/account
+                                    :account.feed.domain/feed]
+                              :opt [:account.feed.domain/id
+                                    :account.feed.domain/version
+                                    :account.feed.domain/order-id
+                                    :account.feed.domain/insert-time
+                                    :account.feed.domain/update-time]))
+
+(defn domain-create-model->data-model [model]
+  (let [now (t/now)
+        {:account.feed.domain/keys [id version order-id insert-time update-time account feed]
+         :or                       {id          (java.util.UUID/randomUUID)
+                                    version     0
+                                    order-id    (tc/to-long now)
+                                    insert-time now}
+         } model]
+    {:account.feed/id          id
+     :account.feed/version     version
+     :account.feed/order_id    order-id
+     :account.feed/insert_time insert-time
+     :account.feed/update_time update-time
+     :account.feed/account_id  (:account.domain/id account)
+     :account.feed/feed_id     (:feed.domain/id feed)}))
+
+(defn create [model]
+  (log/info "create" model)
+  (let [errors (specs/errors ::create-model model)]
     (if (not-empty errors)
       (do
         (log/warn "invalid request" errors)
@@ -123,28 +112,28 @@
                         {:cause   :account-feed-domain-create
                          :reason  :invalid-spec
                          :details errors})))
-      (let [account (:account.feed.domain/account req)
-            feed (:account.feed.domain/feed req)
+      (let [account (:account.feed.domain/account model)
+            feed (:account.feed.domain/feed model)
             account-feed (get-by-account-and-feed {:account.feed.domain/account account
                                                    :account.feed.domain/feed    feed})]
         (if-not (nil? account-feed)
           account-feed
-          (-> req
-              (create-req->model)
+          (-> model
+              (domain-create-model->data-model)
               (dao/insert)
-              (model->response)))))))
+              (data-model->domain-model)))))))
 
 (s/fdef create
-        :args (s/cat :req ::create-req)
-        :ret ::resp)
+        :args (s/cat :model ::create-model)
+        :ret ::model)
 
 ;; delete
 
-(defn delete [req]
-  (log/info "delete" req)
-  (let [id (:account.feed.domain/id req)]
+(defn delete [model]
+  (log/info "delete" model)
+  (let [id (:account.feed.domain/id model)]
     (dao/delete {:account.feed/id id})))
 
 (s/fdef delete
-        :args (s/cat :req ::delete-req)
-        :ret (s/or :ok ::resp :err nil?))
+        :args (s/cat :model (s/keys :req [:account.feed.domain/id]))
+        :ret (s/or :ok ::model :err nil?))

@@ -10,7 +10,7 @@
                  [environ "1.1.0"]
                  [ragtime "0.8.0"]
 
-                 [org.clojure/tools.logging "0.3.1"]
+                 [org.clojure/tools.logging "0.4.0"]
                  [ch.qos.logback/logback-classic "1.1.3"]
 
                  [ring/ring-core "1.6.3"]

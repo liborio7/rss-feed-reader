@@ -1,4 +1,5 @@
 (ns rss-feed-reader.utils.sql
+  (:refer-clojure :exclude [update])
   (:require [clojure.tools.logging :as log]
             [clojure.java.jdbc :as jdbc]
             [honeysql.core :as q]))
@@ -14,7 +15,7 @@
    (log/debug "get by id multi" table id-keyword models)
    (let [ids (->> models
                   (map id-keyword)
-                  (apply conj []))
+                  (reduce conj []))
          query (-> (q/build :select :*
                             :from table
                             :where [:in id-keyword ids])
@@ -33,12 +34,12 @@
      (first result))))
 
 (defn get-multi-by-query
-  ([db table clause] (get-multi-by-query db table clause {}))
-  ([db table clause opts]
-   (log/debug "get by query" table clause)
+  ([db table where-clause] (get-multi-by-query db table where-clause {}))
+  ([db table where-clause opts]
+   (log/debug "get by query" table where-clause)
    (let [query (-> (q/build :select :*
                             :from table)
-                   (merge clause)
+                   (merge where-clause)
                    (q/format))
          opts (merge (default-opts table) opts)
          result (jdbc/query db query opts)]
@@ -80,6 +81,26 @@
        (log/warn "unexpected multiple results"))
      (first result))))
 
+;; update
+
+(defn update
+  ([db table id-keyword version-keyword model] (update db table id-keyword version-keyword model {}))
+  ([db table id-keyword version-keyword model opts]
+   (log/debug "update" table id-keyword model)
+   (let [model-skip-null (->> model
+                              (filter #(not (nil? (second %))))
+                              (into {}))
+         query (-> (q/build :update table
+                            :set model-skip-null
+                            :where [:and
+                                    [:= id-keyword (id-keyword model)]
+                                    [:= version-keyword (version-keyword model)]])
+                   (q/format))
+         opts (merge (default-opts table) opts)
+         result (jdbc/query db query opts)]
+     (log/debug query "returns" result)
+     result)))
+
 ;; delete
 
 (defn delete-multi
@@ -88,7 +109,7 @@
    (log/debug "delete " table id-keyword models)
    (let [ids (->> models
                   (map id-keyword)
-                  (apply conj []))
+                  (reduce conj []))
          query (-> (q/build :delete-from table
                             :where [:in id-keyword ids])
                    (q/format))

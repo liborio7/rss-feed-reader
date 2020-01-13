@@ -8,7 +8,7 @@
 (def db db/connection)
 (def table :account)
 
-;; spec
+;; model
 
 (s/def :account/id uuid?)
 (s/def :account/version pos-int?)
@@ -30,14 +30,14 @@
   (sql/get-by-id db table :account/id model))
 
 (s/fdef get-by-id
-        :args (s/cat :id :account/id)
+        :args (s/cat :model (s/keys :req [:account/id]))
         :ret ::model)
 
 (defn get-by-username [{:account/keys [username]}]
   (sql/get-multi-by-query db table {:where [:= :account/username username]}))
 
 (s/fdef get-by-username
-        :args (s/cat :username :account/username)
+        :args (s/cat :model (s/keys :req [:account/username]))
         :ret ::model)
 
 ;; insert
@@ -55,5 +55,5 @@
   (sql/delete db table :account/id model))
 
 (s/fdef delete
-        :args (s/cat :id :account/id)
+        :args (s/cat :model (s/keys :req [:account/id]))
         :ret int?)
