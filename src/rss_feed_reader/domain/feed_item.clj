@@ -133,7 +133,7 @@
          (reduce conj []))))
 
 (defn create-multi [models]
-  (log/info "create multi" models)
+  (log/info "create" (count models) "models")
   (let [errors (specs/errors ::create-multi-models models)]
     (if (not-empty errors)
       (do

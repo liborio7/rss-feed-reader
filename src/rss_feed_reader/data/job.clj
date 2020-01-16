@@ -1,4 +1,5 @@
 (ns rss-feed-reader.data.job
+  (:refer-clojure :exclude [update])
   (:require [rss-feed-reader.data.postgres.db :as db]
             [rss-feed-reader.utils.sql :as sql]
             [clojure.spec.alpha :as s]))
@@ -46,11 +47,20 @@
         :ret ::model)
 
 (defn get-by-name [model]
-  (sql/get-by-query db table [:= :job/name (:job/name model)]))
+  (sql/get-by-query db table {:= [:job/name (:job/name model)]}))
 
 (s/fdef get-by-name
         :args (s/cat :model (s/keys :req [:job/name]))
         :ret ::model)
+
+;; insert
+
+(defn insert [model]
+  (sql/insert db table :job/id model))
+
+(s/fdef insert
+        :args (s/cat :model ::model)
+        :ret (s/or :ok ::model :err nil?))
 
 ;; update
 

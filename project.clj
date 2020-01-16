@@ -10,8 +10,8 @@
                  [environ "1.1.0"]
                  [ragtime "0.8.0"]
 
-                 [org.clojure/tools.logging "0.4.0"]
-                 [ch.qos.logback/logback-classic "1.1.3"]
+                 [org.clojure/tools.logging "0.5.0"]
+                 [ch.qos.logback/logback-classic "1.2.3"]
 
                  [ring/ring-core "1.6.3"]
                  [ring/ring-json "0.5.0"]
@@ -32,7 +32,9 @@
             "rollback" ["run" "-m" "rss-feed-reader.data.postgres.migrations/rollback"]}
   :repl-options {:init-ns rss-feed-reader.app}
   :main rss-feed-reader.app
+  :resource-paths ["resources"]
   :profiles {
-             :dev {:env          {:environment "dev"}
-                   :dependencies [[org.clojure/test.check "0.9.0"]]}
+             :dev {:env            {:environment "dev"}
+                   :resource-paths ["resources/dev"]
+                   :dependencies   [[org.clojure/test.check "0.9.0"]]}
              })

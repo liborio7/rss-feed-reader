@@ -91,15 +91,20 @@
                               (filter #(not (nil? (second %))))
                               (into {}))
          query (-> (q/build :update table
-                            :set model-skip-null
+                            :set (update-in model-skip-null [version-keyword] inc)
                             :where [:and
                                     [:= id-keyword (id-keyword model)]
                                     [:= version-keyword (version-keyword model)]])
                    (q/format))
          opts (merge (default-opts table) opts)
-         result (jdbc/query db query opts)]
-     (log/debug query "returns" result)
-     result)))
+         affected-rows (jdbc/execute! db query opts)]
+     (log/debug query "affects" affected-rows "row(s)")
+     (if (empty? affected-rows)
+       (throw (ex-info "no rows has been updated"
+                       {:cause   :sql-update
+                        :reason  :no-rows-affected
+                        :details [db table model]})))
+     (get-by-id db table id-keyword model opts))))
 
 ;; delete
 

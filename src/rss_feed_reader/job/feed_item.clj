@@ -4,6 +4,7 @@
             [clj-time.core :as t]
             [clj-time.format :as f]
             [clojure.xml :as xml]
+            [rss-feed-reader.domain.job :as job-mgr]
             [rss-feed-reader.domain.feed :as feed-mgr]
             [rss-feed-reader.domain.feed_item :as feed-item-mgr]
             [rss-feed-reader.utils.uri :as uris]
@@ -19,6 +20,7 @@
    :feed.item.domain/description (first (:description item))})
 
 (defn- fetch-feed-items [feed]
+  (log/info "fetch items for feed" feed)
   (->> (:feed.domain/link feed)
        (str)
        (xml/parse)
@@ -31,32 +33,44 @@
        (map #(->feed-item feed %))))
 
 (defn- fetch-feeds [batch-size]
+  (log/info "fetch feeds with batch size of" batch-size)
   (loop [starting-after 0
-         result 0]
+         fetched-feeds 0]
     (let [feeds (feed-mgr/get-all :starting-after starting-after :limit batch-size)
           feeds-len (count feeds)
           items (->> feeds
                      (map fetch-feed-items)
                      (flatten)
+                     ;; TODO avoid item duplication by checking their link uniqueness
                      (feed-item-mgr/create-multi))
           items-len (count items)
-          result (+ result feeds-len)]
+          fetched-feeds (+ fetched-feeds feeds-len)
+          last-order-id (:feed.domain/order-id (last feeds))]
       (log/debug items-len "items for" feeds-len "feeds")
       (if (or (empty? feeds) (< feeds-len batch-size))
-        result
-        (recur (:feed.domain/order-id (last feeds))
-               result)))))
+        {:feed.item.job/feeds-count fetched-feeds}
+        (recur last-order-id
+               fetched-feeds)))))
 
 (defn run []
-  (let [from (tc/to-long (t/now))]
-    (log/info "job start")
+  (log/info "job started")
+  (let [job-model {:job.domain/name        "feed-item"
+                   :job.domain/description "Fetch feed items"}]
     (try
-      (let [feeds-parsed (fetch-feeds 100)]
-        (log/info feeds-parsed "feeds parsed"))
+      (let [job (-> (or (job-mgr/get-by-name job-model) (job-mgr/create job-model))
+                    (job-mgr/lock))
+            from (tc/to-long (t/now))
+            job-result (fetch-feeds 20)
+            to (tc/to-long (t/now))
+            execution-ms (- to from)]
+        (-> (select-keys job [:job.domain/id :job.domain/version])
+            (merge {:job.domain/last-execution-ms execution-ms})
+            (job-mgr/track_last_execution)
+            (job-mgr/unlock))
+        (log/info "job elapsed in" (format "%dms" execution-ms) job-result))
 
       (catch Exception e
-        (log/warn "error while gathering feed items" e))
-
-      (finally
-        (let [to (tc/to-long (t/now))]
-          (log/info "job elapsed in" (format "%ms" (- to from))))))))
+        (log/error "error while gathering feed items" e)
+        (-> job-model
+            (job-mgr/get-by-name)
+            (job-mgr/unlock))))))
