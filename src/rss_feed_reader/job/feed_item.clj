@@ -8,7 +8,8 @@
             [rss-feed-reader.domain.feed :as feed-mgr]
             [rss-feed-reader.domain.feed_item :as feed-item-mgr]
             [rss-feed-reader.utils.uri :as uris]
-            [rss-feed-reader.utils.date :as dates]))
+            [rss-feed-reader.utils.date :as dates]
+            [rss-feed-reader.utils.cid :as cid]))
 
 (def date-formatter (f/formatter "E, dd MMM yyyy HH:mm:ss Z"))
 
@@ -61,6 +62,7 @@
                fetched-feeds)))))
 
 (defn run []
+  (cid/set-new)
   (log/info "job started")
   (let [job-model {:job.domain/name        "feed-item"
                    :job.domain/description "Fetch feed items"}]

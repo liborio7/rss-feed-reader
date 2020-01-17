@@ -7,6 +7,7 @@
             [clj-time.coerce :as tc]
             [clj-time.core :as t]
             [reitit.ring :as ring]
+            [rss-feed-reader.utils.cid :as cid]
             [rss-feed-reader.utils.response :as r]
             [rss-feed-reader.utils.map :as maps]
             [rss-feed-reader.api.feed.router :as feed]
@@ -18,6 +19,7 @@
   (fn [request]
     (let [{:keys [uri request-method]} request
           from (tc/to-long (t/now))]
+      (cid/set-new)
       (log/info "[REQ]" request-method uri)
       (let [response (handler request)
             {:keys [status]} response
@@ -43,7 +45,7 @@
              (assoc response :body))))))
 
 (def my-pool (j/mk-pool))
-(j/every 5000 feed-item-job/run my-pool)
+(j/every 15000 feed-item-job/run my-pool)
 
 (def app
   (ring/ring-handler
@@ -61,4 +63,5 @@
                   ]}))
 
 (defn -main [& _args]
+  (cid/set-new)
   (jetty/run-jetty app {:port 3000}))
