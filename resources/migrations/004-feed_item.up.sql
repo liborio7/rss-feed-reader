@@ -6,7 +6,7 @@ insert_time timestamp not null,
 update_time timestamp,
 feed_id uuid not null,
 title varchar not null,
-link varchar not null,
+link varchar not null unique,
 pub_time timestamp not null,
 description varchar not null,
 primary key(id)

@@ -77,7 +77,7 @@
                                  (:feed.item.domain/order-id starting-after-feed-item)
                                  0)
                 limit (if-not (nil? limit)
-                        (max 0 (min 20 limit))
+                        (max 0 (min 40 limit))
                         20)
                 feed-items (feed-item-mgr/get-by-feed {:feed.item.domain/feed feed}
                                                       :starting-after starting-after

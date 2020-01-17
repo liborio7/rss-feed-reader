@@ -72,6 +72,35 @@
                      :limit (s/int-in 0 100))
         :ret (s/or :ok ::model :err empty?))
 
+(defn get-by-link [model]
+  (log/info "get by link" model)
+  (let [link (str (:feed.item.domain/link model))
+        data-model (dao/get-by-link {:feed.item/link link})]
+    (if-not (nil? data-model)
+      (data-model->domain-model data-model))))
+
+(s/fdef get-by-link
+        :args (s/cat :model (s/keys :req [:feed.item.domain/link]))
+        :ret (s/or :ok ::model :err nil?))
+
+(defn get-by-links [models]
+  (log/info "get by" (count models) "links")
+  (let [feeds-map (->> models
+                       (group-by #(:feed.domain/id (:feed.item.domain/feed %)))
+                       (map (fn [[k _]] [k (feed-mgr/get-by-id {:feed.domain/id k})]))
+                       (into {}))
+        links (->> models
+                   (map :feed.item.domain/link)
+                   (map str)
+                   (map #(assoc {} :feed.item/link %))
+                   (reduce conj []))
+        data-models (dao/get-by-links links)]
+    (map #(data-model->domain-model % (get feeds-map (:feed.item/feed_id %))) data-models)))
+
+(s/fdef get-by-links
+        :args (s/cat :model (s/coll-of (s/keys :req [:feed.item.domain/link])))
+        :ret (s/or :ok (s/coll-of ::model) :err nil?))
+
 ;; create
 
 (s/def ::create-model (s/keys :req [:feed.item.domain/feed
@@ -115,10 +144,12 @@
                         {:cause   :feed-item-domain-create
                          :reason  :invalid-spec
                          :details errors})))
-      (-> model
-          (domain-create-model->data-model)
-          (dao/insert)
-          (data-model->domain-model)))))
+      (if-let [feed-item (get-by-link model)]
+        feed-item
+        (-> model
+            (domain-create-model->data-model)
+            (dao/insert)
+            (data-model->domain-model))))))
 
 (s/fdef create
         :args (s/cat :model ::create-model)
@@ -126,7 +157,7 @@
 
 (s/def ::create-multi-models (s/coll-of ::create-model))
 
-(defn create-multi-req->models [models]
+(defn domain-create-models->data-models [models]
   (let [now (t/now)]
     (->> models
          (map #(domain-create-model->data-model % now))
@@ -139,7 +170,7 @@
       (do
         (log/warn "invalid request" errors)
         (throw (ex-info "invalid request"
-                        {:cause   :feed-item-domain-create
+                        {:cause   :feed-item-domain-create-multi
                          :reason  :invalid-spec
                          :details errors})))
       (let [feeds-map (->> models
@@ -147,13 +178,13 @@
                            (map (fn [[k _]] [k (feed-mgr/get-by-id {:feed.domain/id k})]))
                            (into {}))]
         (->> models
-             (create-multi-req->models)
+             (domain-create-models->data-models)
              (dao/insert-multi)
              (map #(data-model->domain-model % (get feeds-map (:feed.item/feed_id %))))
              (reduce conj []))))))
 
 (s/fdef create-multi
-        :args (s/cat :model ::create-multi-models)
+        :args (s/cat :models ::create-multi-models)
         :ret (s/coll-of ::model))
 
 ;; delete

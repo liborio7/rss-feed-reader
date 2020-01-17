@@ -41,7 +41,9 @@
         :ret ::model)
 
 (defn get-by-id-multi [models]
-  (sql/get-multi-by-id db table :feed.item/id models))
+  (if (empty? models)
+    []
+    (sql/get-multi-by-id db table :feed.item/id models)))
 
 (s/fdef get-by-id-multi
         :args (s/cat :models (s/coll-of (s/keys :req [:feed.item/id])))
@@ -54,9 +56,19 @@
         :args (s/cat :model (s/keys :req [:feed.item/link]))
         :ret ::model)
 
+(defn get-by-links [models]
+  (let [links (->> models
+                   (map :feed.item/link)
+                   (reduce conj []))]
+    (sql/get-multi-by-query db table {:where [:in :feed.item/link links]})))
+
+(s/fdef get-by-links
+        :args (s/cat :models (s/coll-of (s/keys :req [:feed.item/link])))
+        :ret (s/coll-of ::model))
+
 (defn get-by-feed-id [{:feed.item/keys [feed_id]}
                       & {:keys [starting-after limit]
-                         :or   {starting-after 0 limit 50}}]
+                         :or   {starting-after 0 limit 20}}]
   (sql/get-multi-by-query db table {:where    [:and
                                                [:= :feed.item/feed_id feed_id]
                                                [:> :feed.item/order_id starting-after]]
@@ -79,7 +91,9 @@
         :ret ::model)
 
 (defn insert-multi [models]
-  (sql/insert-multi db table :feed.item/id models))
+  (if (empty? models)
+    []
+    (sql/insert-multi db table :feed.item/id models)))
 
 (s/fdef insert-multi
         :args (s/cat :model (s/coll-of ::model))

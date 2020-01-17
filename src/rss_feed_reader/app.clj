@@ -20,9 +20,9 @@
           from (tc/to-long (t/now))]
       (log/info "[REQ]" request-method uri)
       (let [response (handler request)
-            {:keys [status body]} response
+            {:keys [status]} response
             to (tc/to-long (t/now))]
-        (log/info "[RES]" (format "%dms" (- to from)) status body)
+        (log/info "[RES]" (format "%dms" (- to from)) status)
         response))))
 
 (defn wrap-server-error [handler]

@@ -32,6 +32,14 @@
        (map (fn [item] (reduce #(assoc %1 (:tag %2) (:content %2)) {} item)))
        (map #(->feed-item feed %))))
 
+(defn filter-existing-feed-items [feed-items]
+  (let [links-map (->> feed-items
+                       (feed-item-mgr/get-by-links)
+                       (group-by :feed.item.domain/link))]
+    (->> feed-items
+         (filter #(not (contains? links-map (:feed.item.domain/link %))))
+         (reduce conj []))))
+
 (defn- fetch-feeds [batch-size]
   (log/info "fetch feeds with batch size of" batch-size)
   (loop [starting-after 0
@@ -41,7 +49,7 @@
           items (->> feeds
                      (map fetch-feed-items)
                      (flatten)
-                     ;; TODO avoid item duplication by checking their link uniqueness
+                     (filter-existing-feed-items)
                      (feed-item-mgr/create-multi))
           items-len (count items)
           fetched-feeds (+ fetched-feeds feeds-len)

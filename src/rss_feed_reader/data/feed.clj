@@ -41,7 +41,7 @@
         :ret ::model)
 
 (defn get-all [& {:keys [starting-after limit]
-                  :or   {starting-after 0 limit 50}}]
+                  :or   {starting-after 0 limit 20}}]
   (sql/get-multi-by-query db table {:where    [:> :feed/order_id starting-after]
                                     :order-by [[:feed/order_id :asc]]
                                     :limit    limit}))

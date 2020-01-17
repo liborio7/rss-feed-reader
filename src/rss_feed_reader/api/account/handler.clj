@@ -68,7 +68,7 @@
                                  (:account.feed.domain/order-id starting-after-account-feed)
                                  0)
                 limit (if-not (nil? limit)
-                        (max 0 (min 20 limit))
+                        (max 0 (min 40 limit))
                         20)
                 account-feeds (account-feed-mgr/get-by-account {:account.feed.domain/account account}
                                                                :starting-after starting-after

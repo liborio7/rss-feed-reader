@@ -37,7 +37,7 @@
 
 (defn get-by-account-id [{:account.feed/keys [account_id]}
                          & {:keys [starting-after limit]
-                            :or   {starting-after 0 limit 50}}]
+                            :or   {starting-after 0 limit 20}}]
   (sql/get-multi-by-query db table {:where    [:and
                                                [:= :account.feed/account_id account_id]
                                                [:> :account.feed/order_id starting-after]]
@@ -52,7 +52,7 @@
 
 (defn get-by-feed-id [{:account.feed/keys [feed_id]}
                       & {:keys [starting-after limit]
-                         :or   {starting-after 0 limit 50}}]
+                         :or   {starting-after 0 limit 20}}]
   (sql/get-multi-by-query db table {:where    [:and
                                                [:= :account.feed/feed_id feed_id]
                                                [:> :account.feed/order_id starting-after]]
