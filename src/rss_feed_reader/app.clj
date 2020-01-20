@@ -33,7 +33,7 @@
       (handler request)
       (catch Exception e
         (log/error e)
-        (r/server-error)))))
+        (r/server-error {:cid (cid/get)})))))
 
 (defn wrap-json-response-body [handler]
   (fn [request]

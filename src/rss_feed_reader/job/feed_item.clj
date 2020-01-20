@@ -34,12 +34,17 @@
        (map #(->feed-item feed %))))
 
 (defn filter-existing-feed-items [feed-items]
-  (let [links-map (->> feed-items
-                       (feed-item-mgr/get-by-links)
-                       (group-by :feed.item.domain/link))]
-    (->> feed-items
-         (filter #(not (contains? links-map (:feed.item.domain/link %))))
-         (reduce conj []))))
+  (let [existing-links (->> feed-items
+                            (feed-item-mgr/get-by-links)
+                            (map :feed.item.domain/link)
+                            (reduce conj []))]
+    (let [missing-links (->> feed-items
+                             (remove (fn [feed-item]
+                                       (some #(= % (:feed.item.domain/link feed-item)) existing-links)
+                                       ))
+                             (reduce conj []))]
+      (log/info "missing" (count missing-links) "link(s) out of" (count feed-items))
+      missing-links)))
 
 (defn- fetch-feeds [batch-size]
   (log/info "fetch feeds with batch size of" batch-size)
@@ -47,18 +52,18 @@
          fetched-feeds 0]
     (let [feeds (feed-mgr/get-all :starting-after starting-after :limit batch-size)
           feeds-len (count feeds)
-          items (->> feeds
-                     (map fetch-feed-items)
-                     (flatten)
-                     (filter-existing-feed-items)
-                     (feed-item-mgr/create-multi))
-          items-len (count items)
+          feeds-items-len (apply + (for [feed feeds]
+                                     (->> feed
+                                          (fetch-feed-items)
+                                          (filter-existing-feed-items)
+                                          (feed-item-mgr/create-multi)
+                                          (count))))
           fetched-feeds (+ fetched-feeds feeds-len)
-          last-order-id (:feed.domain/order-id (last feeds))]
-      (log/debug items-len "items for" feeds-len "feeds")
+          last-feed-order-id (:feed.domain/order-id (last feeds))]
+      (log/info feeds-items-len "feeds item(s) created")
       (if (or (empty? feeds) (< feeds-len batch-size))
         {:feed.item.job/feeds-count fetched-feeds}
-        (recur last-order-id
+        (recur last-feed-order-id
                fetched-feeds)))))
 
 (defn run []
@@ -70,7 +75,7 @@
       (let [job (-> (or (job-mgr/get-by-name job-model) (job-mgr/create job-model))
                     (job-mgr/lock))
             from (tc/to-long (t/now))
-            job-result (fetch-feeds 20)
+            job-result (fetch-feeds 1)
             to (tc/to-long (t/now))
             execution-ms (- to from)]
         (-> (select-keys job [:job.domain/id :job.domain/version])

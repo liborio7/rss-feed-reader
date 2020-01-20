@@ -19,7 +19,7 @@
 (s/def :feed.item.domain/title string?)
 (s/def :feed.item.domain/link uri?)
 (s/def :feed.item.domain/pub-time inst?)
-(s/def :feed.item.domain/description string?)
+(s/def :feed.item.domain/description any?)
 
 (s/def ::model (s/keys :req [:feed.item.domain/id
                              :feed.item.domain/order-id
@@ -95,7 +95,9 @@
                    (map #(assoc {} :feed.item/link %))
                    (reduce conj []))
         data-models (dao/get-by-links links)]
-    (map #(data-model->domain-model % (get feeds-map (:feed.item/feed_id %))) data-models)))
+    (->> data-models
+         (map #(data-model->domain-model % (get feeds-map (:feed.item/feed_id %))))
+         (reduce conj []))))
 
 (s/fdef get-by-links
         :args (s/cat :model (s/coll-of (s/keys :req [:feed.item.domain/link])))

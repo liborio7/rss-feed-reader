@@ -12,7 +12,7 @@
 (defn get-multi-by-id
   ([db table id-keyword models] (get-multi-by-id db table id-keyword models {}))
   ([db table id-keyword models opts]
-   (log/debug "get by id multi" table id-keyword models)
+   (log/debug "get by id" table id-keyword models)
    (let [ids (->> models
                   (map id-keyword)
                   (reduce conj []))

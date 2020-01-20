@@ -4,6 +4,7 @@
 (def routes
   [["/feeds"
     ["" {:name ::feeds
+         :get  h/get-feeds
          :post h/create-feed}]
     ["/:feed-id" {:name   ::feeds-id
                   :get    h/get-feed

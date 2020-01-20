@@ -8,6 +8,6 @@ feed_id uuid not null,
 title varchar not null,
 link varchar not null unique,
 pub_time timestamp not null,
-description varchar not null,
+description varchar,
 primary key(id)
 );

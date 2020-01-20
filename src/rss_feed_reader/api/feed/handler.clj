@@ -46,6 +46,25 @@
 
 ;; get
 
+(defn get-feeds [req]
+  (let [req-path (:path-params req)
+        req-query (:params req)
+        starting-after-id (uuids/from-string (:starting-after req-query))
+        limit (ints/parse-int (:limit req-query))]
+    (log/info "get feeds" req-path req-query)
+    (let [starting-after-feed (if-not (nil? starting-after-id)
+                                (feed-mgr/get-by-id {:feed.domain/id starting-after-id}))
+          starting-after (if-not (nil? starting-after-feed)
+                           (:feed.domain/order-id starting-after-feed)
+                           0)
+          limit (if-not (nil? limit)
+                  (max 0 (min 40 limit))
+                  20)
+          feeds (feed-mgr/get-all :starting-after starting-after
+                                  :limit (+ 1 limit))]
+      (-> (r/paginate feeds feed-domain-model->api-model limit)
+          (r/ok)))))
+
 (defn get-feed [req]
   (let [req-path (:path-params req)
         id (uuids/from-string (:feed-id req-path))]
