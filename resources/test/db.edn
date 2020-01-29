@@ -1,0 +1,4 @@
+{:host     "localhost"
+ :database "rss_feed_reader"
+ :user     "clojure"
+ :password ""}

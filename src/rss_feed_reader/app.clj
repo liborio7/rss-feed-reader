@@ -1,5 +1,6 @@
 (ns rss-feed-reader.app
-  (:require [ring.adapter.jetty :as jetty]
+  (:require [environ.core :refer [env]]
+            [ring.adapter.jetty :as jetty]
             [ring.middleware.params :as params]
             [ring.middleware.keyword-params :as kw-params]
             [ring.middleware.json :as json]
@@ -13,7 +14,8 @@
             [rss-feed-reader.api.feed.router :as feed]
             [rss-feed-reader.api.account.router :as account]
             [rss-feed-reader.job.feed_item :as feed-item-job]
-            [overtone.at-at :as j]))
+            [overtone.at-at :as j]
+            [clojure.spec.test.alpha :as stest]))
 
 (defn wrap-logger [handler]
   (fn [request]
@@ -45,7 +47,12 @@
              (assoc response :body))))))
 
 (def my-pool (j/mk-pool))
-(j/every 15000 feed-item-job/run my-pool)
+(case (:environment env)
+  "test" (do
+           (stest/instrument))
+  "dev" (do
+          (stest/instrument)
+          (j/every 15000 feed-item-job/run my-pool)))
 
 (def app
   (ring/ring-handler
