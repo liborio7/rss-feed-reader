@@ -12,7 +12,7 @@
 (defn get-multi-by-id
   ([db table id-keyword models] (get-multi-by-id db table id-keyword models {}))
   ([db table id-keyword models opts]
-   (log/debug "get by id" table id-keyword models)
+   (log/trace "get by id" table id-keyword models)
    (let [ids (->> models
                   (map id-keyword)
                   (reduce conj []))
@@ -22,7 +22,7 @@
                    (q/format))
          opts (merge (default-opts table) opts)
          result (jdbc/query db query opts)]
-     (log/debug query "returns" result)
+     (log/trace query "returns" result)
      result)))
 
 (defn get-by-id
@@ -36,14 +36,14 @@
 (defn get-multi-by-query
   ([db table where-clause] (get-multi-by-query db table where-clause {}))
   ([db table where-clause opts]
-   (log/debug "get by query" table where-clause)
+   (log/trace "get by query" table where-clause)
    (let [query (-> (q/build :select :*
                             :from table)
                    (merge where-clause)
                    (q/format))
          opts (merge (default-opts table) opts)
          result (jdbc/query db query opts)]
-     (log/debug query "returns" (count result) "results")
+     (log/trace query "returns" (count result) "results")
      result)))
 
 (defn get-by-query
@@ -59,13 +59,13 @@
 (defn insert-multi
   ([db table id-keyword models] (insert-multi db table id-keyword models {}))
   ([db table id-keyword models opts]
-   (log/debug "insert " table id-keyword models)
+   (log/trace "insert " table id-keyword models)
    (let [query (-> (q/build :insert-into table
                             :values (apply conj [] models))
                    (q/format))
          opts (merge (default-opts table) opts)
          affected-rows (jdbc/execute! db query opts)]
-     (log/debug query "affects" affected-rows "row(s)")
+     (log/trace query "affects" affected-rows "row(s)")
      (if (empty? affected-rows)
        (throw (ex-info "no rows has been inserted"
                        {:cause   :sql-insert
@@ -86,7 +86,7 @@
 (defn update
   ([db table id-keyword version-keyword model] (update db table id-keyword version-keyword model {}))
   ([db table id-keyword version-keyword model opts]
-   (log/debug "update" table id-keyword model)
+   (log/trace "update" table id-keyword model)
    (let [model-skip-null (->> model
                               (filter #(not (nil? (second %))))
                               (into {}))
@@ -98,7 +98,7 @@
                    (q/format))
          opts (merge (default-opts table) opts)
          affected-rows (jdbc/execute! db query opts)]
-     (log/debug query "affects" affected-rows "row(s)")
+     (log/trace query "affects" affected-rows "row(s)")
      (if (empty? affected-rows)
        (throw (ex-info "no rows has been updated"
                        {:cause   :sql-update
@@ -111,7 +111,7 @@
 (defn delete-multi
   ([db table id-keyword models] (delete-multi db table id-keyword models {}))
   ([db table id-keyword models opts]
-   (log/debug "delete " table id-keyword models)
+   (log/trace "delete " table id-keyword models)
    (let [ids (->> models
                   (map id-keyword)
                   (reduce conj []))
@@ -120,7 +120,7 @@
                    (q/format))
          opts (merge (default-opts table) opts)
          affected-rows (jdbc/execute! db query opts)]
-     (log/debug query "affects" affected-rows "row(s)")
+     (log/trace query "affects" affected-rows "row(s)")
      affected-rows)))
 
 (defn delete
