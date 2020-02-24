@@ -29,7 +29,7 @@
   ([db table id-keyword model] (get-by-id db table id-keyword model {}))
   ([db table id-keyword model opts]
    (let [result (get-multi-by-id db table id-keyword (conj [] model) opts)]
-     (if (> 1 (count result))
+     (if (> (count result) 1)
        (log/warn "unexpected multiple results"))
      (first result))))
 
@@ -50,7 +50,7 @@
   ([db table clause] (get-by-query db table clause {}))
   ([db table clause opts]
    (let [result (get-multi-by-query db table clause opts)]
-     (if (> 1 (count result))
+     (if (> (count result) 1)
        (log/warn "unexpected multiple results"))
      (first result))))
 
@@ -77,7 +77,7 @@
   ([db table id-keyword model] (insert db table id-keyword model {}))
   ([db table id-keyword model opts]
    (let [result (insert-multi db table id-keyword (conj [] model) opts)]
-     (if (> 1 (count result))
+     (if (> (count result) 1)
        (log/warn "unexpected multiple results"))
      (first result))))
 
