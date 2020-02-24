@@ -6,7 +6,8 @@
             [clj-time.core :as t]
             [clj-time.coerce :as tc]
             [clojure.tools.logging :as log]
-            [rss-feed-reader.utils.uri :as uris]))
+            [rss-feed-reader.utils.uri :as uris])
+  (:import (java.util UUID)))
 
 ;; model
 
@@ -120,7 +121,7 @@
   ([model] (domain-create-model->data-model model (t/now)))
   ([model time]
    (let [{:feed.item.domain/keys [id version order-id insert-time update-time feed title link pub-time description]
-          :or                    {id          (java.util.UUID/randomUUID)
+          :or                    {id          (UUID/randomUUID)
                                   version     0
                                   order-id    (tc/to-long (:feed.item.domain/pub-time model))
                                   insert-time time}

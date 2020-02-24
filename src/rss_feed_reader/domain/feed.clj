@@ -5,7 +5,8 @@
             [clojure.spec.alpha :as s]
             [clj-time.core :as t]
             [clj-time.coerce :as tc]
-            [clojure.tools.logging :as log]))
+            [clojure.tools.logging :as log])
+  (:import (java.util UUID)))
 
 ;; model
 
@@ -75,7 +76,7 @@
 (defn domain-create-model->data-model [model]
   (let [now (t/now)
         {:feed.domain/keys [id version order-id insert-time update-time link]
-         :or               {id          (java.util.UUID/randomUUID)
+         :or               {id          (UUID/randomUUID)
                             version     0
                             order-id    (tc/to-long now)
                             insert-time now

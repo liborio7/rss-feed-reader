@@ -4,7 +4,8 @@
             [clojure.tools.logging :as log]
             [clj-time.core :as t]
             [clj-time.coerce :as tc]
-            [rss-feed-reader.utils.spec :as specs]))
+            [rss-feed-reader.utils.spec :as specs])
+  (:import (java.util UUID)))
 
 ;; model
 
@@ -62,7 +63,7 @@
 
 (s/fdef get-by-name
         :args (s/cat :model (s/keys :req [:job.domain/name]))
-        :ret (s/or :ok ::rest :err nil?))
+        :ret (s/or :ok ::model :err nil?))
 
 ;; create
 
@@ -80,7 +81,7 @@
 (defn domain-create-model->data-model [model]
   (let [now (t/now)
         {:job.domain/keys [id version order-id insert-time update-time name execution-payload description enabled locked]
-         :or              {id          (java.util.UUID/randomUUID)
+         :or              {id          (UUID/randomUUID)
                            version     0
                            order-id    (tc/to-long now)
                            insert-time now
@@ -139,7 +140,7 @@
                                     :opt [:job.domain/update-time
                                           :job.domain/last-execution-payload
                                           :job.domain/last-execution-ms]))
-        :ret (s/or :ok ::rest :err nil?))
+        :ret (s/or :ok ::model :err nil?))
 
 (defn lock [model]
   (log/info "lock" model)
@@ -156,7 +157,7 @@
         :args (s/cat :model (s/keys :req [:job.domain/id
                                           :job.domain/version]
                                     :opt [:job.domain/update-time]))
-        :ret (s/or :ok ::rest :err nil?))
+        :ret (s/or :ok ::model :err nil?))
 
 (defn unlock [model]
   (log/info "unlock" model)
@@ -173,4 +174,4 @@
         :args (s/cat :model (s/keys :req [:job.domain/id
                                           :job.domain/version]
                                     :opt [:job.domain/update-time]))
-        :ret (s/or :ok ::rest :err nil?))
+        :ret (s/or :ok ::model :err nil?))
