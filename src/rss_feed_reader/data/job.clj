@@ -47,7 +47,7 @@
         :ret ::model)
 
 (defn get-by-name [model]
-  (sql/get-by-query db table {:= [:job/name (:job/name model)]}))
+  (sql/get-by-query db table {:where [:= :job/name (:job/name model)]}))
 
 (s/fdef get-by-name
         :args (s/cat :model (s/keys :req [:job/name]))
