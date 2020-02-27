@@ -10,8 +10,8 @@
 ;; model
 
 (s/def :account.domain/id uuid?)
-(s/def :account.domain/version pos-int?)
-(s/def :account.domain/order-id pos-int?)
+(s/def :account.domain/version nat-int?)
+(s/def :account.domain/order-id nat-int?)
 (s/def :account.domain/insert-time inst?)
 (s/def :account.domain/update-time inst?)
 (s/def :account.domain/username string?)

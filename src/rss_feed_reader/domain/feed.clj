@@ -11,15 +11,15 @@
 ;; model
 
 (s/def :feed.domain/id uuid?)
-(s/def :feed.domain/version pos-int?)
-(s/def :feed.domain/order-id pos-int?)
+(s/def :feed.domain/version nat-int?)
+(s/def :feed.domain/order-id nat-int?)
 (s/def :feed.domain/insert-time inst?)
 (s/def :feed.domain/update-time inst?)
 (s/def :feed.domain/link uri?)
 
 (s/def ::model (s/keys :req [:feed.domain/id
-                             :feed.domain/link
-                             :feed.domain/order-id]))
+                             :feed.domain/order-id
+                             :feed.domain/link]))
 
 ;; conversion
 
@@ -60,8 +60,7 @@
     (map data-model->domain-model data-models)))
 
 (s/fdef get-all
-        :args (s/cat :starting-after :feed.domain/order-id
-                     :limit (s/int-in 0 100))
+        :args (s/* (s/cat :opt keyword? :val nat-int?))
         :ret (s/or :ok (s/coll-of ::model) :err nil?))
 
 ;; create
@@ -112,9 +111,9 @@
 
 ;; delete
 
-(defn delete [req]
-  (log/info "delete" req)
-  (let [id (:feed.domain/id req)]
+(defn delete [model]
+  (log/info "delete" model)
+  (let [id (:feed.domain/id model)]
     (dao/delete {:feed/id id})))
 
 (s/fdef delete

@@ -11,8 +11,8 @@
 ;; model
 
 (s/def :account/id uuid?)
-(s/def :account/version pos-int?)
-(s/def :account/order_id pos-int?)
+(s/def :account/version nat-int?)
+(s/def :account/order_id nat-int?)
 (s/def :account/insert_time inst?)
 (s/def :account/update_time inst?)
 (s/def :account/username string?)

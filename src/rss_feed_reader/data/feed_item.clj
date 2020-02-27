@@ -10,8 +10,8 @@
 ;; model
 
 (s/def :feed.item/id uuid?)
-(s/def :feed.item/version pos-int?)
-(s/def :feed.item/order_id pos-int?)
+(s/def :feed.item/version nat-int?)
+(s/def :feed.item/order_id nat-int?)
 (s/def :feed.item/insert_time inst?)
 (s/def :feed.item/update_time inst?)
 (s/def :feed.item/feed_id uuid?)

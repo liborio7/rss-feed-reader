@@ -11,8 +11,8 @@
 ;; model
 
 (s/def :feed/id uuid?)
-(s/def :feed/version pos-int?)
-(s/def :feed/order_id pos-int?)
+(s/def :feed/version nat-int?)
+(s/def :feed/order_id nat-int?)
 (s/def :feed/insert_time pos-int?)
 (s/def :feed/update_time pos-int?)
 (s/def :feed/link string?)

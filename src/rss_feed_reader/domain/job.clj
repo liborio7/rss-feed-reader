@@ -10,8 +10,8 @@
 ;; model
 
 (s/def :job.domain/id uuid?)
-(s/def :job.domain/version pos-int?)
-(s/def :job.domain/order-id pos-int?)
+(s/def :job.domain/version nat-int?)
+(s/def :job.domain/order-id nat-int?)
 (s/def :job.domain/insert-time inst?)
 (s/def :job.domain/update-time inst?)
 (s/def :job.domain/name string?)
@@ -24,14 +24,19 @@
 
 (s/def ::model (s/keys :req [:job.domain/id
                              :job.domain/order-id
-                             :job.domain/name]))
+                             :job.domain/name
+                             :job.domain/execution-payload
+                             :job.domain/last-execution-payload
+                             :job.domain/last-execution-ms
+                             :job.domain/description
+                             :job.domain/enabled
+                             :job.domain/locked]))
 
 ;; conversion
 
 (defn data-model->domain-model [model]
-  (let [{:job/keys [id version order_id name execution_payload last_execution_payload last_execution_ms description enabled locked]} model]
+  (let [{:job/keys [id order_id name execution_payload last_execution_payload last_execution_ms description enabled locked]} model]
     {:job.domain/id                     id
-     :job.domain/version                version
      :job.domain/order-id               order_id
      :job.domain/name                   name
      :job.domain/execution-payload      execution_payload

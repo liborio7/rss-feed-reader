@@ -11,8 +11,8 @@
 ;; model
 
 (s/def :account.feed/id uuid?)
-(s/def :account.feed/version pos-int?)
-(s/def :account.feed/order_id pos-int?)
+(s/def :account.feed/version nat-int?)
+(s/def :account.feed/order_id nat-int?)
 (s/def :account.feed/insert_time inst?)
 (s/def :account.feed/update_time inst?)
 (s/def :account.feed/account_id uuid?)
@@ -46,8 +46,7 @@
 
 (s/fdef get-by-account-id
         :args (s/cat :model (s/keys :req [:account.feed/account_id])
-                     :starting-after :account.feed/order_id
-                     :limit (s/int-in 0 100))
+                     :opts (s/* (s/cat :opt keyword? :val nat-int?)))
         :ret (s/coll-of ::model))
 
 (defn get-by-feed-id [{:account.feed/keys [feed_id]}
@@ -61,8 +60,7 @@
 
 (s/fdef get-by-feed-id
         :args (s/cat :model (s/keys :req [:account.feed/feed_id])
-                     :starting-after :account.feed/order_id
-                     :limit (s/int-in 0 100))
+                     :opts (s/* (s/cat :opt keyword? :val nat-int?)))
         :ret (s/coll-of ::model))
 
 (defn get-by-account-id-and-feed-id [{:account.feed/keys [account_id feed_id]}]

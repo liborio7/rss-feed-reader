@@ -12,8 +12,8 @@
 ;; model
 
 (s/def :feed.item.domain/id uuid?)
-(s/def :feed.item.domain/version pos-int?)
-(s/def :feed.item.domain/order-id pos-int?)
+(s/def :feed.item.domain/version nat-int?)
+(s/def :feed.item.domain/order-id nat-int?)
 (s/def :feed.item.domain/insert-time inst?)
 (s/def :feed.item.domain/update-time inst?)
 (s/def :feed.item.domain/feed (s/keys :req [:feed.domain/id]))
@@ -69,8 +69,7 @@
 
 (s/fdef get-by-feed
         :args (s/cat :model (s/keys :req [:feed.item.domain/feed])
-                     :starting-after :feed.item.domain/order-id
-                     :limit (s/int-in 0 100))
+                     :opts (s/* (s/cat :opt keyword? :val nat-int?)))
         :ret (s/or :ok ::model :err empty?))
 
 (defn get-by-link [model]
@@ -192,9 +191,9 @@
 
 ;; delete
 
-(defn delete [req]
-  (log/info "delete" req)
-  (let [id (:feed.item.domain/id req)]
+(defn delete [model]
+  (log/info "delete" model)
+  (let [id (:feed.item.domain/id model)]
     (dao/delete {:feed.item/id id})))
 
 (s/fdef delete

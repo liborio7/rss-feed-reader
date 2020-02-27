@@ -12,8 +12,8 @@
 ;; model
 
 (s/def :job/id uuid?)
-(s/def :job/version pos-int?)
-(s/def :job/order_id pos-int?)
+(s/def :job/version nat-int?)
+(s/def :job/order_id nat-int?)
 (s/def :job/insert_time inst?)
 (s/def :job/update_time inst?)
 (s/def :job/name string?)
