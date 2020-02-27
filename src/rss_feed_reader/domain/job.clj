@@ -15,14 +15,15 @@
 (s/def :job.domain/insert-time inst?)
 (s/def :job.domain/update-time inst?)
 (s/def :job.domain/name string?)
-(s/def :job.domain/execution-payload map?)
-(s/def :job.domain/last-execution-payload map?)
-(s/def :job.domain/last-execution-ms pos-int?)
-(s/def :job.domain/description string?)
+(s/def :job.domain/execution-payload (s/nilable map?))
+(s/def :job.domain/last-execution-payload (s/nilable map?))
+(s/def :job.domain/last-execution-ms (s/nilable pos-int?))
+(s/def :job.domain/description (s/nilable string?))
 (s/def :job.domain/enabled boolean?)
 (s/def :job.domain/locked boolean?)
 
 (s/def ::model (s/keys :req [:job.domain/id
+                             :job.domain/version
                              :job.domain/order-id
                              :job.domain/name
                              :job.domain/execution-payload
@@ -35,8 +36,9 @@
 ;; conversion
 
 (defn data-model->domain-model [model]
-  (let [{:job/keys [id order_id name execution_payload last_execution_payload last_execution_ms description enabled locked]} model]
+  (let [{:job/keys [id version order_id name execution_payload last_execution_payload last_execution_ms description enabled locked]} model]
     {:job.domain/id                     id
+     :job.domain/version                version
      :job.domain/order-id               order_id
      :job.domain/name                   name
      :job.domain/execution-payload      execution_payload

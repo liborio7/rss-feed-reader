@@ -14,7 +14,7 @@
 (s/def :feed/version nat-int?)
 (s/def :feed/order_id nat-int?)
 (s/def :feed/insert_time pos-int?)
-(s/def :feed/update_time pos-int?)
+(s/def :feed/update_time (s/nilable pos-int?))
 (s/def :feed/link string?)
 
 (s/def ::model (s/keys :req [:feed/id
@@ -47,8 +47,7 @@
                                     :limit    limit}))
 
 (s/fdef get-all
-        :args (s/cat :starting-after :feed/order_id
-                     :limit (s/int-in 0 100))
+        :args (s/* (s/cat :opt keyword? :val nat-int?))
         :ret (s/coll-of ::model))
 
 ;; insert

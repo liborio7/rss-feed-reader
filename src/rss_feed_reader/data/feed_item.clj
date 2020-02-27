@@ -13,12 +13,12 @@
 (s/def :feed.item/version nat-int?)
 (s/def :feed.item/order_id nat-int?)
 (s/def :feed.item/insert_time inst?)
-(s/def :feed.item/update_time inst?)
+(s/def :feed.item/update_time (s/nilable inst?))
 (s/def :feed.item/feed_id uuid?)
 (s/def :feed.item/title string?)
 (s/def :feed.item/link string?)
 (s/def :feed.item/pub_time inst?)
-(s/def :feed.item/description string?)
+(s/def :feed.item/description (s/nilable string?))
 
 (s/def ::model (s/keys :req [:feed.item/id
                              :feed.item/version

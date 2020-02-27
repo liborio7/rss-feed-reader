@@ -14,7 +14,7 @@
 (s/def :account.feed/version nat-int?)
 (s/def :account.feed/order_id nat-int?)
 (s/def :account.feed/insert_time inst?)
-(s/def :account.feed/update_time inst?)
+(s/def :account.feed/update_time (s/nilable inst?))
 (s/def :account.feed/account_id uuid?)
 (s/def :account.feed/feed_id uuid?)
 

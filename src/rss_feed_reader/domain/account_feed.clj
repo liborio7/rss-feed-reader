@@ -20,6 +20,7 @@
 (s/def :account.feed.domain/feed (s/keys :req [:feed.domain/id]))
 
 (s/def ::model (s/keys :req [:account.feed.domain/id
+                             :account.feed.domain/version
                              :account.feed.domain/order-id
                              :account.feed.domain/account
                              :account.feed.domain/feed]))
@@ -27,10 +28,11 @@
 ;; conversion
 
 (defn data-model->domain-model [model]
-  (let [{:account.feed/keys [id order_id account_id feed_id]} model
+  (let [{:account.feed/keys [id version order_id account_id feed_id]} model
         account (account-mgr/get-by-id {:account.domain/id account_id})
         feed (feed-mgr/get-by-id {:feed.domain/id feed_id})]
     {:account.feed.domain/id       id
+     :account.feed.domain/version  version
      :account.feed.domain/order-id order_id
      :account.feed.domain/account  account
      :account.feed.domain/feed     feed}))

@@ -17,14 +17,16 @@
 (s/def :account.domain/username string?)
 
 (s/def ::model (s/keys :req [:account.domain/id
+                             :account.domain/version
                              :account.domain/order-id
                              :account.domain/username]))
 
 ;; conversion
 
 (defn data-model->domain-model [model]
-  (let [{:account/keys [id order_id username]} model]
+  (let [{:account/keys [id version order_id username]} model]
     {:account.domain/id       id
+     :account.domain/version  version
      :account.domain/order-id order_id
      :account.domain/username username}))
 

@@ -23,6 +23,7 @@
 (s/def :feed.item.domain/description any?)
 
 (s/def ::model (s/keys :req [:feed.item.domain/id
+                             :feed.item.domain/version
                              :feed.item.domain/order-id
                              :feed.item.domain/feed
                              :feed.item.domain/title
@@ -35,8 +36,9 @@
 (defn data-model->domain-model
   ([model] (data-model->domain-model model (feed-mgr/get-by-id {:feed.domain/id (:feed.item/feed_id model)})))
   ([model feed]
-   (let [{:feed.item/keys [id order_id title link pub-time description]} model]
+   (let [{:feed.item/keys [id version order_id title link pub-time description]} model]
      {:feed.item.domain/id          id
+      :feed.item.domain/version     version
       :feed.item.domain/order-id    order_id
       :feed.item.domain/feed        feed
       :feed.item.domain/title       title

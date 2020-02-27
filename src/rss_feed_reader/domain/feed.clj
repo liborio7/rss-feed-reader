@@ -18,14 +18,16 @@
 (s/def :feed.domain/link uri?)
 
 (s/def ::model (s/keys :req [:feed.domain/id
+                             :feed.domain/version
                              :feed.domain/order-id
                              :feed.domain/link]))
 
 ;; conversion
 
 (defn data-model->domain-model [model]
-  (let [{:feed/keys [id order_id link]} model]
+  (let [{:feed/keys [id version order_id link]} model]
     {:feed.domain/id       id
+     :feed.domain/version  version
      :feed.domain/order-id order_id
      :feed.domain/link     (uris/from-string link)}))
 
