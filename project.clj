@@ -33,11 +33,20 @@
   :main rss-feed-reader.app
   :resource-paths ["resources"]
   :profiles {
-             :test {:env            {:environment "test"}
-                    :resource-paths ["resources/test"]
-                    :dependencies   [[org.clojure/test.check "0.9.0"]]
-                    }
-             :dev  {:env            {:environment "dev"}
-                    :resource-paths ["resources/dev"]
-                    :dependencies   [[org.clojure/test.check "0.9.0"]]}
+             :dev        {:env            {:environment "dev"}
+                          :resource-paths ["resources/dev"]
+                          :dependencies   [[org.clojure/test.check "0.9.0"]]}
+
+             :test       {:env            {:environment "test"}
+                          :resource-paths ["resources/test"]
+                          :dependencies   [[org.clojure/test.check "0.9.0"]]}
+
+             :testing    {:env            {:environment "testing"}
+                          :resource-paths ["resources/testing"]}
+
+             :staging    {:env            {:environment "staging"}
+                          :resource-paths ["resources/staging"]}
+
+             :production {:env            {:environment "production"}
+                          :resource-paths ["resources/production"]}
              })
