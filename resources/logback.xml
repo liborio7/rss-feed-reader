@@ -20,7 +20,7 @@
         </encoder>
     </appender>
 
-    <logger name="rss-feed-reader" level="TRACE"/>
+    <logger name="rss-feed-reader" level="INFO"/>
 
     <root level="INFO">
         <appender-ref ref="STDOUT"/>

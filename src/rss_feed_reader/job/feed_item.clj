@@ -21,7 +21,7 @@
    :feed.item.domain/description (first (:description item))})
 
 (defn- fetch-feed-items [feed]
-  (log/info "fetch items for feed" feed)
+  (log/trace "fetch items for feed" feed)
   (->> (:feed.domain/link feed)
        (str)
        (xml/parse)
@@ -47,7 +47,7 @@
       missing-links)))
 
 (defn- fetch-feeds [batch-size]
-  (log/info "fetch feeds with batch size of" batch-size)
+  (log/trace "fetch feeds with batch size of" batch-size)
   (loop [starting-after 0
          fetched-feeds 0]
     (let [feeds (feed-mgr/get-all :starting-after starting-after :limit batch-size)
@@ -60,7 +60,7 @@
                                           (count))))
           fetched-feeds (+ fetched-feeds feeds-len)
           last-feed-order-id (:feed.domain/order-id (last feeds))]
-      (log/info feeds-items-len "feeds item(s) created")
+      (log/trace feeds-items-len "feeds item(s) created")
       (if (or (empty? feeds) (< feeds-len batch-size))
         {:feed.item.job/feeds-count fetched-feeds}
         (recur last-feed-order-id
