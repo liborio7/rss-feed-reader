@@ -1,5 +1,5 @@
 (ns rss-feed-reader.domain.account_feed
-  (:require [rss-feed-reader.data.account_feed :as dao]
+  (:require [rss-feed-reader.dao.account_feed :as dao]
             [rss-feed-reader.utils.spec :as specs]
             [rss-feed-reader.domain.feed :as feed-mgr]
             [rss-feed-reader.domain.account :as account-mgr]
