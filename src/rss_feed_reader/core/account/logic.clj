@@ -9,63 +9,63 @@
 
 ;; model
 
-(s/def :account.domain/id uuid?)
-(s/def :account.domain/version nat-int?)
-(s/def :account.domain/order-id nat-int?)
-(s/def :account.domain/insert-time inst?)
-(s/def :account.domain/update-time inst?)
-(s/def :account.domain/username string?)
+(s/def :account.logic/id uuid?)
+(s/def :account.logic/version nat-int?)
+(s/def :account.logic/order-id nat-int?)
+(s/def :account.logic/insert-time inst?)
+(s/def :account.logic/update-time inst?)
+(s/def :account.logic/username string?)
 
-(s/def ::model (s/keys :req [:account.domain/id
-                             :account.domain/version
-                             :account.domain/order-id
-                             :account.domain/username]))
+(s/def ::model (s/keys :req [:account.logic/id
+                             :account.logic/version
+                             :account.logic/order-id
+                             :account.logic/username]))
 
 ;; conversion
 
 (defn data-model->domain-model [model]
   (let [{:account/keys [id version order_id username]} model]
-    {:account.domain/id       id
-     :account.domain/version  version
-     :account.domain/order-id order_id
-     :account.domain/username username}))
+    {:account.logic/id       id
+     :account.logic/version  version
+     :account.logic/order-id order_id
+     :account.logic/username username}))
 
 ;; get
 
 (defn get-by-id [model]
   (log/info "get by id" model)
-  (let [id (:account.domain/id model)
+  (let [id (:account.logic/id model)
         data-model (dao/get-by-id {:account/id id})]
     (if-not (nil? data-model)
       (data-model->domain-model data-model))))
 
 (s/fdef get-by-id
-        :args (s/cat :model (s/keys :req [:account.domain/id]))
+        :args (s/cat :model (s/keys :req [:account.logic/id]))
         :ret (s/or :ok ::model :err nil?))
 
 (defn get-by-username [model]
   (log/info "get by username" model)
-  (let [username (:account.domain/username model)
+  (let [username (:account.logic/username model)
         data-model (dao/get-by-username {:account/username username})]
     (if-not (nil? data-model)
       (data-model->domain-model data-model))))
 
 (s/fdef get-by-username
-        :args (s/cat :model (s/keys :req [:account.domain/id]))
+        :args (s/cat :model (s/keys :req [:account.logic/id]))
         :ret (s/or :ok ::rest :err nil?))
 
 ;; create
 
-(s/def ::create-model (s/keys :req [:account.domain/username]
-                              :opt [:account.domain/id
-                                    :account.domain/version
-                                    :account.domain/order-id
-                                    :account.domain/insert-time
-                                    :account.domain/update-time]))
+(s/def ::create-model (s/keys :req [:account.logic/username]
+                              :opt [:account.logic/id
+                                    :account.logic/version
+                                    :account.logic/order-id
+                                    :account.logic/insert-time
+                                    :account.logic/update-time]))
 
 (defn domain-create-model->data-model [model]
   (let [now (t/now)
-        {:account.domain/keys [id version order-id insert-time update-time username]
+        {:account.logic/keys [id version order-id insert-time update-time username]
          :or                  {id          (UUID/randomUUID)
                                version     0
                                order-id    (tc/to-long now)
@@ -103,9 +103,9 @@
 
 (defn delete [model]
   (log/info "delete" model)
-  (let [id (:account.domain/id model)]
+  (let [id (:account.logic/id model)]
     (dao/delete {:account/id id})))
 
 (s/fdef delete
-        :args (s/cat :model (s/keys :req [:account.domain/id]))
+        :args (s/cat :model (s/keys :req [:account.logic/id]))
         :ret (s/or :ok ::model :err nil?))

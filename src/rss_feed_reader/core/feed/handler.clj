@@ -11,38 +11,38 @@
 
 ;; model
 
-(s/def :feed.api/id uuid?)
-(s/def :feed.api/link string?)
+(s/def :feed.handler/id uuid?)
+(s/def :feed.handler/link string?)
 
-(s/def ::feed-model (s/keys :req [:feed.api/id
-                                  :feed.api/link]))
+(s/def ::feed-model (s/keys :req [:feed.handler/id
+                                  :feed.handler/link]))
 
-(s/def :feed.item.api/id uuid?)
-(s/def :feed.item.api/title string?)
-(s/def :feed.item.api/link string?)
-(s/def :feed.item.api/pub-time string?)
-(s/def :feed.item.api/description string?)
+(s/def :feed.item.handler/id uuid?)
+(s/def :feed.item.handler/title string?)
+(s/def :feed.item.handler/link string?)
+(s/def :feed.item.handler/pub-time string?)
+(s/def :feed.item.handler/description string?)
 
-(s/def ::feed-item-model (s/keys :req [:feed.item.api/id
-                                       :feed.item.api/title
-                                       :feed.item.api/link]
-                                 :opt [:feed.item.api/pub-time
-                                       :feed.item.api/description]))
+(s/def ::feed-item-model (s/keys :req [:feed.item.handler/id
+                                       :feed.item.handler/title
+                                       :feed.item.handler/link]
+                                 :opt [:feed.item.handler/pub-time
+                                       :feed.item.handler/description]))
 
 ;; conversion
 
 (defn feed-domain-model->api-model [model]
-  (let [{:feed.domain/keys [id link]} model]
-    {:feed.api/id   id
-     :feed.api/link (str link)}))
+  (let [{:feed.logic/keys [id link]} model]
+    {:feed.handler/id   id
+     :feed.handler/link (str link)}))
 
 (defn feed-item-domain-model->api-model [model]
-  (let [{:feed.item.domain/keys [id title link pub-time description]} model]
-    {:feed.item.api/id          id
-     :feed.item.api/title       title
-     :feed.item.api/link        (str link)
-     :feed.item.api/pub-time    (dates/unparse-date pub-time)
-     :feed.item.api/description description}))
+  (let [{:feed.item.logic/keys [id title link pub-time description]} model]
+    {:feed.item.handler/id          id
+     :feed.item.handler/title       title
+     :feed.item.handler/link        (str link)
+     :feed.item.handler/pub-time    (dates/unparse-date pub-time)
+     :feed.item.handler/description description}))
 
 ;; get
 
@@ -53,9 +53,9 @@
         limit (ints/parse-int (:limit req-query))]
     (log/info "get feeds" req-path req-query)
     (let [starting-after-feed (if-not (nil? starting-after-id)
-                                (feed-logic/get-by-id {:feed.domain/id starting-after-id}))
+                                (feed-logic/get-by-id {:feed.logic/id starting-after-id}))
           starting-after (if-not (nil? starting-after-feed)
-                           (:feed.domain/order-id starting-after-feed)
+                           (:feed.logic/order-id starting-after-feed)
                            0)
           limit (if-not (nil? limit)
                   (max 0 (min 40 limit))
@@ -71,7 +71,7 @@
     (log/info "get feed" req-path)
     (if (nil? id)
       (r/not-found)
-      (let [feed (feed-logic/get-by-id {:feed.domain/id id})]
+      (let [feed (feed-logic/get-by-id {:feed.logic/id id})]
         (if (nil? feed)
           (r/not-found)
           (-> feed
@@ -87,18 +87,18 @@
     (log/info "get feed items" req-path req-query)
     (if (nil? feed-id)
       (r/not-found)
-      (let [feed (feed-logic/get-by-id {:feed.domain/id feed-id})]
+      (let [feed (feed-logic/get-by-id {:feed.logic/id feed-id})]
         (if (nil? feed)
           (r/not-found)
           (let [starting-after-feed-item (if-not (nil? starting-after-id)
-                                           (feed-item-logic/get-by-id {:feed.item.domain/id starting-after-id}))
+                                           (feed-item-logic/get-by-id {:feed.item.logic/id starting-after-id}))
                 starting-after (if-not (nil? starting-after-feed-item)
-                                 (:feed.item.domain/order-id starting-after-feed-item)
+                                 (:feed.item.logic/order-id starting-after-feed-item)
                                  0)
                 limit (if-not (nil? limit)
                         (max 0 (min 40 limit))
                         20)
-                feed-items (feed-item-logic/get-by-feed {:feed.item.domain/feed feed}
+                feed-items (feed-item-logic/get-by-feed {:feed.item.logic/feed feed}
                                                         :starting-after starting-after
                                                         :limit (+ 1 limit))]
             (-> (r/paginate feed-items feed-item-domain-model->api-model limit)
@@ -111,7 +111,7 @@
         link (uris/from-string (:link req-body))]
     (log/info "create feed" req-body)
     (try
-      (-> {:feed.domain/link link}
+      (-> {:feed.logic/link link}
           (feed-logic/create)
           (feed-domain-model->api-model)
           (r/ok))
@@ -131,5 +131,5 @@
     (if (nil? id)
       (r/no-content)
       (do
-        (feed-logic/delete {:feed.domain/id id})
+        (feed-logic/delete {:feed.logic/id id})
         (r/no-content)))))

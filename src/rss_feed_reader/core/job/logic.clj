@@ -9,85 +9,85 @@
 
 ;; model
 
-(s/def :job.domain/id uuid?)
-(s/def :job.domain/version nat-int?)
-(s/def :job.domain/order-id nat-int?)
-(s/def :job.domain/insert-time inst?)
-(s/def :job.domain/update-time inst?)
-(s/def :job.domain/name string?)
-(s/def :job.domain/execution-payload (s/nilable map?))
-(s/def :job.domain/last-execution-payload (s/nilable map?))
-(s/def :job.domain/last-execution-ms (s/nilable pos-int?))
-(s/def :job.domain/description (s/nilable string?))
-(s/def :job.domain/enabled boolean?)
-(s/def :job.domain/locked boolean?)
+(s/def :job.logic/id uuid?)
+(s/def :job.logic/version nat-int?)
+(s/def :job.logic/order-id nat-int?)
+(s/def :job.logic/insert-time inst?)
+(s/def :job.logic/update-time inst?)
+(s/def :job.logic/name string?)
+(s/def :job.logic/execution-payload (s/nilable map?))
+(s/def :job.logic/last-execution-payload (s/nilable map?))
+(s/def :job.logic/last-execution-ms (s/nilable pos-int?))
+(s/def :job.logic/description (s/nilable string?))
+(s/def :job.logic/enabled boolean?)
+(s/def :job.logic/locked boolean?)
 
-(s/def ::model (s/keys :req [:job.domain/id
-                             :job.domain/version
-                             :job.domain/order-id
-                             :job.domain/name
-                             :job.domain/execution-payload
-                             :job.domain/last-execution-payload
-                             :job.domain/last-execution-ms
-                             :job.domain/description
-                             :job.domain/enabled
-                             :job.domain/locked]))
+(s/def ::model (s/keys :req [:job.logic/id
+                             :job.logic/version
+                             :job.logic/order-id
+                             :job.logic/name
+                             :job.logic/execution-payload
+                             :job.logic/last-execution-payload
+                             :job.logic/last-execution-ms
+                             :job.logic/description
+                             :job.logic/enabled
+                             :job.logic/locked]))
 
 ;; conversion
 
 (defn data-model->domain-model [model]
   (let [{:job/keys [id version order_id name execution_payload last_execution_payload last_execution_ms description enabled locked]} model]
-    {:job.domain/id                     id
-     :job.domain/version                version
-     :job.domain/order-id               order_id
-     :job.domain/name                   name
-     :job.domain/execution-payload      execution_payload
-     :job.domain/last-execution-payload last_execution_payload
-     :job.domain/last-execution-ms      last_execution_ms
-     :job.domain/description            description
-     :job.domain/enabled                enabled
-     :job.domain/locked                 locked}))
+    {:job.logic/id                     id
+     :job.logic/version                version
+     :job.logic/order-id               order_id
+     :job.logic/name                   name
+     :job.logic/execution-payload      execution_payload
+     :job.logic/last-execution-payload last_execution_payload
+     :job.logic/last-execution-ms      last_execution_ms
+     :job.logic/description            description
+     :job.logic/enabled                enabled
+     :job.logic/locked                 locked}))
 
 ;; get
 
 (defn get-by-id [model]
   (log/info "get by id" model)
-  (let [id (:job.domain/id model)
+  (let [id (:job.logic/id model)
         data-model (dao/get-by-id {:job/id id})]
     (if-not (nil? data-model)
       (data-model->domain-model data-model))))
 
 (s/fdef get-by-id
-        :args (s/cat :model (s/keys :req [:job.domain/id]))
+        :args (s/cat :model (s/keys :req [:job.logic/id]))
         :ret (s/or :ok ::model :err nil?))
 
 (defn get-by-name [model]
   (log/info "get by name" model)
-  (let [name (:job.domain/name model)
+  (let [name (:job.logic/name model)
         data-model (dao/get-by-name {:job/name name})]
     (if-not (nil? data-model)
       (data-model->domain-model data-model))))
 
 (s/fdef get-by-name
-        :args (s/cat :model (s/keys :req [:job.domain/name]))
+        :args (s/cat :model (s/keys :req [:job.logic/name]))
         :ret (s/or :ok ::model :err nil?))
 
 ;; create
 
-(s/def ::create-model (s/keys :req [:job.domain/name]
-                              :opt [:job.domain/id
-                                    :job.domain/version
-                                    :job.domain/order-id
-                                    :job.domain/insert-time
-                                    :job.domain/update-time
-                                    :job.domain/execution-payload
-                                    :job.domain/description
-                                    :job.domain/enabled
-                                    :job.domain/locked]))
+(s/def ::create-model (s/keys :req [:job.logic/name]
+                              :opt [:job.logic/id
+                                    :job.logic/version
+                                    :job.logic/order-id
+                                    :job.logic/insert-time
+                                    :job.logic/update-time
+                                    :job.logic/execution-payload
+                                    :job.logic/description
+                                    :job.logic/enabled
+                                    :job.logic/locked]))
 
 (defn domain-create-model->data-model [model]
   (let [now (t/now)
-        {:job.domain/keys [id version order-id insert-time update-time name execution-payload description enabled locked]
+        {:job.logic/keys [id version order-id insert-time update-time name execution-payload description enabled locked]
          :or              {id          (UUID/randomUUID)
                            version     0
                            order-id    (tc/to-long now)
@@ -131,7 +131,7 @@
 
 (defn track_last_execution [model]
   (log/info "track last execution" model)
-  (let [{:job.domain/keys [id version update-time last-execution-payload last-execution-ms]
+  (let [{:job.logic/keys [id version update-time last-execution-payload last-execution-ms]
          :or              {update-time (t/now)}} model]
     (-> {:job/id                     id
          :job/version                version
@@ -142,16 +142,16 @@
         (data-model->domain-model))))
 
 (s/fdef track_last_execution
-        :args (s/cat :model (s/keys :req [:job.domain/id
-                                          :job.domain/version]
-                                    :opt [:job.domain/update-time
-                                          :job.domain/last-execution-payload
-                                          :job.domain/last-execution-ms]))
+        :args (s/cat :model (s/keys :req [:job.logic/id
+                                          :job.logic/version]
+                                    :opt [:job.logic/update-time
+                                          :job.logic/last-execution-payload
+                                          :job.logic/last-execution-ms]))
         :ret (s/or :ok ::model :err nil?))
 
 (defn lock [model]
   (log/info "lock" model)
-  (let [{:job.domain/keys [id version update-time]
+  (let [{:job.logic/keys [id version update-time]
          :or              {update-time (t/now)}} model]
     (-> {:job/id          id
          :job/version     version
@@ -161,14 +161,14 @@
         (data-model->domain-model))))
 
 (s/fdef lock
-        :args (s/cat :model (s/keys :req [:job.domain/id
-                                          :job.domain/version]
-                                    :opt [:job.domain/update-time]))
+        :args (s/cat :model (s/keys :req [:job.logic/id
+                                          :job.logic/version]
+                                    :opt [:job.logic/update-time]))
         :ret (s/or :ok ::model :err nil?))
 
 (defn unlock [model]
   (log/info "unlock" model)
-  (let [{:job.domain/keys [id version update-time]
+  (let [{:job.logic/keys [id version update-time]
          :or              {update-time (t/now)}} model]
     (-> {:job/id          id
          :job/version     version
@@ -178,7 +178,7 @@
         (data-model->domain-model))))
 
 (s/fdef unlock
-        :args (s/cat :model (s/keys :req [:job.domain/id
-                                          :job.domain/version]
-                                    :opt [:job.domain/update-time]))
+        :args (s/cat :model (s/keys :req [:job.logic/id
+                                          :job.logic/version]
+                                    :opt [:job.logic/update-time]))
         :ret (s/or :ok ::model :err nil?))

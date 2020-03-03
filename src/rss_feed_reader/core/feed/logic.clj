@@ -10,49 +10,49 @@
 
 ;; model
 
-(s/def :feed.domain/id uuid?)
-(s/def :feed.domain/version nat-int?)
-(s/def :feed.domain/order-id nat-int?)
-(s/def :feed.domain/insert-time inst?)
-(s/def :feed.domain/update-time inst?)
-(s/def :feed.domain/link uri?)
+(s/def :feed.logic/id uuid?)
+(s/def :feed.logic/version nat-int?)
+(s/def :feed.logic/order-id nat-int?)
+(s/def :feed.logic/insert-time inst?)
+(s/def :feed.logic/update-time inst?)
+(s/def :feed.logic/link uri?)
 
-(s/def ::model (s/keys :req [:feed.domain/id
-                             :feed.domain/version
-                             :feed.domain/order-id
-                             :feed.domain/link]))
+(s/def ::model (s/keys :req [:feed.logic/id
+                             :feed.logic/version
+                             :feed.logic/order-id
+                             :feed.logic/link]))
 
 ;; conversion
 
 (defn data-model->domain-model [model]
   (let [{:feed/keys [id version order_id link]} model]
-    {:feed.domain/id       id
-     :feed.domain/version  version
-     :feed.domain/order-id order_id
-     :feed.domain/link     (uris/from-string link)}))
+    {:feed.logic/id       id
+     :feed.logic/version  version
+     :feed.logic/order-id order_id
+     :feed.logic/link     (uris/from-string link)}))
 
 ;; get
 
 (defn get-by-id [model]
   (log/info "get by id" model)
-  (let [id (:feed.domain/id model)
+  (let [id (:feed.logic/id model)
         data-model (dao/get-by-id {:feed/id id})]
     (if-not (nil? data-model)
       (data-model->domain-model data-model))))
 
 (s/fdef get-by-id
-        :args (s/cat :model (s/keys :req [:feed.domain/id]))
+        :args (s/cat :model (s/keys :req [:feed.logic/id]))
         :ret (s/or :ok ::model :err nil?))
 
 (defn get-by-link [model]
   (log/info "get by link" model)
-  (let [link (str (:feed.domain/link model))
+  (let [link (str (:feed.logic/link model))
         data-model (dao/get-by-link {:feed/link link})]
     (if-not (nil? data-model)
       (data-model->domain-model data-model))))
 
 (s/fdef get-by-link
-        :args (s/cat :model (s/keys :req [:feed.domain/link]))
+        :args (s/cat :model (s/keys :req [:feed.logic/link]))
         :ret (s/or :ok ::model :err nil?))
 
 (defn get-all [& {:keys [starting-after limit]
@@ -67,16 +67,16 @@
 
 ;; create
 
-(s/def ::create-model (s/keys :req [:feed.domain/link]
-                              :opt [:feed.domain/id
-                                    :feed.domain/version
-                                    :feed.domain/order-id
-                                    :feed.domain/insert-time
-                                    :feed.domain/update-time]))
+(s/def ::create-model (s/keys :req [:feed.logic/link]
+                              :opt [:feed.logic/id
+                                    :feed.logic/version
+                                    :feed.logic/order-id
+                                    :feed.logic/insert-time
+                                    :feed.logic/update-time]))
 
 (defn domain-create-model->data-model [model]
   (let [now (t/now)
-        {:feed.domain/keys [id version order-id insert-time update-time link]
+        {:feed.logic/keys [id version order-id insert-time update-time link]
          :or               {id          (UUID/randomUUID)
                             version     0
                             order-id    (tc/to-long now)
@@ -115,9 +115,9 @@
 
 (defn delete [model]
   (log/info "delete" model)
-  (let [id (:feed.domain/id model)]
+  (let [id (:feed.logic/id model)]
     (dao/delete {:feed/id id})))
 
 (s/fdef delete
-        :args (s/cat :model (s/keys :req [:feed.domain/id]))
+        :args (s/cat :model (s/keys :req [:feed.logic/id]))
         :ret int?)

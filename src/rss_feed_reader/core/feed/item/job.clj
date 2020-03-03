@@ -14,15 +14,15 @@
 (def date-formatter (f/formatter "E, dd MMM yyyy HH:mm:ss Z"))
 
 (defn- ->feed-item [feed item]
-  {:feed.item.domain/feed        feed
-   :feed.item.domain/title       (first (:title item))
-   :feed.item.domain/link        (uris/from-string (first (:link item)))
-   :feed.item.domain/pub-time    (dates/parse-date (first (:pubDate item)) date-formatter)
-   :feed.item.domain/description (first (:description item))})
+  {:feed.item.logic/feed        feed
+   :feed.item.logic/title       (first (:title item))
+   :feed.item.logic/link        (uris/from-string (first (:link item)))
+   :feed.item.logic/pub-time    (dates/parse-date (first (:pubDate item)) date-formatter)
+   :feed.item.logic/description (first (:description item))})
 
 (defn- fetch-feed-items [feed]
   (log/trace "fetch items for feed" feed)
-  (->> (:feed.domain/link feed)
+  (->> (:feed.logic/link feed)
        (str)
        (xml/parse)
        (:content)
@@ -36,11 +36,11 @@
 (defn filter-existing-feed-items [feed-items]
   (let [existing-links (->> feed-items
                             (feed-item-logic/get-by-links)
-                            (map :feed.item.domain/link)
+                            (map :feed.item.logic/link)
                             (reduce conj []))]
     (let [missing-links (->> feed-items
                              (remove (fn [feed-item]
-                                       (some #(= % (:feed.item.domain/link feed-item)) existing-links)
+                                       (some #(= % (:feed.item.logic/link feed-item)) existing-links)
                                        ))
                              (reduce conj []))]
       (log/info "missing" (count missing-links) "link(s) out of" (count feed-items))
@@ -59,7 +59,7 @@
                                           (feed-item-logic/create-multi)
                                           (count))))
           fetched-feeds (+ fetched-feeds feeds-len)
-          last-feed-order-id (:feed.domain/order-id (last feeds))]
+          last-feed-order-id (:feed.logic/order-id (last feeds))]
       (log/trace feeds-items-len "feeds item(s) created")
       (if (or (empty? feeds) (< feeds-len batch-size))
         {:feed.item.job/feeds-count fetched-feeds}
@@ -69,8 +69,8 @@
 (defn run []
   (cid/set-new)
   (log/info "job started")
-  (let [job-model {:job.domain/name        "feed-item"
-                   :job.domain/description "Fetch feed items"}]
+  (let [job-model {:job.logic/name        "feed-item"
+                   :job.logic/description "Fetch feed items"}]
     (try
       (let [job (-> (or (job-logic/get-by-name job-model) (job-logic/create job-model))
                     (job-logic/lock))
@@ -78,8 +78,8 @@
             job-result (fetch-feeds 1)
             to (tc/to-long (t/now))
             execution-ms (- to from)]
-        (-> (select-keys job [:job.domain/id :job.domain/version])
-            (merge {:job.domain/last-execution-ms execution-ms})
+        (-> (select-keys job [:job.logic/id :job.logic/version])
+            (merge {:job.logic/last-execution-ms execution-ms})
             (job-logic/track_last_execution)
             (job-logic/unlock))
         (log/info "job elapsed in" (format "%dms" execution-ms) job-result))
