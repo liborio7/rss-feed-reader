@@ -13,8 +13,8 @@
             [rss-feed-reader.utils.cid :as cid]
             [rss-feed-reader.utils.response :as r]
             [rss-feed-reader.utils.map :as maps]
-            [rss-feed-reader.api.feed.router :as feed]
-            [rss-feed-reader.api.account.router :as account]))
+            [rss-feed-reader.core.feed.router :as feed]
+            [rss-feed-reader.core.account.router :as account]))
 
 (defn wrap-logger [handler]
   (fn [request]

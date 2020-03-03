@@ -1,8 +1,8 @@
-(ns rss-feed-reader.api.feed.handler
+(ns rss-feed-reader.core.feed.handler
   (:require [clojure.spec.alpha :as s]
             [clojure.tools.logging :as log]
-            [rss-feed-reader.domain.feed :as feed-mgr]
-            [rss-feed-reader.domain.feed_item :as feed-item-mgr]
+            [rss-feed-reader.core.feed.logic :as feed-logic]
+            [rss-feed-reader.core.feed.item.logic :as feed-item-logic]
             [rss-feed-reader.utils.uuid :as uuids]
             [rss-feed-reader.utils.uri :as uris]
             [rss-feed-reader.utils.response :as r]
@@ -53,15 +53,15 @@
         limit (ints/parse-int (:limit req-query))]
     (log/info "get feeds" req-path req-query)
     (let [starting-after-feed (if-not (nil? starting-after-id)
-                                (feed-mgr/get-by-id {:feed.domain/id starting-after-id}))
+                                (feed-logic/get-by-id {:feed.domain/id starting-after-id}))
           starting-after (if-not (nil? starting-after-feed)
                            (:feed.domain/order-id starting-after-feed)
                            0)
           limit (if-not (nil? limit)
                   (max 0 (min 40 limit))
                   20)
-          feeds (feed-mgr/get-all :starting-after starting-after
-                                  :limit (+ 1 limit))]
+          feeds (feed-logic/get-all :starting-after starting-after
+                                    :limit (+ 1 limit))]
       (-> (r/paginate feeds feed-domain-model->api-model limit)
           (r/ok)))))
 
@@ -71,7 +71,7 @@
     (log/info "get feed" req-path)
     (if (nil? id)
       (r/not-found)
-      (let [feed (feed-mgr/get-by-id {:feed.domain/id id})]
+      (let [feed (feed-logic/get-by-id {:feed.domain/id id})]
         (if (nil? feed)
           (r/not-found)
           (-> feed
@@ -87,20 +87,20 @@
     (log/info "get feed items" req-path req-query)
     (if (nil? feed-id)
       (r/not-found)
-      (let [feed (feed-mgr/get-by-id {:feed.domain/id feed-id})]
+      (let [feed (feed-logic/get-by-id {:feed.domain/id feed-id})]
         (if (nil? feed)
           (r/not-found)
           (let [starting-after-feed-item (if-not (nil? starting-after-id)
-                                           (feed-item-mgr/get-by-id {:feed.item.domain/id starting-after-id}))
+                                           (feed-item-logic/get-by-id {:feed.item.domain/id starting-after-id}))
                 starting-after (if-not (nil? starting-after-feed-item)
                                  (:feed.item.domain/order-id starting-after-feed-item)
                                  0)
                 limit (if-not (nil? limit)
                         (max 0 (min 40 limit))
                         20)
-                feed-items (feed-item-mgr/get-by-feed {:feed.item.domain/feed feed}
-                                                      :starting-after starting-after
-                                                      :limit (+ 1 limit))]
+                feed-items (feed-item-logic/get-by-feed {:feed.item.domain/feed feed}
+                                                        :starting-after starting-after
+                                                        :limit (+ 1 limit))]
             (-> (r/paginate feed-items feed-item-domain-model->api-model limit)
                 (r/ok))))))))
 
@@ -112,7 +112,7 @@
     (log/info "create feed" req-body)
     (try
       (-> {:feed.domain/link link}
-          (feed-mgr/create)
+          (feed-logic/create)
           (feed-domain-model->api-model)
           (r/ok))
       (catch Exception e
@@ -131,5 +131,5 @@
     (if (nil? id)
       (r/no-content)
       (do
-        (feed-mgr/delete {:feed.domain/id id})
+        (feed-logic/delete {:feed.domain/id id})
         (r/no-content)))))

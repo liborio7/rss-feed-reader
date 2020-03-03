@@ -1,12 +1,12 @@
-(ns rss-feed-reader.job.feed_item
+(ns rss-feed-reader.core.feed.item.job
   (:require [clojure.tools.logging :as log]
             [clj-time.coerce :as tc]
             [clj-time.core :as t]
             [clj-time.format :as f]
             [clojure.xml :as xml]
-            [rss-feed-reader.domain.job :as job-mgr]
-            [rss-feed-reader.domain.feed :as feed-mgr]
-            [rss-feed-reader.domain.feed_item :as feed-item-mgr]
+            [rss-feed-reader.core.job.logic :as job-logic]
+            [rss-feed-reader.core.feed.logic :as feed-logic]
+            [rss-feed-reader.core.feed.item.logic :as feed-item-logic]
             [rss-feed-reader.utils.uri :as uris]
             [rss-feed-reader.utils.date :as dates]
             [rss-feed-reader.utils.cid :as cid]))
@@ -35,7 +35,7 @@
 
 (defn filter-existing-feed-items [feed-items]
   (let [existing-links (->> feed-items
-                            (feed-item-mgr/get-by-links)
+                            (feed-item-logic/get-by-links)
                             (map :feed.item.domain/link)
                             (reduce conj []))]
     (let [missing-links (->> feed-items
@@ -50,13 +50,13 @@
   (log/trace "fetch feeds with batch size of" batch-size)
   (loop [starting-after 0
          fetched-feeds 0]
-    (let [feeds (feed-mgr/get-all :starting-after starting-after :limit batch-size)
+    (let [feeds (feed-logic/get-all :starting-after starting-after :limit batch-size)
           feeds-len (count feeds)
           feeds-items-len (apply + (for [feed feeds]
                                      (->> feed
                                           (fetch-feed-items)
                                           (filter-existing-feed-items)
-                                          (feed-item-mgr/create-multi)
+                                          (feed-item-logic/create-multi)
                                           (count))))
           fetched-feeds (+ fetched-feeds feeds-len)
           last-feed-order-id (:feed.domain/order-id (last feeds))]
@@ -72,20 +72,20 @@
   (let [job-model {:job.domain/name        "feed-item"
                    :job.domain/description "Fetch feed items"}]
     (try
-      (let [job (-> (or (job-mgr/get-by-name job-model) (job-mgr/create job-model))
-                    (job-mgr/lock))
+      (let [job (-> (or (job-logic/get-by-name job-model) (job-logic/create job-model))
+                    (job-logic/lock))
             from (tc/to-long (t/now))
             job-result (fetch-feeds 1)
             to (tc/to-long (t/now))
             execution-ms (- to from)]
         (-> (select-keys job [:job.domain/id :job.domain/version])
             (merge {:job.domain/last-execution-ms execution-ms})
-            (job-mgr/track_last_execution)
-            (job-mgr/unlock))
+            (job-logic/track_last_execution)
+            (job-logic/unlock))
         (log/info "job elapsed in" (format "%dms" execution-ms) job-result))
 
       (catch Exception e
         (log/error "error while gathering feed items" e)
         (-> job-model
-            (job-mgr/get-by-name)
-            (job-mgr/unlock))))))
+            (job-logic/get-by-name)
+            (job-logic/unlock))))))

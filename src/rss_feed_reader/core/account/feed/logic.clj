@@ -1,8 +1,8 @@
-(ns rss-feed-reader.domain.account_feed
-  (:require [rss-feed-reader.dao.account_feed :as dao]
+(ns rss-feed-reader.core.account.feed.logic
+  (:require [rss-feed-reader.core.account.feed.dao :as dao]
+            [rss-feed-reader.core.feed.logic :as feed-logic]
+            [rss-feed-reader.core.account.logic :as account-logic]
             [rss-feed-reader.utils.spec :as specs]
-            [rss-feed-reader.domain.feed :as feed-mgr]
-            [rss-feed-reader.domain.account :as account-mgr]
             [clojure.spec.alpha :as s]
             [clj-time.core :as t]
             [clj-time.coerce :as tc]
@@ -29,8 +29,8 @@
 
 (defn data-model->domain-model [model]
   (let [{:account.feed/keys [id version order_id account_id feed_id]} model
-        account (account-mgr/get-by-id {:account.domain/id account_id})
-        feed (feed-mgr/get-by-id {:feed.domain/id feed_id})]
+        account (account-logic/get-by-id {:account.domain/id account_id})
+        feed (feed-logic/get-by-id {:feed.domain/id feed_id})]
     {:account.feed.domain/id       id
      :account.feed.domain/version  version
      :account.feed.domain/order-id order_id

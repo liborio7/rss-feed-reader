@@ -1,7 +1,7 @@
-(ns rss-feed-reader.domain.feed_item
-  (:require [rss-feed-reader.dao.feed_item :as dao]
+(ns rss-feed-reader.core.feed.item.logic
+  (:require [rss-feed-reader.core.feed.item.dao :as dao]
+            [rss-feed-reader.core.feed.logic :as feed-logic]
             [rss-feed-reader.utils.spec :as specs]
-            [rss-feed-reader.domain.feed :as feed-mgr]
             [clojure.spec.alpha :as s]
             [clj-time.core :as t]
             [clj-time.coerce :as tc]
@@ -34,7 +34,7 @@
 ;; conversion
 
 (defn data-model->domain-model
-  ([model] (data-model->domain-model model (feed-mgr/get-by-id {:feed.domain/id (:feed.item/feed_id model)})))
+  ([model] (data-model->domain-model model (feed-logic/get-by-id {:feed.domain/id (:feed.item/feed_id model)})))
   ([model feed]
    (let [{:feed.item/keys [id version order_id title link pub-time description]} model]
      {:feed.item.domain/id          id
@@ -89,7 +89,7 @@
   (log/info "get by" (count models) "links")
   (let [feeds-map (->> models
                        (group-by #(:feed.domain/id (:feed.item.domain/feed %)))
-                       (map (fn [[k _]] [k (feed-mgr/get-by-id {:feed.domain/id k})]))
+                       (map (fn [[k _]] [k (feed-logic/get-by-id {:feed.domain/id k})]))
                        (into {}))
         links (->> models
                    (map :feed.item.domain/link)
@@ -179,7 +179,7 @@
                          :details errors})))
       (let [feeds-map (->> models
                            (group-by #(:feed.domain/id (:feed.item.domain/feed %)))
-                           (map (fn [[k _]] [k (feed-mgr/get-by-id {:feed.domain/id k})]))
+                           (map (fn [[k _]] [k (feed-logic/get-by-id {:feed.domain/id k})]))
                            (into {}))]
         (->> models
              (domain-create-models->data-models)

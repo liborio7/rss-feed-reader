@@ -1,5 +1,5 @@
-(ns rss-feed-reader.api.feed.router
-  (:require [rss-feed-reader.api.feed.handler :as h]))
+(ns rss-feed-reader.core.feed.router
+  (:require [rss-feed-reader.core.feed.handler :as h]))
 
 (def routes
   [["/feeds"

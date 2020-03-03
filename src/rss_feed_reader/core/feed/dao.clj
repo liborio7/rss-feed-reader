@@ -1,5 +1,5 @@
-(ns rss-feed-reader.dao.feed
-  (:require [rss-feed-reader.dao.db.postgres :as db]
+(ns rss-feed-reader.core.feed.dao
+  (:require [rss-feed-reader.db.postgres :as db]
             [rss-feed-reader.utils.sql :as sql]
             [clojure.spec.alpha :as s]))
 

@@ -1,7 +1,7 @@
 (ns rss-feed-reader.jobs
   (:require [environ.core :refer [env]]
             [overtone.at-at :as j]
-            [rss-feed-reader.job.feed_item :as feed-item-job]))
+            [rss-feed-reader.core.feed.item.job :as feed-item-job]))
 
 (def my-pool (j/mk-pool))
 (case (:environment env)

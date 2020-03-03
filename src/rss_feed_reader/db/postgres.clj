@@ -1,4 +1,4 @@
-(ns rss-feed-reader.dao.db.postgres
+(ns rss-feed-reader.db.postgres
   (:require [clj-time.jdbc]
             [environ.core :refer [env]]
             [clojure.edn :as edn]
