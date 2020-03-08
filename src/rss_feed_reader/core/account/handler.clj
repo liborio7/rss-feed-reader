@@ -14,14 +14,14 @@
 (s/def :account.handler/id uuid?)
 (s/def :account.handler/username string?)
 
-(s/def ::account-model (s/cat :req [:account.handler/id
-                                    :account.handler/username]))
+(s/def ::model (s/cat :req [:account.handler/id
+                            :account.handler/username]))
 
 (s/def :account.feed.handler/id uuid?)
 (s/def :account.feed.handler/link string?)
 
-(s/def ::account-feed-model (s/cat :req [:account.feed.handler/id
-                                         :account.feed.handler/link]))
+(s/def ::feed.model (s/cat :req [:account.feed.handler/id
+                                 :account.feed.handler/link]))
 
 ;; conversion
 

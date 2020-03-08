@@ -14,8 +14,8 @@
 (s/def :feed.handler/id uuid?)
 (s/def :feed.handler/link string?)
 
-(s/def ::feed-model (s/keys :req [:feed.handler/id
-                                  :feed.handler/link]))
+(s/def ::model (s/keys :req [:feed.handler/id
+                             :feed.handler/link]))
 
 (s/def :feed.item.handler/id uuid?)
 (s/def :feed.item.handler/title string?)
@@ -23,11 +23,11 @@
 (s/def :feed.item.handler/pub-time string?)
 (s/def :feed.item.handler/description string?)
 
-(s/def ::feed-item-model (s/keys :req [:feed.item.handler/id
-                                       :feed.item.handler/title
-                                       :feed.item.handler/link]
-                                 :opt [:feed.item.handler/pub-time
-                                       :feed.item.handler/description]))
+(s/def ::item.model (s/keys :req [:feed.item.handler/id
+                                  :feed.item.handler/title
+                                  :feed.item.handler/link]
+                            :opt [:feed.item.handler/pub-time
+                                  :feed.item.handler/description]))
 
 ;; conversion
 
