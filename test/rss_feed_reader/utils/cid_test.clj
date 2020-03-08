@@ -2,17 +2,31 @@
   (:refer-clojure :exclude [get set])
   (:require [clojure.test :refer :all]
             [rss-feed-reader.utils.cid :refer :all]
-            [clojure.spec.alpha :as s]
             [clojure.spec.test.alpha :as stest]
-            [clojure.spec.gen.alpha :as gen]))
+            [clojure.spec.gen.alpha :as gen]
+            [clojure.spec.alpha :as s]))
+
+(deftest should-generate
+  (testing "should generate"
+    ; when
+    (let [cid (generate)]
+      ; then
+      (is (s/valid? :utils/cid cid)))))
 
 (deftest should-set-and-get
-  (testing "generate"
-    (stest/instrument)
+  (testing "should set and get"
     ; given
-    (let [actual (gen/generate (s/gen :utils/cid))]
-      (set actual)
+    (let [expected (gen/generate (s/gen :utils/cid))]
       ; when
-      (let [expected (get)]
-        ; then
-        (is (= expected actual))))))
+      (set expected)
+      ; then
+      (let [actual (get)]
+        (is (= actual expected))))))
+
+(deftest should-set-new-and-get
+  (testing "should set and get"
+    ; when
+    (set-new)
+    ;then
+    (let [cid (get)]
+      (is (s/valid? :utils/cid cid)))))
