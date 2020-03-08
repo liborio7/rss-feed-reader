@@ -1,14 +1,14 @@
 (ns rss-feed-reader.instrument
   (:require [environ.core :refer [env]]
-            [clojure.spec.test.alpha :as stest]))
+            [orchestra.spec.test :as orchestra]))
 
 (case (:environment env)
   "dev"
   (do
-    (stest/instrument))
+    (orchestra/instrument))
   "test"
   (do
-    (stest/instrument))
+    (orchestra/instrument))
   (do
     ; nothing to do here
     ))

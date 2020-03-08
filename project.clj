@@ -5,6 +5,7 @@
             :url  "https://www.eclipse.org/legal/epl-2.0/"}
   :dependencies [
                  [org.clojure/clojure "1.10.0"]
+                 [orchestra "2018.12.06-2"]
 
                  [environ "1.1.0"]
                  [ragtime "0.8.0"]
