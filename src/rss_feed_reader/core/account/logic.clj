@@ -23,7 +23,7 @@
 
 ;; conversion
 
-(defn data-model->domain-model [model]
+(defn dao-model->logic-model [model]
   (let [{:account/keys [id version order_id username]} model]
     {:account.logic/id       id
      :account.logic/version  version
@@ -35,9 +35,9 @@
 (defn get-by-id [model]
   (log/info "get by id" model)
   (let [id (:account.logic/id model)
-        data-model (dao/get-by-id {:account/id id})]
-    (if-not (nil? data-model)
-      (data-model->domain-model data-model))))
+        dao-model (dao/get-by-id {:account/id id})]
+    (if-not (nil? dao-model)
+      (dao-model->logic-model dao-model))))
 
 (s/fdef get-by-id
         :args (s/cat :model (s/keys :req [:account.logic/id]))
@@ -46,9 +46,9 @@
 (defn get-by-username [model]
   (log/info "get by username" model)
   (let [username (:account.logic/username model)
-        data-model (dao/get-by-username {:account/username username})]
-    (if-not (nil? data-model)
-      (data-model->domain-model data-model))))
+        dao-model (dao/get-by-username {:account/username username})]
+    (if-not (nil? dao-model)
+      (dao-model->logic-model dao-model))))
 
 (s/fdef get-by-username
         :args (s/cat :model (s/keys :req [:account.logic/id]))
@@ -63,13 +63,13 @@
                                     :account.logic/insert-time
                                     :account.logic/update-time]))
 
-(defn domain-create-model->data-model [model]
+(defn logic-create-model->dao-model [model]
   (let [now (t/now)
         {:account.logic/keys [id version order-id insert-time update-time username]
-         :or                  {id          (UUID/randomUUID)
-                               version     0
-                               order-id    (tc/to-long now)
-                               insert-time now}
+         :or                 {id          (UUID/randomUUID)
+                              version     0
+                              order-id    (tc/to-long now)
+                              insert-time now}
          } model]
     {:account/id          id
      :account/version     version
@@ -85,15 +85,15 @@
       (do
         (log/warn "invalid request" errors)
         (throw (ex-info "invalid request"
-                        {:cause   :account-domain-create
+                        {:cause   :account-logic-create
                          :reason  :invalid-spec
                          :details errors})))
       (if-let [account (get-by-username model)]
         account
         (-> model
-            (domain-create-model->data-model)
+            (logic-create-model->dao-model)
             (dao/insert)
-            (data-model->domain-model))))))
+            (dao-model->logic-model))))))
 
 (s/fdef create
         :args (s/cat :model ::create-model)

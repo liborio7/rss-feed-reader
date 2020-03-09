@@ -7,7 +7,8 @@
             [rss-feed-reader.utils.uuid :as uuids]
             [rss-feed-reader.utils.int :as ints]
             [rss-feed-reader.utils.response :as r]
-            [rss-feed-reader.utils.uri :as uris]))
+            [rss-feed-reader.utils.uri :as uris])
+  (:import (clojure.lang ExceptionInfo)))
 
 ;; model
 
@@ -101,11 +102,11 @@
           (account-logic/create)
           (account-domain-model->api-model)
           (r/ok))
-      (catch Exception e
+      (catch ExceptionInfo e
         (let [data (ex-data e)
               {:keys [cause reason]} data]
           (case [cause reason]
-            [:account-domain-create :invalid-spec] (r/bad-request {:code 1 :message "invalid request"})
+            [:account-logic-create :invalid-spec] (r/bad-request {:code 1 :message "invalid request"})
             (throw e)))))))
 
 (defn create-account-feed [req]
@@ -124,7 +125,7 @@
                 (account-feed-logic/create)
                 (account-feed-domain-model->api-model)
                 (r/ok)))
-          (catch Exception e
+          (catch ExceptionInfo e
             (let [data (ex-data e)
                   {:keys [cause reason]} data]
               (case [cause reason]

@@ -7,7 +7,8 @@
             [rss-feed-reader.utils.uri :as uris]
             [rss-feed-reader.utils.response :as r]
             [rss-feed-reader.utils.date :as dates]
-            [rss-feed-reader.utils.int :as ints]))
+            [rss-feed-reader.utils.int :as ints])
+  (:import (clojure.lang ExceptionInfo)))
 
 ;; model
 
@@ -115,7 +116,7 @@
           (feed-logic/create)
           (feed-domain-model->api-model)
           (r/ok))
-      (catch Exception e
+      (catch ExceptionInfo e
         (let [data (ex-data e)
               {:keys [cause reason]} data]
           (case [cause reason]

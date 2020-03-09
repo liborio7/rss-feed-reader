@@ -5,7 +5,6 @@
             :url  "https://www.eclipse.org/legal/epl-2.0/"}
   :dependencies [
                  [org.clojure/clojure "1.10.0"]
-                 [orchestra "2018.12.06-2"]
 
                  [environ "1.1.0"]
                  [ragtime "0.8.0"]
@@ -36,11 +35,13 @@
   :profiles {
              :dev        {:env            {:environment "dev"}
                           :resource-paths ["resources/dev"]
-                          :dependencies   [[org.clojure/test.check "0.9.0"]]}
+                          :dependencies   [[org.clojure/test.check "0.9.0"]
+                                           [orchestra "2018.12.06-2"]]}
 
              :test       {:env            {:environment "test"}
                           :resource-paths ["resources/test"]
-                          :dependencies   [[org.clojure/test.check "0.9.0"]]}
+                          :dependencies   [[org.clojure/test.check "0.9.0"]
+                                           [orchestra "2018.12.06-2"]]}
 
              :testing    {:env            {:environment "testing"}
                           :resource-paths ["resources/testing"]}
