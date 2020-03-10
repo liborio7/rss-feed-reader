@@ -24,7 +24,7 @@
 
 ;; conversion
 
-(defn data-model->domain-model [model]
+(defn dao-model->logic-model [model]
   (let [{:feed/keys [id version order_id link]} model]
     {:feed.logic/id       id
      :feed.logic/version  version
@@ -33,12 +33,22 @@
 
 ;; get
 
+(defn get-all [& {:keys [starting-after limit]
+                  :or   {starting-after 0 limit 20}}]
+  (log/info "get all starting after" starting-after "limit" limit)
+  (let [data-models (dao/get-all :starting-after starting-after :limit limit)]
+    (map dao-model->logic-model data-models)))
+
+(s/fdef get-all
+        :args (s/* (s/cat :opt keyword? :val nat-int?))
+        :ret (s/or :ok (s/coll-of ::model) :err nil?))
+
 (defn get-by-id [model]
   (log/info "get by id" model)
   (let [id (:feed.logic/id model)
         data-model (dao/get-by-id {:feed/id id})]
     (if-not (nil? data-model)
-      (data-model->domain-model data-model))))
+      (dao-model->logic-model data-model))))
 
 (s/fdef get-by-id
         :args (s/cat :model (s/keys :req [:feed.logic/id]))
@@ -49,21 +59,11 @@
   (let [link (str (:feed.logic/link model))
         data-model (dao/get-by-link {:feed/link link})]
     (if-not (nil? data-model)
-      (data-model->domain-model data-model))))
+      (dao-model->logic-model data-model))))
 
 (s/fdef get-by-link
         :args (s/cat :model (s/keys :req [:feed.logic/link]))
         :ret (s/or :ok ::model :err nil?))
-
-(defn get-all [& {:keys [starting-after limit]
-                  :or   {starting-after 0 limit 20}}]
-  (log/info "get all starting after" starting-after "limit" limit)
-  (let [data-models (dao/get-all :starting-after starting-after :limit limit)]
-    (map data-model->domain-model data-models)))
-
-(s/fdef get-all
-        :args (s/* (s/cat :opt keyword? :val nat-int?))
-        :ret (s/or :ok (s/coll-of ::model) :err nil?))
 
 ;; create
 
@@ -74,7 +74,7 @@
                                     :feed.logic/insert-time
                                     :feed.logic/update-time]))
 
-(defn domain-create-model->data-model [model]
+(defn logic-create-model->dao-model [model]
   (let [now (t/now)
         {:feed.logic/keys [id version order-id insert-time update-time link]
          :or               {id          (UUID/randomUUID)
@@ -97,15 +97,15 @@
       (do
         (log/warn "invalid request" errors)
         (throw (ex-info "invalid request"
-                        {:cause   :feed-domain-create
+                        {:cause   :feed-logic-create
                          :reason  :invalid-spec
                          :details errors})))
       (if-let [feed (get-by-link model)]
         feed
         (-> model
-            (domain-create-model->data-model)
+            (logic-create-model->dao-model)
             (dao/insert)
-            (data-model->domain-model))))))
+            (dao-model->logic-model))))))
 
 (s/fdef create
         :args (s/cat :model ::create-model)
