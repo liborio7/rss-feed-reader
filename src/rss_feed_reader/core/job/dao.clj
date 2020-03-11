@@ -44,14 +44,14 @@
 
 (s/fdef get-by-id
         :args (s/cat :model (s/keys :req [:job/id]))
-        :ret ::model)
+        :ret (s/or :ok ::model :not-found nil?))
 
 (defn get-by-name [model]
   (sql/get-by-query db table {:where [:= :job/name (:job/name model)]}))
 
 (s/fdef get-by-name
         :args (s/cat :model (s/keys :req [:job/name]))
-        :ret ::model)
+        :ret (s/or :ok ::model :not-found nil?))
 
 ;; insert
 
@@ -60,7 +60,7 @@
 
 (s/fdef insert
         :args (s/cat :model ::model)
-        :ret (s/or :ok ::model :err nil?))
+        :ret ::model)
 
 ;; update
 
@@ -74,4 +74,4 @@
                                           :job/last_execution_ms
                                           :job/enabled
                                           :job/locked]))
-        :ret (s/or :ok ::model :err nil?))
+        :ret ::model)

@@ -31,14 +31,14 @@
 
 (s/fdef get-by-id
         :args (s/cat :model (s/keys :req [:feed/id]))
-        :ret ::model)
+        :ret (s/or :ok ::model :not-found nil?))
 
 (defn get-by-link [{:feed/keys [link]}]
   (sql/get-by-query db table {:where [:= :feed/link link]}))
 
 (s/fdef get-by-link
         :args (s/cat :model (s/keys :req [:feed/link]))
-        :ret ::model)
+        :ret (s/or :ok ::model :not-found nil?))
 
 (defn get-all [& {:keys [starting-after limit]
                   :or   {starting-after 0 limit 20}}]
@@ -66,4 +66,4 @@
 
 (s/fdef delete
         :args (s/cat :model (s/keys :req [:feed/id]))
-        :ret (s/and int?))
+        :ret int?)

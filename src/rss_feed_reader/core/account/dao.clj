@@ -31,14 +31,14 @@
 
 (s/fdef get-by-id
         :args (s/cat :model (s/keys :req [:account/id]))
-        :ret ::model)
+        :ret (s/or :ok ::model :not-found nil?))
 
 (defn get-by-username [{:account/keys [username]}]
-  (sql/get-multi-by-query db table {:where [:= :account/username username]}))
+  (sql/get-by-query db table {:where [:= :account/username username]}))
 
 (s/fdef get-by-username
         :args (s/cat :model (s/keys :req [:account/username]))
-        :ret ::model)
+        :ret (s/or :ok ::model :not-found nil?))
 
 ;; insert
 
@@ -47,7 +47,7 @@
 
 (s/fdef insert
         :args (s/cat :model ::model)
-        :ret (s/or :ok ::model :err nil?))
+        :ret ::model)
 
 ;; delete
 

@@ -14,7 +14,7 @@
 (s/def :feed.logic/version nat-int?)
 (s/def :feed.logic/order-id nat-int?)
 (s/def :feed.logic/insert-time inst?)
-(s/def :feed.logic/update-time inst?)
+(s/def :feed.logic/update-time (s/nilable inst?))
 (s/def :feed.logic/link uri?)
 
 (s/def ::model (s/keys :req [:feed.logic/id
@@ -36,34 +36,34 @@
 (defn get-all [& {:keys [starting-after limit]
                   :or   {starting-after 0 limit 20}}]
   (log/info "get all starting after" starting-after "limit" limit)
-  (let [data-models (dao/get-all :starting-after starting-after :limit limit)]
-    (map dao-model->logic-model data-models)))
+  (let [dao-models (dao/get-all :starting-after starting-after :limit limit)]
+    (map dao-model->logic-model dao-models)))
 
 (s/fdef get-all
         :args (s/* (s/cat :opt keyword? :val nat-int?))
-        :ret (s/or :ok (s/coll-of ::model) :err nil?))
+        :ret (s/coll-of ::model))
 
 (defn get-by-id [model]
   (log/info "get by id" model)
   (let [id (:feed.logic/id model)
-        data-model (dao/get-by-id {:feed/id id})]
-    (if-not (nil? data-model)
-      (dao-model->logic-model data-model))))
+        dao-model (dao/get-by-id {:feed/id id})]
+    (if-not (nil? dao-model)
+      (dao-model->logic-model dao-model))))
 
 (s/fdef get-by-id
         :args (s/cat :model (s/keys :req [:feed.logic/id]))
-        :ret (s/or :ok ::model :err nil?))
+        :ret (s/or :ok ::model :not-found nil?))
 
 (defn get-by-link [model]
   (log/info "get by link" model)
   (let [link (str (:feed.logic/link model))
-        data-model (dao/get-by-link {:feed/link link})]
-    (if-not (nil? data-model)
-      (dao-model->logic-model data-model))))
+        dao-model (dao/get-by-link {:feed/link link})]
+    (if-not (nil? dao-model)
+      (dao-model->logic-model dao-model))))
 
 (s/fdef get-by-link
         :args (s/cat :model (s/keys :req [:feed.logic/link]))
-        :ret (s/or :ok ::model :err nil?))
+        :ret (s/or :ok ::model :not-found nil?))
 
 ;; create
 

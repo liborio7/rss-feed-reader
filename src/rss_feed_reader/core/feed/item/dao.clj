@@ -38,14 +38,14 @@
 
 (s/fdef get-by-id
         :args (s/cat :model (s/keys :req [:feed.item/id]))
-        :ret ::model)
+        :ret (s/or :ok ::model :not-found nil?))
 
-(defn get-by-id-multi [models]
+(defn get-by-ids [models]
   (if (empty? models)
     []
     (sql/get-multi-by-id db table :feed.item/id models)))
 
-(s/fdef get-by-id-multi
+(s/fdef get-by-ids
         :args (s/cat :models (s/coll-of (s/keys :req [:feed.item/id])))
         :ret (s/coll-of ::model))
 
@@ -54,7 +54,7 @@
 
 (s/fdef get-by-link
         :args (s/cat :model (s/keys :req [:feed.item/link]))
-        :ret ::model)
+        :ret (s/or :ok ::model :not-found nil?))
 
 (defn get-by-links [models]
   (let [links (->> models
@@ -106,4 +106,4 @@
 
 (s/fdef delete
         :args (s/cat :model (s/keys :req [:feed.item/id]))
-        :ret (s/and int?))
+        :ret int?)

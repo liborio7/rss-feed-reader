@@ -33,7 +33,7 @@
 
 (s/fdef get-by-id
         :args (s/cat :model (s/keys :req [:account.feed/id]))
-        :ret ::model)
+        :ret (s/or :ok ::model :not-found nil?))
 
 (defn get-by-account-id [{:account.feed/keys [account_id]}
                          & {:keys [starting-after limit]
@@ -69,7 +69,7 @@
 (s/fdef get-by-account-id-and-feed-id
         :args (s/cat :model (s/keys :req [:account.feed/account_id
                                           :account.feed/feed_id]))
-        :ret ::model)
+        :ret (s/or :ok ::model :not-found nil?))
 
 ;; insert
 
@@ -78,7 +78,7 @@
 
 (s/fdef insert
         :args (s/cat :model ::model)
-        :ret (s/or :ok ::model :err nil?))
+        :ret ::model)
 
 ;; delete
 

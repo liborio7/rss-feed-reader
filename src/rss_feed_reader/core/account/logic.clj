@@ -13,7 +13,7 @@
 (s/def :account.logic/version nat-int?)
 (s/def :account.logic/order-id nat-int?)
 (s/def :account.logic/insert-time inst?)
-(s/def :account.logic/update-time inst?)
+(s/def :account.logic/update-time (s/nilable inst?))
 (s/def :account.logic/username string?)
 
 (s/def ::model (s/keys :req [:account.logic/id
@@ -41,7 +41,7 @@
 
 (s/fdef get-by-id
         :args (s/cat :model (s/keys :req [:account.logic/id]))
-        :ret (s/or :ok ::model :err nil?))
+        :ret (s/or :ok ::model :not-found nil?))
 
 (defn get-by-username [model]
   (log/info "get by username" model)
@@ -52,7 +52,7 @@
 
 (s/fdef get-by-username
         :args (s/cat :model (s/keys :req [:account.logic/id]))
-        :ret (s/or :ok ::rest :err nil?))
+        :ret (s/or :ok ::model :not-found nil?))
 
 ;; create
 
@@ -108,4 +108,4 @@
 
 (s/fdef delete
         :args (s/cat :model (s/keys :req [:account.logic/id]))
-        :ret (s/or :ok ::model :err nil?))
+        :ret int?)

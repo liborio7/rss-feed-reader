@@ -15,7 +15,7 @@
 (s/def :account.feed.logic/version nat-int?)
 (s/def :account.feed.logic/order-id nat-int?)
 (s/def :account.feed.logic/insert-time inst?)
-(s/def :account.feed.logic/update-time inst?)
+(s/def :account.feed.logic/update-time (s/nilable inst?))
 (s/def :account.feed.logic/account (s/keys :req [:account.logic/id]))
 (s/def :account.feed.logic/feed (s/keys :req [:feed.logic/id]))
 
@@ -48,7 +48,7 @@
 
 (s/fdef get-by-id
         :args (s/cat :model (s/keys :req [:account.feed.logic/id]))
-        :ret (s/or :ok ::model :err nil?))
+        :ret (s/or :ok ::model :not-found nil?))
 
 (defn get-by-account [model & {:keys [starting-after limit]
                                :or   {starting-after 0 limit 20}}]
@@ -62,7 +62,7 @@
 (s/fdef get-by-account
         :args (s/cat :model (s/keys :req [:account.feed.logic/account])
                      :opts (s/* (s/cat :opt keyword? :val nat-int?)))
-        :ret (s/or :ok ::model :err empty?))
+        :ret (s/coll-of ::model))
 
 (defn get-by-account-and-feed [model]
   (log/info "get by account and feed" model)
@@ -76,7 +76,7 @@
 (s/fdef get-by-account-and-feed
         :args (s/cat :model (s/keys :req [:account.feed.logic/account
                                           :account.feed.logic/feed]))
-        :ret (s/or :ok ::model :err nil?))
+        :ret (s/or :ok ::model :not-found nil?))
 
 ;; create
 
@@ -91,10 +91,10 @@
 (defn domain-create-model->data-model [model]
   (let [now (t/now)
         {:account.feed.logic/keys [id version order-id insert-time update-time account feed]
-         :or                       {id          (UUID/randomUUID)
-                                    version     0
-                                    order-id    (tc/to-long now)
-                                    insert-time now}
+         :or                      {id          (UUID/randomUUID)
+                                   version     0
+                                   order-id    (tc/to-long now)
+                                   insert-time now}
          } model]
     {:account.feed/id          id
      :account.feed/version     version
@@ -138,4 +138,4 @@
 
 (s/fdef delete
         :args (s/cat :model (s/keys :req [:account.feed.logic/id]))
-        :ret (s/or :ok ::model :err nil?))
+        :ret int?)

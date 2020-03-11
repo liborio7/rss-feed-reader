@@ -15,12 +15,12 @@
 (s/def :feed.item.logic/version nat-int?)
 (s/def :feed.item.logic/order-id nat-int?)
 (s/def :feed.item.logic/insert-time inst?)
-(s/def :feed.item.logic/update-time inst?)
+(s/def :feed.item.logic/update-time (s/nilable inst?))
 (s/def :feed.item.logic/feed (s/keys :req [:feed.logic/id]))
 (s/def :feed.item.logic/title string?)
 (s/def :feed.item.logic/link uri?)
 (s/def :feed.item.logic/pub-time inst?)
-(s/def :feed.item.logic/description any?)
+(s/def :feed.item.logic/description (s/nilable string?))
 
 (s/def ::model (s/keys :req [:feed.item.logic/id
                              :feed.item.logic/version
@@ -168,7 +168,7 @@
          (reduce conj []))))
 
 (defn create-multi [models]
-  (log/info "create" (count models) "models")
+  (log/info "create" (count models) "model(s)")
   (let [errors (specs/errors ::create-multi-models models)]
     (if (not-empty errors)
       (do
