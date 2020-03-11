@@ -8,39 +8,40 @@
 (deftest should-get
   (testing "should get"
     ; given
-    (let [model (gen/generate (s/gen :rss-feed-reader.core.account.logic/model))]
-      (testing "by id"
-        (testing "and return nil"
-          ; when
-          (with-redefs [rss-feed-reader.core.account.dao/get-by-id (fn [_] nil)]
-            ; then
-            (let [actual (get-by-id model)]
-              (nil? actual))))
-        (testing "and return model"
-          ; when
-          (let [dao-model (gen/generate (s/gen :rss-feed-reader.core.account.dao/model))
-                expected (gen/generate (s/gen :rss-feed-reader.core.account.logic/model))]
-            (with-redefs [rss-feed-reader.core.account.dao/get-by-id (fn [_] dao-model)
-                          rss-feed-reader.core.account.logic/dao-model->logic-model (fn [_] expected)]
+    (testing "by"
+      (let [model (gen/generate (s/gen :rss-feed-reader.core.account.logic/model))]
+        (testing "id"
+          (testing "and return nil"
+            ; when
+            (with-redefs [rss-feed-reader.core.account.dao/get-by-id (fn [_] nil)]
               ; then
               (let [actual (get-by-id model)]
-                (= actual expected))))))
-      (testing "by username"
-        (testing "and return nil"
-          ; when
-          (with-redefs [rss-feed-reader.core.account.dao/get-by-username (fn [_] nil)]
-            ; then
-            (let [actual (get-by-id model)]
-              (nil? actual))))
-        (testing "and return model"
-          ; when
-          (let [dao-model (gen/generate (s/gen :rss-feed-reader.core.account.dao/model))
-                expected (gen/generate (s/gen :rss-feed-reader.core.account.logic/model))]
-            (with-redefs [rss-feed-reader.core.account.dao/get-by-username (fn [_] dao-model)
-                          rss-feed-reader.core.account.logic/dao-model->logic-model (fn [_] expected)]
+                (nil? actual))))
+          (testing "and return model"
+            ; when
+            (let [dao-model (gen/generate (s/gen :rss-feed-reader.core.account.dao/model))
+                  expected (gen/generate (s/gen :rss-feed-reader.core.account.logic/model))]
+              (with-redefs [rss-feed-reader.core.account.dao/get-by-id (fn [_] dao-model)
+                            rss-feed-reader.core.account.logic/dao-model->logic-model (fn [_] expected)]
+                ; then
+                (let [actual (get-by-id model)]
+                  (= actual expected))))))
+        (testing "username"
+          (testing "and return nil"
+            ; when
+            (with-redefs [rss-feed-reader.core.account.dao/get-by-username (fn [_] nil)]
               ; then
               (let [actual (get-by-id model)]
-                (= actual expected)))))))))
+                (nil? actual))))
+          (testing "and return model"
+            ; when
+            (let [dao-model (gen/generate (s/gen :rss-feed-reader.core.account.dao/model))
+                  expected (gen/generate (s/gen :rss-feed-reader.core.account.logic/model))]
+              (with-redefs [rss-feed-reader.core.account.dao/get-by-username (fn [_] dao-model)
+                            rss-feed-reader.core.account.logic/dao-model->logic-model (fn [_] expected)]
+                ; then
+                (let [actual (get-by-id model)]
+                  (= actual expected))))))))))
 
 (deftest should-create
   (testing "should create"

@@ -30,63 +30,64 @@
                           rss-feed-reader.core.feed.logic/dao-model->logic-model (fn [_] expected)]
               ; then
               (let [actual (get-all :starting-after starting-after :limit limit)]
-                (= actual expected)))))))
-    (testing "with default arguments"
-      ; given
-      (let [dao-models (gen/sample (s/gen :rss-feed-reader.core.feed.dao/model))
-            expected (gen/sample (s/gen :rss-feed-reader.core.feed.logic/model))]
-        (with-redefs [rss-feed-reader.core.feed.dao/get-all
-                      (fn [_ sa _ l]
-                        (let [default-starting-after 0
-                              default-limit 20]
-                          (cond
-                            (not= sa default-starting-after) (do-report {:type     :fail,
-                                                                         :message  "wrong starting after",
-                                                                         :expected default-starting-after,
-                                                                         :actual   sa})
-                            (not= l default-limit) (do-report {:type     :fail,
-                                                               :message  "wrong limit",
-                                                               :expected default-limit,
-                                                               :actual   l})
-                            :else dao-models)))
-                      rss-feed-reader.core.feed.logic/dao-model->logic-model (fn [_] expected)]
-          ; then
-          (let [actual (get-all)]
-            (= actual expected))))))
-  ; given
-  (let [model (gen/generate (s/gen :rss-feed-reader.core.feed.logic/model))]
-    (testing "by id"
-      (testing "and return nil"
-        ; when
-        (with-redefs [rss-feed-reader.core.feed.dao/get-by-id (fn [_] nil)]
-          ; then
-          (let [actual (get-by-id model)]
-            (nil? actual))))
-      (testing "and return model"
-        ; when
-        (let [dao-model (gen/generate (s/gen :rss-feed-reader.core.feed.dao/model))
-              expected (gen/generate (s/gen :rss-feed-reader.core.feed.logic/model))]
-          (with-redefs [rss-feed-reader.core.feed.dao/get-by-id (fn [_] dao-model)
+                (= actual expected))))))
+      (testing "with default arguments"
+        ; given
+        (let [dao-models (gen/sample (s/gen :rss-feed-reader.core.feed.dao/model))
+              expected (gen/sample (s/gen :rss-feed-reader.core.feed.logic/model))]
+          (with-redefs [rss-feed-reader.core.feed.dao/get-all
+                        (fn [_ sa _ l]
+                          (let [default-starting-after 0
+                                default-limit 20]
+                            (cond
+                              (not= sa default-starting-after) (do-report {:type     :fail,
+                                                                           :message  "wrong starting after",
+                                                                           :expected default-starting-after,
+                                                                           :actual   sa})
+                              (not= l default-limit) (do-report {:type     :fail,
+                                                                 :message  "wrong limit",
+                                                                 :expected default-limit,
+                                                                 :actual   l})
+                              :else dao-models)))
                         rss-feed-reader.core.feed.logic/dao-model->logic-model (fn [_] expected)]
             ; then
-            (let [actual (get-by-id model)]
+            (let [actual (get-all)]
               (= actual expected))))))
-    (testing "by link"
-      (testing "and return nil"
-        ; when
-        (with-redefs [rss-feed-reader.core.feed.dao/get-by-link (fn [_] nil)]
-          ; then
-          (let [actual (get-by-id model)]
-            (nil? actual))))
-      (testing "and return model"
-        ; when
-        (let [dao-model (gen/generate (s/gen :rss-feed-reader.core.feed.dao/model))
-              expected (gen/generate (s/gen :rss-feed-reader.core.feed.logic/model))]
-          (with-redefs [rss-feed-reader.core.feed.dao/get-by-link (fn [_] dao-model)
-                        rss-feed-reader.core.feed.logic/dao-model->logic-model (fn [_] expected)]
-            ; then
-            (let [actual (get-by-id model)]
-              (= actual expected))))))))
+    (testing "by"
+      ; given
+      (let [model (gen/generate (s/gen :rss-feed-reader.core.feed.logic/model))]
+        (testing "id"
+          (testing "and return nil"
+            ; when
+            (with-redefs [rss-feed-reader.core.feed.dao/get-by-id (fn [_] nil)]
+              ; then
+              (let [actual (get-by-id model)]
+                (nil? actual))))
+          (testing "and return model"
+            ; when
+            (let [dao-model (gen/generate (s/gen :rss-feed-reader.core.feed.dao/model))
+                  expected (gen/generate (s/gen :rss-feed-reader.core.feed.logic/model))]
+              (with-redefs [rss-feed-reader.core.feed.dao/get-by-id (fn [_] dao-model)
+                            rss-feed-reader.core.feed.logic/dao-model->logic-model (fn [_] expected)]
+                ; then
+                (let [actual (get-by-id model)]
+                  (= actual expected))))))
+        (testing "link"
+          (testing "and return nil"
+            ; when
+            (with-redefs [rss-feed-reader.core.feed.dao/get-by-link (fn [_] nil)]
+              ; then
+              (let [actual (get-by-id model)]
+                (nil? actual))))
+          (testing "and return model"
+            ; when
+            (let [dao-model (gen/generate (s/gen :rss-feed-reader.core.feed.dao/model))
+                  expected (gen/generate (s/gen :rss-feed-reader.core.feed.logic/model))]
+              (with-redefs [rss-feed-reader.core.feed.dao/get-by-link (fn [_] dao-model)
+                            rss-feed-reader.core.feed.logic/dao-model->logic-model (fn [_] expected)]
+                ; then
+                (let [actual (get-by-id model)]
+                  (= actual expected))))))))))
 
 (deftest should-create
   (testing "should create"
