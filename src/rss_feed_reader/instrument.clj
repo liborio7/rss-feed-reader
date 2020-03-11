@@ -1,5 +1,5 @@
 (ns rss-feed-reader.instrument
-  (:require [environ.core :refer [env]]
+  (:require [rss-feed-reader.env :refer [env]]
             [orchestra.spec.test :as orchestra]))
 
 (case (:environment env)

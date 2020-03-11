@@ -1,5 +1,5 @@
 (ns rss-feed-reader.jobs
-  (:require [environ.core :refer [env]]
+  (:require [rss-feed-reader.env :refer [env]]
             [overtone.at-at :as j]
             [rss-feed-reader.core.feed.item.job :as feed-item-job]))
 

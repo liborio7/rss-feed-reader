@@ -7,9 +7,29 @@ jobs:
 
     runs-on: ubuntu-latest
 
+    container: clojure
+
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
-    - uses: actions/checkout@v1
-    - name: Install dependencies
-      run: lein deps
-    - name: Run tests
-      run: lein test
+      - name: Check out repository code
+        uses: actions/checkout@v1
+
+      - name: Install dependencies
+        run: lein deps
+
+      - name: Run tests
+        run: lein test
+        env:
+          POSTGRES_HOST: ${{ secrets.POSTGRES_DB }}
+          POSTGRES_PORT: 5432

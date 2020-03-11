@@ -1,4 +1,4 @@
-{:host     "localhost"
- :database "rss_feed_reader"
- :user     "clojure"
- :password ""}
+{:postgres_host     "localhost"
+ :postgres_database "rss_feed_reader"
+ :postgres_user     "clojure"
+ :postgres_password ""}

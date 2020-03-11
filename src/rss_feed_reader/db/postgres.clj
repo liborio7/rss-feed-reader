@@ -1,20 +1,15 @@
 (ns rss-feed-reader.db.postgres
   (:require [clj-time.jdbc]
-            [environ.core :refer [env]]
-            [clojure.edn :as edn]
+            [rss-feed-reader.env :refer [env]]
             [ragtime.jdbc :as jdbc]
             [ragtime.repl :as repl]))
 
 (def connection
-  (let [props (->> (:environment env)
-                   (format "resources/%s/db.edn")
-                   (slurp)
-                   (edn/read-string))]
-    {:dbtype   "postgresql"
-     :dbname   (:database props)
-     :host     (:host props)
-     :user     (:user props)
-     :password (:password props)}))
+  {:dbtype   "postgresql"
+   :dbname   (:postgres_database env)
+   :host     (:postgres_host env)
+   :user     (:postgres_user env)
+   :password (:postgres_password env)})
 
 (def ragtime-config
   {:datastore  (jdbc/sql-database connection)
