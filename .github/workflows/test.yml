@@ -20,7 +20,6 @@ jobs:
     container:
       image: clojure
       env:
-        ENVIRONMENT: test
         POSTGRES_HOST: postgres
         POSTGRES_DB: postgres
         POSTGRES_USER: postgres
@@ -29,7 +28,5 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v1
-      - name: Run migrations
-        run: lein migrate
       - name: Run tests
         run: lein test
