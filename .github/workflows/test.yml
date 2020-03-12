@@ -8,6 +8,12 @@ jobs:
 
     container:
       image: clojure
+      env:
+        POSTGRES_HOST: postgres
+        POSTGRES_DB: postgres
+        POSTGRES_USER: postgres
+        POSTGRES_PASSWORD: postgres
+        POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }}
 
     services:
       postgres:
@@ -25,17 +31,5 @@ jobs:
         uses: actions/checkout@v1
       - name: Run migrations
         run: lein migrate
-        env:
-          POSTGRES_HOST: postgres
-          POSTGRES_DB: postgres
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }}
       - name: Run tests
         run: lein test
-        env:
-          POSTGRES_HOST: postgres
-          POSTGRES_DB: postgres
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }}

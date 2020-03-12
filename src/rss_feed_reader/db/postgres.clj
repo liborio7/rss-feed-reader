@@ -2,17 +2,14 @@
   (:require [clj-time.jdbc]
             [rss-feed-reader.env :refer [env]]
             [ragtime.jdbc :as jdbc]
-            [ragtime.repl :as repl]
-            [clojure.tools.logging :as log]))
+            [ragtime.repl :as repl]))
 
 (def connection
-  (let [props {:dbtype   "postgresql"
-               :dbname   (:postgres-db env)
-               :host     (:postgres-host env)
-               :user     (:postgres-user env)
-               :password (:postgres-password env)}]
-    (log/info "properties:" props)
-    props))
+  {:dbtype   "postgresql"
+   :dbname   (:postgres-db env)
+   :host     (:postgres-host env)
+   :user     (:postgres-user env)
+   :password (:postgres-password env)})
 
 (def ragtime-config
   {:datastore  (jdbc/sql-database connection)
