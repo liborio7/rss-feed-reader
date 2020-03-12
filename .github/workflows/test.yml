@@ -1,0 +1,42 @@
+name: Test
+
+on: [push]
+
+jobs:
+  checkout:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v1
+
+  test:
+    needs: checkout
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:11
+        env:
+          POSTGRES_DB: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    container:
+      image: clojure
+      env:
+        POSTGRES_HOST: postgres
+        POSTGRES_PORT: 5432
+        POSTGRES_DB: postgres
+        POSTGRES_USER: user
+        POSTGRES_PASSWORD: password
+
+    steps:
+      - name: Run migrations
+        run: lein migrate
+      - name: Run tests
+        run: lein test
