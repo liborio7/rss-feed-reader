@@ -68,7 +68,7 @@
           ; when
           (let [expected (gen/generate (s/gen :rss-feed-reader.core.job.logic/model))]
             (with-redefs [rss-feed-reader.utils.spec/errors (fn [_ _] {})
-                          rss-feed-reader.core.job.dao/get-by-name (fn [_] expected)]
+                          rss-feed-reader.core.job.logic/get-by-name (fn [_] expected)]
               ; then
               (let [actual (create create-model)]
                 (= actual expected)))))
@@ -77,7 +77,7 @@
           (let [dao-model (gen/generate (s/gen :rss-feed-reader.core.job.dao/model))
                 expected (gen/generate (s/gen :rss-feed-reader.core.job.logic/model))]
             (with-redefs [rss-feed-reader.utils.spec/errors (fn [_ _] {})
-                          rss-feed-reader.core.job.dao/get-by-name (fn [_] nil)
+                          rss-feed-reader.core.job.logic/get-by-name (fn [_] nil)
                           rss-feed-reader.core.job.logic/logic-create-model->dao-model (fn [_] dao-model)
                           rss-feed-reader.core.job.dao/insert (fn [_] dao-model)
                           rss-feed-reader.core.job.logic/dao-model->logic-model (fn [_] expected)]

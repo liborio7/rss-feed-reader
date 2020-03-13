@@ -27,7 +27,7 @@
 
 ;; conversion
 
-(defn data-model->domain-model [model]
+(defn dao-model->logic-model [model]
   (let [{:account.feed/keys [id version order_id account_id feed_id]} model
         account (account-logic/get-by-id {:account.logic/id account_id})
         feed (feed-logic/get-by-id {:feed.logic/id feed_id})]
@@ -42,9 +42,9 @@
 (defn get-by-id [model]
   (log/info "get by id" model)
   (let [id (:account.feed.logic/id model)
-        data-model (dao/get-by-id {:account.feed/id id})]
-    (if-not (nil? data-model)
-      (data-model->domain-model data-model))))
+        dao-model (dao/get-by-id {:account.feed/id id})]
+    (if-not (nil? dao-model)
+      (dao-model->logic-model dao-model))))
 
 (s/fdef get-by-id
         :args (s/cat :model (s/keys :req [:account.feed.logic/id]))
@@ -54,10 +54,10 @@
                                :or   {starting-after 0 limit 20}}]
   (log/info "get by account" model "starting after" starting-after "limit" limit)
   (let [account-id (:account.logic/id (:account.feed.logic/account model))
-        data-models (dao/get-by-account-id {:account.feed/account_id account-id}
+        dao-models (dao/get-by-account-id {:account.feed/account_id account-id}
                                            :starting-after starting-after
                                            :limit limit)]
-    (map data-model->domain-model data-models)))
+    (map dao-model->logic-model dao-models)))
 
 (s/fdef get-by-account
         :args (s/cat :model (s/keys :req [:account.feed.logic/account])
@@ -68,10 +68,10 @@
   (log/info "get by account and feed" model)
   (let [account-id (:account.logic/id (:account.feed.logic/account model))
         feed-id (:feed.logic/id (:account.feed.logic/feed model))
-        data-model (dao/get-by-account-id-and-feed-id {:account.feed/account_id account-id
+        dao-model (dao/get-by-account-id-and-feed-id {:account.feed/account_id account-id
                                                        :account.feed/feed_id    feed-id})]
-    (if-not (nil? data-model)
-      (data-model->domain-model data-model))))
+    (if-not (nil? dao-model)
+      (dao-model->logic-model dao-model))))
 
 (s/fdef get-by-account-and-feed
         :args (s/cat :model (s/keys :req [:account.feed.logic/account
@@ -88,7 +88,7 @@
                                     :account.feed.logic/insert-time
                                     :account.feed.logic/update-time]))
 
-(defn domain-create-model->data-model [model]
+(defn logic-create-model->dao-model [model]
   (let [now (t/now)
         {:account.feed.logic/keys [id version order-id insert-time update-time account feed]
          :or                      {id          (UUID/randomUUID)
@@ -111,7 +111,7 @@
       (do
         (log/warn "invalid request" errors)
         (throw (ex-info "invalid request"
-                        {:cause   :account-feed-domain-create
+                        {:cause   :account-feed-logic-create
                          :reason  :invalid-spec
                          :details errors})))
       (let [account (:account.feed.logic/account model)
@@ -121,9 +121,9 @@
         (if-not (nil? account-feed)
           account-feed
           (-> model
-              (domain-create-model->data-model)
+              (logic-create-model->dao-model)
               (dao/insert)
-              (data-model->domain-model)))))))
+              (dao-model->logic-model)))))))
 
 (s/fdef create
         :args (s/cat :model ::create-model)

@@ -130,7 +130,7 @@
                   {:keys [cause reason]} data]
               (case [cause reason]
                 [:feed-domain-create :invalid-spec] (r/bad-request {:code 1 :message "invalid request"})
-                [:account-feed-domain-create :invalid-spec] (r/bad-request {:code 1 :message "invalid request"})
+                [:account-feed-logic-create :invalid-spec] (r/bad-request {:code 1 :message "invalid request"})
                 (throw e)))))))))
 
 ;; delete

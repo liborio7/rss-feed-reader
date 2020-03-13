@@ -137,7 +137,7 @@
           (let [dao-model (gen/generate (s/gen :rss-feed-reader.core.feed.item.dao/model))
                 expected (gen/generate (s/gen :rss-feed-reader.core.feed.item.logic/model))]
             (with-redefs [rss-feed-reader.utils.spec/errors (fn [_ _] {})
-                          rss-feed-reader.core.feed.item.dao/get-by-link (fn [_] nil)
+                          rss-feed-reader.core.feed.item.logic/get-by-link (fn [_] nil)
                           rss-feed-reader.core.feed.item.logic/logic-create-model->dao-model (fn [_] dao-model)
                           rss-feed-reader.core.feed.item.dao/insert (fn [_] dao-model)
                           rss-feed-reader.core.feed.item.logic/dao-model->logic-model (fn [_] expected)]
