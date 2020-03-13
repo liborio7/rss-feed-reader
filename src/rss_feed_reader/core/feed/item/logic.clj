@@ -33,8 +33,8 @@
 
 ;; conversion
 
-(defn data-model->domain-model
-  ([model] (data-model->domain-model model (feed-logic/get-by-id {:feed.logic/id (:feed.item/feed_id model)})))
+(defn dao-model->logic-model
+  ([model] (dao-model->logic-model model (feed-logic/get-by-id {:feed.logic/id (:feed.item/feed_id model)})))
   ([model feed]
    (let [{:feed.item/keys [id version order_id title link pub-time description]} model]
      {:feed.item.logic/id          id
@@ -53,7 +53,7 @@
   (let [id (:feed.item.logic/id model)
         data-model (dao/get-by-id {:feed.item/id id})]
     (if-not (nil? data-model)
-      (data-model->domain-model data-model))))
+      (dao-model->logic-model data-model))))
 
 (s/fdef get-by-id
         :args (s/cat :model (s/keys :req [:feed.item.logic/id]))
@@ -67,7 +67,7 @@
         data-models (dao/get-by-feed-id {:feed.item/feed_id feed-id}
                                         :starting-after starting-after
                                         :limit limit)]
-    (map #(data-model->domain-model % feed) data-models)))
+    (map #(dao-model->logic-model % feed) data-models)))
 
 (s/fdef get-by-feed
         :args (s/cat :model (s/keys :req [:feed.item.logic/feed])
@@ -79,7 +79,7 @@
   (let [link (str (:feed.item.logic/link model))
         data-model (dao/get-by-link {:feed.item/link link})]
     (if-not (nil? data-model)
-      (data-model->domain-model data-model))))
+      (dao-model->logic-model data-model))))
 
 (s/fdef get-by-link
         :args (s/cat :model (s/keys :req [:feed.item.logic/link]))
@@ -98,7 +98,7 @@
                    (reduce conj []))
         data-models (dao/get-by-links links)]
     (->> data-models
-         (map #(data-model->domain-model % (get feeds-map (:feed.item/feed_id %))))
+         (map #(dao-model->logic-model % (get feeds-map (:feed.item/feed_id %))))
          (reduce conj []))))
 
 (s/fdef get-by-links
@@ -118,14 +118,14 @@
                                     :feed.item.logic/update-time
                                     :feed.item.logic/description]))
 
-(defn domain-create-model->data-model
-  ([model] (domain-create-model->data-model model (t/now)))
+(defn logic-create-model->dao-model
+  ([model] (logic-create-model->dao-model model (t/now)))
   ([model time]
    (let [{:feed.item.logic/keys [id version order-id insert-time update-time feed title link pub-time description]
-          :or                    {id          (UUID/randomUUID)
-                                  version     0
-                                  order-id    (tc/to-long (:feed.item.logic/pub-time model))
-                                  insert-time time}
+          :or                   {id          (UUID/randomUUID)
+                                 version     0
+                                 order-id    (tc/to-long (:feed.item.logic/pub-time model))
+                                 insert-time time}
           } model]
      {:feed.item/id          id
       :feed.item/version     version
@@ -145,47 +145,55 @@
       (do
         (log/warn "invalid request" errors)
         (throw (ex-info "invalid request"
-                        {:cause   :feed-item-domain-create
+                        {:cause   :feed-item-logic-create
                          :reason  :invalid-spec
                          :details errors})))
       (if-let [feed-item (get-by-link model)]
         feed-item
         (-> model
-            (domain-create-model->data-model)
+            (logic-create-model->dao-model)
             (dao/insert)
-            (data-model->domain-model))))))
+            (dao-model->logic-model))))))
 
 (s/fdef create
         :args (s/cat :model ::create-model)
         :ret ::model)
 
-(s/def ::create-multi-models (s/coll-of ::create-model))
-
-(defn domain-create-models->data-models [models]
+(defn logic-create-models->dao-models [models]
   (let [now (t/now)]
     (->> models
-         (map #(domain-create-model->data-model % now))
+         (map #(logic-create-model->dao-model % now))
          (reduce conj []))))
 
 (defn create-multi [models]
   (log/info "create" (count models) "model(s)")
-  (let [errors (specs/errors ::create-multi-models models)]
+  (let [errors (specs/errors (s/coll-of ::create-model) models)]
     (if (not-empty errors)
       (do
         (log/warn "invalid request" errors)
         (throw (ex-info "invalid request"
-                        {:cause   :feed-item-domain-create-multi
+                        {:cause   :feed-item-logic-create
                          :reason  :invalid-spec
                          :details errors})))
-      (let [feeds-map (->> models
-                           (group-by #(:feed.logic/id (:feed.item.logic/feed %)))
-                           (map (fn [[k _]] [k (feed-logic/get-by-id {:feed.logic/id k})]))
-                           (into {}))]
-        (->> models
-             (domain-create-models->data-models)
-             (dao/insert-multi)
-             (map #(data-model->domain-model % (get feeds-map (:feed.item/feed_id %))))
-             (reduce conj []))))))
+      (let [existing-models (get-by-links models)
+            existing-links (->> existing-models
+                                (map :feed.item.logic/link)
+                                (reduce conj []))
+            missing-models (->> models
+                                (remove (fn [feed-item]
+                                          (some #(= % (:feed.item.logic/link feed-item)) existing-links)
+                                          ))
+                                (reduce conj []))
+            missing-models-feeds-map (->> missing-models
+                                          (group-by #(:feed.logic/id (:feed.item.logic/feed %)))
+                                          (map (fn [[k _]] [k (feed-logic/get-by-id {:feed.logic/id k})]))
+                                          (into {}))]
+        (merge
+          existing-models
+          (->> missing-models
+               (logic-create-models->dao-models)
+               (dao/insert-multi)
+               (map #(dao-model->logic-model % (get missing-models-feeds-map (:feed.item/feed_id %))))))))))
 
 (s/fdef create-multi
         :args (s/cat :models ::create-multi-models)

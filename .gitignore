@@ -13,4 +13,5 @@ pom.xml.asc
 .hgignore
 .hg/
 /resources/dev
+/resources/test
 /logs

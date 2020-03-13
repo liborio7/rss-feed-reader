@@ -2,10 +2,7 @@
   (:require [clj-time.jdbc]
             [rss-feed-reader.env :refer [env]]
             [ragtime.jdbc :as jdbc]
-            [ragtime.repl :as repl]
-            [clojure.tools.logging :as log]))
-
-(log/info "env: " (into {} env))
+            [ragtime.repl :as repl]))
 
 (def connection
   {:dbtype   "postgresql"

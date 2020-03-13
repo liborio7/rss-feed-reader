@@ -77,8 +77,7 @@
 
 (s/fdef get-by-feed-id
         :args (s/cat :model (s/keys :req [:feed.item/feed_id])
-                     :starting-after :feed.item/order_id
-                     :limit (s/int-in 0 100))
+                     :opts (s/* (s/cat :opt keyword? :val nat-int?)))
         :ret (s/coll-of ::model))
 
 ;; insert
