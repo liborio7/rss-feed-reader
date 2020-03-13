@@ -46,7 +46,7 @@
                                                              :expected limit,
                                                              :actual   l})
                                   :else dao-models))
-                              rss-feed-reader.core.account.feed.logic/dao-model->logic-model (fn [_ _] expected)]
+                              rss-feed-reader.core.account.feed.logic/dao-model->logic-model (fn [_] expected)]
                   ; then
                   (let [actual (get-by-account model :starting-after starting-after :limit limit)]
                     (= actual expected))))))
@@ -68,7 +68,7 @@
                                                                      :expected default-limit,
                                                                      :actual   l})
                                   :else dao-models)))
-                            rss-feed-reader.core.account.feed.logic/dao-model->logic-model (fn [_ _] expected)]
+                            rss-feed-reader.core.account.feed.logic/dao-model->logic-model (fn [_] expected)]
                 ; then
                 (let [actual (get-by-account model)]
                   (= actual expected))))))
@@ -107,7 +107,7 @@
               (catch ExceptionInfo e
                 (let [data (ex-data e)
                       {:keys [cause reason details]} data]
-                  (is (= :account-logic-create cause))
+                  (is (= :account-feed-logic-create cause))
                   (is (= :invalid-spec reason))
                   (is (= specs-errors details)))))))
         (testing "and return existing model"

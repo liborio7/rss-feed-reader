@@ -14,9 +14,11 @@
 
 (s/def :account.handler/id uuid?)
 (s/def :account.handler/username string?)
+(s/def :account.handler/chat-id int?)
 
 (s/def ::model (s/cat :req [:account.handler/id
-                            :account.handler/username]))
+                            :account.handler/username
+                            :account.handler/chat-id]))
 
 (s/def :account.feed.handler/id uuid?)
 (s/def :account.feed.handler/link string?)
@@ -27,9 +29,10 @@
 ;; conversion
 
 (defn account-logic-model->handler-model [model]
-  (let [{:account.logic/keys [id username]} model]
+  (let [{:account.logic/keys [id username chat-id]} model]
     {:account.handler/id       id
-     :account.handler/username username}))
+     :account.handler/username username
+     :account.handler/chat-id  chat-id}))
 
 (defn account-feed-logic-model->handler-model [model]
   (let [{:account.feed.logic/keys [id feed]} model]
@@ -95,10 +98,12 @@
 
 (defn create-account [req]
   (let [req-body (:body req)
-        username (:username req-body)]
+        username (:username req-body)
+        chat-id (:chat_id req-body)]
     (log/info "create account" req-body)
     (try
-      (-> {:account.logic/username username}
+      (-> {:account.logic/username username
+           :account.logic/chat-id  chat-id}
           (account-logic/create)
           (account-logic-model->handler-model)
           (r/ok))

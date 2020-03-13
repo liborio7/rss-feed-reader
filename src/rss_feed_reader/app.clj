@@ -1,6 +1,5 @@
 (ns rss-feed-reader.app
-  (:require [rss-feed-reader.instrument]
-            [rss-feed-reader.jobs]
+  (:require [rss-feed-reader.jobs]
             [rss-feed-reader.env :refer [env]]
             [ring.adapter.jetty :as jetty]
             [ring.middleware.params :as params]

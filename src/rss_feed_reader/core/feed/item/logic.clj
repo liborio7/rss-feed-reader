@@ -143,7 +143,7 @@
   (let [errors (specs/errors ::create-model model)]
     (if (not-empty errors)
       (do
-        (log/warn "invalid request" errors)
+        (log/info "invalid request" errors)
         (throw (ex-info "invalid request"
                         {:cause   :feed-item-logic-create
                          :reason  :invalid-spec
@@ -170,7 +170,7 @@
   (let [errors (specs/errors (s/coll-of ::create-model) models)]
     (if (not-empty errors)
       (do
-        (log/warn "invalid request" errors)
+        (log/info "invalid request" errors)
         (throw (ex-info "invalid request"
                         {:cause   :feed-item-logic-create
                          :reason  :invalid-spec
@@ -188,7 +188,7 @@
                                           (group-by #(:feed.logic/id (:feed.item.logic/feed %)))
                                           (map (fn [[k _]] [k (feed-logic/get-by-id {:feed.logic/id k})]))
                                           (into {}))]
-        (merge
+        (concat
           existing-models
           (->> missing-models
                (logic-create-models->dao-models)
@@ -196,7 +196,7 @@
                (map #(dao-model->logic-model % (get missing-models-feeds-map (:feed.item/feed_id %))))))))))
 
 (s/fdef create-multi
-        :args (s/cat :models ::create-multi-models)
+        :args (s/cat :models (s/coll-of ::create-model))
         :ret (s/coll-of ::model))
 
 ;; delete

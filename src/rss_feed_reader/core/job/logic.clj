@@ -111,7 +111,7 @@
   (let [errors (specs/errors ::create-model model)]
     (if (not-empty errors)
       (do
-        (log/warn "invalid request" errors)
+        (log/info "invalid request" errors)
         (throw (ex-info "invalid request"
                         {:cause   :job-logic-create
                          :reason  :invalid-spec

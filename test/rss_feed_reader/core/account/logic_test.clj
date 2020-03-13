@@ -41,6 +41,22 @@
                             rss-feed-reader.core.account.logic/dao-model->logic-model (fn [_] expected)]
                 ; then
                 (let [actual (get-by-id model)]
+                  (= actual expected))))))
+        (testing "chat id"
+          (testing "and return nil"
+            ; when
+            (with-redefs [rss-feed-reader.core.account.dao/get-by-chat-id (fn [_] nil)]
+              ; then
+              (let [actual (get-by-id model)]
+                (nil? actual))))
+          (testing "and return model"
+            ; when
+            (let [dao-model (gen/generate (s/gen :rss-feed-reader.core.account.dao/model))
+                  expected (gen/generate (s/gen :rss-feed-reader.core.account.logic/model))]
+              (with-redefs [rss-feed-reader.core.account.logic/get-by-chat-id (fn [_] dao-model)
+                            rss-feed-reader.core.account.logic/dao-model->logic-model (fn [_] expected)]
+                ; then
+                (let [actual (get-by-id model)]
                   (= actual expected))))))))))
 
 (deftest should-create
@@ -68,7 +84,7 @@
           ; when
           (let [expected (gen/generate (s/gen :rss-feed-reader.core.account.logic/model))]
             (with-redefs [rss-feed-reader.utils.spec/errors (fn [_ _] {})
-                          rss-feed-reader.core.account.logic/get-by-username (fn [_] expected)]
+                          rss-feed-reader.core.account.logic/get-by-chat-id (fn [_] expected)]
               ; then
               (let [actual (create create-model)]
                 (= actual expected)))))
@@ -77,7 +93,7 @@
           (let [dao-model (gen/generate (s/gen :rss-feed-reader.core.account.dao/model))
                 expected (gen/generate (s/gen :rss-feed-reader.core.account.logic/model))]
             (with-redefs [rss-feed-reader.utils.spec/errors (fn [_ _] {})
-                          rss-feed-reader.core.account.dao/get-by-username (fn [_] nil)
+                          rss-feed-reader.core.account.dao/get-by-chat-id (fn [_] nil)
                           rss-feed-reader.core.account.logic/logic-create-model->dao-model (fn [_] dao-model)
                           rss-feed-reader.core.account.dao/insert (fn [_] dao-model)
                           rss-feed-reader.core.account.logic/dao-model->logic-model (fn [_] expected)]

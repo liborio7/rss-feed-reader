@@ -15,20 +15,23 @@
 (s/def :account.logic/insert-time inst?)
 (s/def :account.logic/update-time (s/nilable inst?))
 (s/def :account.logic/username string?)
+(s/def :account.logic/chat-id int?)
 
 (s/def ::model (s/keys :req [:account.logic/id
                              :account.logic/version
                              :account.logic/order-id
-                             :account.logic/username]))
+                             :account.logic/username
+                             :account.logic/chat-id]))
 
 ;; conversion
 
 (defn dao-model->logic-model [model]
-  (let [{:account/keys [id version order_id username]} model]
+  (let [{:account/keys [id version order_id username chat_id]} model]
     {:account.logic/id       id
      :account.logic/version  version
      :account.logic/order-id order_id
-     :account.logic/username username}))
+     :account.logic/username username
+     :account.logic/chat-id  chat_id}))
 
 ;; get
 
@@ -51,12 +54,24 @@
       (dao-model->logic-model dao-model))))
 
 (s/fdef get-by-username
-        :args (s/cat :model (s/keys :req [:account.logic/id]))
+        :args (s/cat :model (s/keys :req [:account.logic/username]))
+        :ret (s/or :ok ::model :not-found nil?))
+
+(defn get-by-chat-id [model]
+  (log/debug "get by chat id" model)
+  (let [chat-id (:account.logic/chat-id model)
+        dao-model (dao/get-by-chat-id {:account/chat_id chat-id})]
+    (if-not (nil? dao-model)
+      (dao-model->logic-model dao-model))))
+
+(s/fdef get-by-chat-id
+        :args (s/cat :model (s/keys :req [:account.logic/chat-id]))
         :ret (s/or :ok ::model :not-found nil?))
 
 ;; create
 
-(s/def ::create-model (s/keys :req [:account.logic/username]
+(s/def ::create-model (s/keys :req [:account.logic/username
+                                    :account.logic/chat-id]
                               :opt [:account.logic/id
                                     :account.logic/version
                                     :account.logic/order-id
@@ -65,7 +80,7 @@
 
 (defn logic-create-model->dao-model [model]
   (let [now (t/now)
-        {:account.logic/keys [id version order-id insert-time update-time username]
+        {:account.logic/keys [id version order-id insert-time update-time username chat-id]
          :or                 {id          (UUID/randomUUID)
                               version     0
                               order-id    (tc/to-long now)
@@ -76,19 +91,20 @@
      :account/order_id    order-id
      :account/insert_time insert-time
      :account/update_time update-time
-     :account/username    username}))
+     :account/username    username
+     :account/chat_id     chat-id}))
 
 (defn create [model]
   (log/info "create" model)
   (let [errors (specs/errors ::create-model model)]
     (if (not-empty errors)
       (do
-        (log/warn "invalid request" errors)
+        (log/info "invalid request" errors)
         (throw (ex-info "invalid request"
                         {:cause   :account-logic-create
                          :reason  :invalid-spec
                          :details errors})))
-      (if-let [account (get-by-username model)]
+      (if-let [account (get-by-chat-id model)]
         account
         (-> model
             (logic-create-model->dao-model)

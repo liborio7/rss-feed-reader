@@ -16,13 +16,15 @@
 (s/def :account/insert_time inst?)
 (s/def :account/update_time (s/nilable inst?))
 (s/def :account/username string?)
+(s/def :account/chat_id int?)
 
 (s/def ::model (s/keys :req [:account/id
                              :account/version
                              :account/order_id
                              :account/insert_time
                              :account/update_time
-                             :account/username]))
+                             :account/username
+                             :account/chat_id]))
 
 ;; get
 
@@ -38,6 +40,13 @@
 
 (s/fdef get-by-username
         :args (s/cat :model (s/keys :req [:account/username]))
+        :ret (s/or :ok ::model :not-found nil?))
+
+(defn get-by-chat-id [{:account/keys [chat_id]}]
+  (sql/get-by-query db table {:where [:= :account/chat_id chat_id]}))
+
+(s/fdef get-by-chat-id
+        :args (s/cat :model (s/keys :req [:account/chat_id]))
         :ret (s/or :ok ::model :not-found nil?))
 
 ;; insert
