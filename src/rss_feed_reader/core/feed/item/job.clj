@@ -33,19 +33,6 @@
        (map (fn [item] (reduce #(assoc %1 (:tag %2) (:content %2)) {} item)))
        (map #(->feed-item feed %))))
 
-(defn filter-existing-feed-items [feed-items]
-  (let [existing-links (->> feed-items
-                            (feed-item-logic/get-by-links)
-                            (map :feed.item.logic/link)
-                            (reduce conj []))]
-    (let [missing-links (->> feed-items
-                             (remove (fn [feed-item]
-                                       (some #(= % (:feed.item.logic/link feed-item)) existing-links)
-                                       ))
-                             (reduce conj []))]
-      (log/info "missing" (count missing-links) "link(s) out of" (count feed-items))
-      missing-links)))
-
 (defn- fetch-feeds [batch-size]
   (log/trace "fetch feeds with batch size of" batch-size)
   (loop [starting-after 0
@@ -55,12 +42,11 @@
           feeds-items-len (apply + (for [feed feeds]
                                      (->> feed
                                           (fetch-feed-items)
-                                          (filter-existing-feed-items)
                                           (feed-item-logic/create-multi)
                                           (count))))
           fetched-feeds (+ fetched-feeds feeds-len)
           last-feed-order-id (:feed.logic/order-id (last feeds))]
-      (log/trace feeds-items-len "feeds item(s) created")
+      (log/trace feeds-items-len "feeds item(s) fetched")
       (if (or (empty? feeds) (< feeds-len batch-size))
         {:feed.item.job/feeds-count fetched-feeds}
         (recur last-feed-order-id
