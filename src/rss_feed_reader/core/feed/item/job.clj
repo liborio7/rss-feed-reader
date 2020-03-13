@@ -36,7 +36,8 @@
 (defn- fetch-feeds [batch-size]
   (log/trace "fetch feeds with batch size of" batch-size)
   (loop [starting-after 0
-         fetched-feeds 0]
+         fetched-feeds 0
+         fetched-feeds-items 0]
     (let [feeds (feed-logic/get-all :starting-after starting-after :limit batch-size)
           feeds-len (count feeds)
           feeds-items-len (apply + (for [feed feeds]
@@ -45,12 +46,15 @@
                                           (feed-item-logic/create-multi)
                                           (count))))
           fetched-feeds (+ fetched-feeds feeds-len)
+          fetched-feeds-items (+ fetched-feeds-items feeds-items-len)
           last-feed-order-id (:feed.logic/order-id (last feeds))]
       (log/trace feeds-items-len "feeds item(s) fetched")
       (if (or (empty? feeds) (< feeds-len batch-size))
-        {:feed.item.job/feeds-count fetched-feeds}
+        {:feed.item.job/feeds-count       fetched-feeds
+         :feed.item.job/feeds-items-count fetched-feeds-items}
         (recur last-feed-order-id
-               fetched-feeds)))))
+               fetched-feeds
+               fetched-feeds-items)))))
 
 (defn run []
   (cid/set-new)

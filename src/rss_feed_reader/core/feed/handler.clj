@@ -32,12 +32,12 @@
 
 ;; conversion
 
-(defn feed-domain-model->api-model [model]
+(defn feed-logic-model->handler-model [model]
   (let [{:feed.logic/keys [id link]} model]
     {:feed.handler/id   id
      :feed.handler/link (str link)}))
 
-(defn feed-item-domain-model->api-model [model]
+(defn feed-item-logic-model->handler-model [model]
   (let [{:feed.item.logic/keys [id title link pub-time description]} model]
     {:feed.item.handler/id          id
      :feed.item.handler/title       title
@@ -63,7 +63,7 @@
                   20)
           feeds (feed-logic/get-all :starting-after starting-after
                                     :limit (+ 1 limit))]
-      (-> (r/paginate feeds feed-domain-model->api-model limit)
+      (-> (r/paginate feeds feed-logic-model->handler-model limit)
           (r/ok)))))
 
 (defn get-feed [req]
@@ -76,7 +76,7 @@
         (if (nil? feed)
           (r/not-found)
           (-> feed
-              (feed-domain-model->api-model)
+              (feed-logic-model->handler-model)
               (r/ok)))))))
 
 (defn get-feed-items [req]
@@ -102,7 +102,7 @@
                 feed-items (feed-item-logic/get-by-feed {:feed.item.logic/feed feed}
                                                         :starting-after starting-after
                                                         :limit (+ 1 limit))]
-            (-> (r/paginate feed-items feed-item-domain-model->api-model limit)
+            (-> (r/paginate feed-items feed-item-logic-model->handler-model limit)
                 (r/ok))))))))
 
 ;; post
@@ -114,13 +114,13 @@
     (try
       (-> {:feed.logic/link link}
           (feed-logic/create)
-          (feed-domain-model->api-model)
+          (feed-logic-model->handler-model)
           (r/ok))
       (catch ExceptionInfo e
         (let [data (ex-data e)
               {:keys [cause reason]} data]
           (case [cause reason]
-            [:feed-domain-create :invalid-spec] (r/bad-request {:code 1 :message "invalid request"})
+            [:feed-logic-create :invalid-spec] (r/bad-request {:code 1 :message "invalid request"})
             (throw e)))))))
 
 ;; delete

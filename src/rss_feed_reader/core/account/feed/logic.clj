@@ -40,7 +40,7 @@
 ;; get
 
 (defn get-by-id [model]
-  (log/info "get by id" model)
+  (log/debug "get by id" model)
   (let [id (:account.feed.logic/id model)
         dao-model (dao/get-by-id {:account.feed/id id})]
     (if-not (nil? dao-model)
@@ -52,7 +52,7 @@
 
 (defn get-by-account [model & {:keys [starting-after limit]
                                :or   {starting-after 0 limit 20}}]
-  (log/info "get by account" model "starting after" starting-after "limit" limit)
+  (log/debug "get by account" model "starting after" starting-after "limit" limit)
   (let [account-id (:account.logic/id (:account.feed.logic/account model))
         dao-models (dao/get-by-account-id {:account.feed/account_id account-id}
                                            :starting-after starting-after
@@ -65,7 +65,7 @@
         :ret (s/coll-of ::model))
 
 (defn get-by-account-and-feed [model]
-  (log/info "get by account and feed" model)
+  (log/debug "get by account and feed" model)
   (let [account-id (:account.logic/id (:account.feed.logic/account model))
         feed-id (:feed.logic/id (:account.feed.logic/feed model))
         dao-model (dao/get-by-account-id-and-feed-id {:account.feed/account_id account-id

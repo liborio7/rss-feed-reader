@@ -35,7 +35,7 @@
 
 (defn get-all [& {:keys [starting-after limit]
                   :or   {starting-after 0 limit 20}}]
-  (log/info "get all starting after" starting-after "limit" limit)
+  (log/debug "get all starting after" starting-after "limit" limit)
   (let [dao-models (dao/get-all :starting-after starting-after :limit limit)]
     (map dao-model->logic-model dao-models)))
 
@@ -44,7 +44,7 @@
         :ret (s/coll-of ::model))
 
 (defn get-by-id [model]
-  (log/info "get by id" model)
+  (log/debug "get by id" model)
   (let [id (:feed.logic/id model)
         dao-model (dao/get-by-id {:feed/id id})]
     (if-not (nil? dao-model)
@@ -55,7 +55,7 @@
         :ret (s/or :ok ::model :not-found nil?))
 
 (defn get-by-link [model]
-  (log/info "get by link" model)
+  (log/debug "get by link" model)
   (let [link (str (:feed.logic/link model))
         dao-model (dao/get-by-link {:feed/link link})]
     (if-not (nil? dao-model)

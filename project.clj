@@ -36,7 +36,9 @@
              :dev        {:env            {:environment "dev"}
                           :resource-paths ["resources/dev"]
                           :dependencies   [[org.clojure/test.check "0.9.0"]
-                                           [orchestra "2018.12.06-2"]]}
+                                           [orchestra "2018.12.06-2"]]
+                          :injections     [(require 'orchestra.spec.test)
+                                           (orchestra.spec.test/instrument)]}
 
              :test       {:env            {:environment "test"}
                           :resource-paths ["resources/test"]

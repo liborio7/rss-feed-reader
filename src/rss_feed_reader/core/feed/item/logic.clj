@@ -49,7 +49,7 @@
 ;; get
 
 (defn get-by-id [model]
-  (log/info "get by id" model)
+  (log/debug "get by id" model)
   (let [id (:feed.item.logic/id model)
         data-model (dao/get-by-id {:feed.item/id id})]
     (if-not (nil? data-model)
@@ -61,7 +61,7 @@
 
 (defn get-by-feed [model & {:keys [starting-after limit]
                             :or   {starting-after 0 limit 20}}]
-  (log/info "get by feed" model "starting-after" starting-after "limit" limit)
+  (log/debug "get by feed" model "starting-after" starting-after "limit" limit)
   (let [feed (:feed.item.logic/feed model)
         feed-id (:feed.logic/id feed)
         data-models (dao/get-by-feed-id {:feed.item/feed_id feed-id}
@@ -75,7 +75,7 @@
         :ret (s/or :ok ::model :err empty?))
 
 (defn get-by-link [model]
-  (log/info "get by link" model)
+  (log/debug "get by link" model)
   (let [link (str (:feed.item.logic/link model))
         data-model (dao/get-by-link {:feed.item/link link})]
     (if-not (nil? data-model)
@@ -86,7 +86,7 @@
         :ret (s/or :ok ::model :err nil?))
 
 (defn get-by-links [models]
-  (log/info "get by" (count models) "links")
+  (log/debug "get by" (count models) "links")
   (let [feeds-map (->> models
                        (group-by #(:feed.logic/id (:feed.item.logic/feed %)))
                        (map (fn [[k _]] [k (feed-logic/get-by-id {:feed.logic/id k})]))

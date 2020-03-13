@@ -33,7 +33,7 @@
 ;; get
 
 (defn get-by-id [model]
-  (log/info "get by id" model)
+  (log/debug "get by id" model)
   (let [id (:account.logic/id model)
         dao-model (dao/get-by-id {:account/id id})]
     (if-not (nil? dao-model)
@@ -44,7 +44,7 @@
         :ret (s/or :ok ::model :not-found nil?))
 
 (defn get-by-username [model]
-  (log/info "get by username" model)
+  (log/debug "get by username" model)
   (let [username (:account.logic/username model)
         dao-model (dao/get-by-username {:account/username username})]
     (if-not (nil? dao-model)

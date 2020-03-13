@@ -26,12 +26,12 @@
 
 ;; conversion
 
-(defn account-domain-model->api-model [model]
+(defn account-logic-model->handler-model [model]
   (let [{:account.logic/keys [id username]} model]
     {:account.handler/id       id
      :account.handler/username username}))
 
-(defn account-feed-domain-model->api-model [model]
+(defn account-feed-logic-model->handler-model [model]
   (let [{:account.feed.logic/keys [id feed]} model]
     {:account.feed.handler/id   id
      :account.feed.handler/link (str (:feed.logic/link feed))}))
@@ -48,7 +48,7 @@
         (if (nil? account)
           (r/not-found)
           (-> account
-              (account-domain-model->api-model)
+              (account-logic-model->handler-model)
               (r/ok)))))))
 
 (defn get-account-feeds [req]
@@ -74,7 +74,7 @@
                 account-feeds (account-feed-logic/get-by-account {:account.feed.logic/account account}
                                                                  :starting-after starting-after
                                                                  :limit (+ 1 limit))]
-            (-> (r/paginate account-feeds account-feed-domain-model->api-model limit)
+            (-> (r/paginate account-feeds account-feed-logic-model->handler-model limit)
                 (r/ok))))))))
 
 (defn get-account-feed [req]
@@ -88,7 +88,7 @@
         (if (not= account-id (:account.logic/id (:account.feed.logic/account account-feed)))
           (r/not-found)
           (-> account-feed
-              (account-feed-domain-model->api-model)
+              (account-feed-logic-model->handler-model)
               (r/ok)))))))
 
 ;; post
@@ -100,7 +100,7 @@
     (try
       (-> {:account.logic/username username}
           (account-logic/create)
-          (account-domain-model->api-model)
+          (account-logic-model->handler-model)
           (r/ok))
       (catch ExceptionInfo e
         (let [data (ex-data e)
@@ -123,13 +123,13 @@
             (-> {:account.feed.logic/account account
                  :account.feed.logic/feed    feed}
                 (account-feed-logic/create)
-                (account-feed-domain-model->api-model)
+                (account-feed-logic-model->handler-model)
                 (r/ok)))
           (catch ExceptionInfo e
             (let [data (ex-data e)
                   {:keys [cause reason]} data]
               (case [cause reason]
-                [:feed-domain-create :invalid-spec] (r/bad-request {:code 1 :message "invalid request"})
+                [:feed-logic-create :invalid-spec] (r/bad-request {:code 1 :message "invalid request"})
                 [:account-feed-logic-create :invalid-spec] (r/bad-request {:code 1 :message "invalid request"})
                 (throw e)))))))))
 
