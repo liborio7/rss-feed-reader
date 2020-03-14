@@ -88,23 +88,25 @@
 (defn logic-create-model->dao-model [model]
   (let [now (t/now)
         {:job.logic/keys [id version order-id insert-time update-time name execution-payload description enabled locked]
-         :or              {id          (UUID/randomUUID)
-                           version     0
-                           order-id    (tc/to-long now)
-                           insert-time now
-                           enabled     true
-                           locked      false}
+         :or             {id          (UUID/randomUUID)
+                          version     0
+                          order-id    (tc/to-long now)
+                          insert-time now
+                          enabled     true
+                          locked      false}
          } model]
-    {:job/id                id
-     :job/version           version
-     :job/order_id          order-id
-     :job/insert_time       insert-time
-     :job/update_time       update-time
-     :job/name              name
-     :job/execution_payload execution-payload
-     :job/description       description
-     :job/enabled           enabled
-     :job/locked            locked}))
+    {:job/id                     id
+     :job/version                version
+     :job/order_id               order-id
+     :job/insert_time            insert-time
+     :job/update_time            update-time
+     :job/name                   name
+     :job/execution_payload      execution-payload
+     :job/last_execution_payload nil
+     :job/last_execution_ms      nil
+     :job/description            description
+     :job/enabled                enabled
+     :job/locked                 locked}))
 
 (defn create [model]
   (log/info "create" model)
@@ -132,7 +134,7 @@
 (defn track_last_execution [model]
   (log/info "track last execution" model)
   (let [{:job.logic/keys [id version update-time last-execution-payload last-execution-ms]
-         :or              {update-time (t/now)}} model]
+         :or             {update-time (t/now)}} model]
     (-> {:job/id                     id
          :job/version                version
          :job/update_time            update-time
@@ -152,7 +154,7 @@
 (defn lock [model]
   (log/info "lock" model)
   (let [{:job.logic/keys [id version update-time]
-         :or              {update-time (t/now)}} model]
+         :or             {update-time (t/now)}} model]
     (-> {:job/id          id
          :job/version     version
          :job/update_time update-time
@@ -169,7 +171,7 @@
 (defn unlock [model]
   (log/info "unlock" model)
   (let [{:job.logic/keys [id version update-time]
-         :or              {update-time (t/now)}} model]
+         :or             {update-time (t/now)}} model]
     (-> {:job/id          id
          :job/version     version
          :job/update_time update-time
