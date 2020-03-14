@@ -16,7 +16,7 @@
    :feed.item.logic/pub-time    (dates/parse-date (first (:pubDate item)) date-formatter)
    :feed.item.logic/description (first (:description item))})
 
-(defn filter-existing-feed-items [feed-items]
+(defn- filter-existing-feed-items [feed-items]
   (let [existing-links (->> feed-items
                             (feed-item-logic/get-by-links)
                             (map :feed.item.logic/link)

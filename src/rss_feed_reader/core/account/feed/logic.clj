@@ -27,7 +27,7 @@
 
 ;; conversion
 
-(defn dao-model->logic-model [model]
+(defn- dao-model->logic-model [model]
   (let [{:account.feed/keys [id version order_id account_id feed_id]} model
         account (account-logic/get-by-id {:account.logic/id account_id})
         feed (feed-logic/get-by-id {:feed.logic/id feed_id})]
@@ -88,7 +88,7 @@
                                     :account.feed.logic/insert-time
                                     :account.feed.logic/update-time]))
 
-(defn logic-create-model->dao-model [model]
+(defn- logic-create-model->dao-model [model]
   (let [now (t/now)
         {:account.feed.logic/keys [id version order-id insert-time update-time account feed]
          :or                      {id          (UUID/randomUUID)

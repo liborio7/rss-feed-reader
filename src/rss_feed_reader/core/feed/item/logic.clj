@@ -33,7 +33,7 @@
 
 ;; conversion
 
-(defn dao-model->logic-model
+(defn- dao-model->logic-model
   ([model] (dao-model->logic-model model (feed-logic/get-by-id {:feed.logic/id (:feed.item/feed_id model)})))
   ([model feed]
    (let [{:feed.item/keys [id version order_id title link pub-time description]} model]
@@ -118,7 +118,7 @@
                                     :feed.item.logic/update-time
                                     :feed.item.logic/description]))
 
-(defn logic-create-model->dao-model
+(defn- logic-create-model->dao-model
   ([model] (logic-create-model->dao-model model (t/now)))
   ([model time]
    (let [{:feed.item.logic/keys [id version order-id insert-time update-time feed title link pub-time description]
@@ -159,7 +159,7 @@
         :args (s/cat :model ::create-model)
         :ret ::model)
 
-(defn logic-create-models->dao-models [models]
+(defn- logic-create-models->dao-models [models]
   (let [now (t/now)]
     (->> models
          (map #(logic-create-model->dao-model % now))

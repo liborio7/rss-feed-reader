@@ -47,7 +47,7 @@
         {:telegram.message/keys []} body-result]
     {}))
 
-(defn body->models [body]
+(defn- body->models [body]
   (let [body-result (:result (json/parse-string body))]
 
     ))

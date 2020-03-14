@@ -28,13 +28,13 @@
 
 ;; conversion
 
-(defn account-logic-model->handler-model [model]
+(defn- account-logic-model->handler-model [model]
   (let [{:account.logic/keys [id username chat-id]} model]
     {:account.handler/id       id
      :account.handler/username username
      :account.handler/chat-id  chat-id}))
 
-(defn account-feed-logic-model->handler-model [model]
+(defn- account-feed-logic-model->handler-model [model]
   (let [{:account.feed.logic/keys [id feed]} model]
     {:account.feed.handler/id   id
      :account.feed.handler/link (str (:feed.logic/link feed))}))

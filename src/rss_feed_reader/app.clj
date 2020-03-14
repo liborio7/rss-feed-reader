@@ -15,7 +15,7 @@
             [rss-feed-reader.core.feed.router :as feed]
             [rss-feed-reader.core.account.router :as account]))
 
-(defn wrap-logger [handler]
+(defn- wrap-logger [handler]
   (fn [request]
     (let [{:keys [uri request-method]} request
           from (tc/to-long (t/now))]
@@ -27,7 +27,7 @@
         (log/info "[RES]" (format "%dms" (- to from)) status)
         response))))
 
-(defn wrap-server-error [handler]
+(defn- wrap-server-error [handler]
   (fn [request]
     (try
       (handler request)
@@ -35,7 +35,7 @@
         (log/error e)
         (r/server-error {:cid (cid/get)})))))
 
-(defn wrap-json-response-body [handler]
+(defn- wrap-json-response-body [handler]
   (fn [request]
     (let [response (handler request)
           resp-body (:body response)]

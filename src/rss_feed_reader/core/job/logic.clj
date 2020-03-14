@@ -35,7 +35,7 @@
 
 ;; conversion
 
-(defn dao-model->logic-model [model]
+(defn- dao-model->logic-model [model]
   (let [{:job/keys [id version order_id name execution_payload last_execution_payload last_execution_ms description enabled locked]} model]
     {:job.logic/id                     id
      :job.logic/version                version
@@ -85,7 +85,7 @@
                                     :job.logic/enabled
                                     :job.logic/locked]))
 
-(defn logic-create-model->dao-model [model]
+(defn- logic-create-model->dao-model [model]
   (let [now (t/now)
         {:job.logic/keys [id version order-id insert-time update-time name execution-payload description enabled locked]
          :or             {id          (UUID/randomUUID)

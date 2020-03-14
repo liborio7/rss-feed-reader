@@ -4,7 +4,7 @@
             [clojure.java.jdbc :as jdbc]
             [honeysql.core :as q]))
 
-(defn default-opts [table]
+(defn- default-opts [table]
   {:qualifier (clojure.string/replace (name table) "_" ".")})
 
 ;; select

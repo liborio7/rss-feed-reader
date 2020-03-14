@@ -25,7 +25,7 @@
 
 ;; conversion
 
-(defn dao-model->logic-model [model]
+(defn- dao-model->logic-model [model]
   (let [{:account/keys [id version order_id username chat_id]} model]
     {:account.logic/id       id
      :account.logic/version  version
@@ -78,7 +78,7 @@
                                     :account.logic/insert-time
                                     :account.logic/update-time]))
 
-(defn logic-create-model->dao-model [model]
+(defn- logic-create-model->dao-model [model]
   (let [now (t/now)
         {:account.logic/keys [id version order-id insert-time update-time username chat-id]
          :or                 {id          (UUID/randomUUID)
