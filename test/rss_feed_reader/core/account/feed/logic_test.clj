@@ -25,7 +25,7 @@
                             rss-feed-reader.core.account.feed.logic/dao-model->logic-model (fn [_] expected)]
                 ; then
                 (let [actual (get-by-id model)]
-                  (= actual expected))))))
+                  (is (= actual expected)))))))
         (testing "account"
           (testing "with provided arguments"
             ; given
@@ -33,7 +33,8 @@
                   limit (gen/generate (s/gen nat-int?))]
               ; when
               (let [dao-models (gen/sample (s/gen :rss-feed-reader.core.feed.item.dao/model))
-                    expected (gen/sample (s/gen :rss-feed-reader.core.feed.item.logic/model))]
+                    logic-model (gen/generate (s/gen :rss-feed-reader.core.feed.item.logic/model))
+                    expected (repeat (count dao-models) logic-model)]
                 (with-redefs [rss-feed-reader.core.account.feed.dao/get-by-account-id
                               (fn [_ _ sa _ l]
                                 (cond
@@ -46,14 +47,15 @@
                                                              :expected limit,
                                                              :actual   l})
                                   :else dao-models))
-                              rss-feed-reader.core.account.feed.logic/dao-model->logic-model (fn [_] expected)]
+                              rss-feed-reader.core.account.feed.logic/dao-model->logic-model (fn [_] logic-model)]
                   ; then
                   (let [actual (get-by-account model :starting-after starting-after :limit limit)]
-                    (= actual expected))))))
+                    (is (= actual expected)))))))
           (testing "with default arguments"
             ; given
             (let [dao-models (gen/sample (s/gen :rss-feed-reader.core.feed.item.dao/model))
-                  expected (gen/sample (s/gen :rss-feed-reader.core.feed.item.logic/model))]
+                  logic-model (gen/generate (s/gen :rss-feed-reader.core.feed.item.logic/model))
+                  expected (repeat (count dao-models) logic-model)]
               (with-redefs [rss-feed-reader.core.account.feed.dao/get-by-account-id
                             (fn [_ _ sa _ l]
                               (let [default-starting-after 0
@@ -68,16 +70,16 @@
                                                                      :expected default-limit,
                                                                      :actual   l})
                                   :else dao-models)))
-                            rss-feed-reader.core.account.feed.logic/dao-model->logic-model (fn [_] expected)]
+                            rss-feed-reader.core.account.feed.logic/dao-model->logic-model (fn [_] logic-model)]
                 ; then
                 (let [actual (get-by-account model)]
-                  (= actual expected))))))
+                  (is (= actual expected)))))))
         (testing "account and feed"
           (testing "and return nil"
             ; when
             (with-redefs [rss-feed-reader.core.account.feed.dao/get-by-account-id-and-feed-id (fn [_] nil)]
               ; then
-              (let [actual (get-by-id model)]
+              (let [actual (get-by-account-and-feed model)]
                 (nil? actual))))
           (testing "and return model"
             ; when
@@ -86,8 +88,8 @@
               (with-redefs [rss-feed-reader.core.account.feed.dao/get-by-account-id-and-feed-id (fn [_] dao-model)
                             rss-feed-reader.core.account.feed.logic/dao-model->logic-model (fn [_] expected)]
                 ; then
-                (let [actual (get-by-id model)]
-                  (= actual expected))))))))))
+                (let [actual (get-by-account-and-feed model)]
+                  (is (= actual expected)))))))))))
 
 (deftest should-create
   (testing "should create"
@@ -117,7 +119,7 @@
                           rss-feed-reader.core.account.feed.logic/get-by-account-and-feed (fn [_] expected)]
               ; then
               (let [actual (create create-model)]
-                (= actual expected)))))
+                (is (= actual expected))))))
         (testing "and return new model"
           ; when
           (let [dao-model (gen/generate (s/gen :rss-feed-reader.core.account.feed.dao/model))
@@ -129,7 +131,7 @@
                           rss-feed-reader.core.account.feed.logic/dao-model->logic-model (fn [_] expected)]
               ; then
               (let [actual (create create-model)]
-                (= actual expected)))))))))
+                (is (= actual expected))))))))))
 
 (deftest should-delete
   (testing "should delete"

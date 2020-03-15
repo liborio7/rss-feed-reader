@@ -25,13 +25,13 @@
                             rss-feed-reader.core.job.logic/dao-model->logic-model (fn [_] expected)]
                 ; then
                 (let [actual (get-by-id model)]
-                  (= actual expected))))))
+                  (is (= actual expected)))))))
         (testing "name"
           (testing "and return nil"
             ; when
             (with-redefs [rss-feed-reader.core.job.dao/get-by-name (fn [_] nil)]
               ; then
-              (let [actual (get-by-id model)]
+              (let [actual (get-by-name model)]
                 (nil? actual))))
           (testing "and return model"
             ; when
@@ -40,8 +40,8 @@
               (with-redefs [rss-feed-reader.core.job.dao/get-by-name (fn [_] dao-model)
                             rss-feed-reader.core.job.logic/dao-model->logic-model (fn [_] expected)]
                 ; then
-                (let [actual (get-by-id model)]
-                  (= actual expected))))))))))
+                (let [actual (get-by-name model)]
+                  (is (= actual expected)))))))))))
 
 (deftest should-create
   (testing "should create"
@@ -71,7 +71,7 @@
                           rss-feed-reader.core.job.logic/get-by-name (fn [_] expected)]
               ; then
               (let [actual (create create-model)]
-                (= actual expected)))))
+                (is (= actual expected))))))
         (testing "and return new model"
           ; when
           (let [dao-model (gen/generate (s/gen :rss-feed-reader.core.job.dao/model))
@@ -83,4 +83,4 @@
                           rss-feed-reader.core.job.logic/dao-model->logic-model (fn [_] expected)]
               ; then
               (let [actual (create create-model)]
-                (= actual expected)))))))))
+                (is (= actual expected))))))))))

@@ -35,6 +35,15 @@
         :args (s/cat :model (s/keys :req [:account/id]))
         :ret (s/or :ok ::model :not-found nil?))
 
+(defn get-by-ids [models]
+  (if (empty? models)
+    []
+    (sql/get-multi-by-id db table :account/id models)))
+
+(s/fdef get-by-ids
+        :args (s/cat :models (s/coll-of (s/keys :req [:account/id])))
+        :ret (s/coll-of ::model))
+
 (defn get-by-username [{:account/keys [username]}]
   (sql/get-by-query db table {:where [:= :account/username username]}))
 

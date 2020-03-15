@@ -77,11 +77,10 @@
 (defn- logic-create-model->dao-model [model]
   (let [now (t/now)
         {:feed.logic/keys [id version order-id insert-time update-time link]
-         :or               {id          (UUID/randomUUID)
-                            version     0
-                            order-id    (tc/to-long now)
-                            insert-time now
-                            }
+         :or              {id          (UUID/randomUUID)
+                           version     0
+                           order-id    (tc/to-long now)
+                           insert-time now}
          } model]
     {:feed/id          id
      :feed/version     version
