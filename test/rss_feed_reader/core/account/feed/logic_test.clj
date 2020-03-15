@@ -74,6 +74,54 @@
                 ; then
                 (let [actual (get-by-account model)]
                   (is (= actual expected)))))))
+        (testing "feed"
+          (testing "with provided arguments"
+            ; given
+            (let [starting-after (gen/generate (s/gen nat-int?))
+                  limit (gen/generate (s/gen nat-int?))]
+              ; when
+              (let [dao-models (gen/sample (s/gen :rss-feed-reader.core.feed.item.dao/model))
+                    logic-model (gen/generate (s/gen :rss-feed-reader.core.feed.item.logic/model))
+                    expected (repeat (count dao-models) logic-model)]
+                (with-redefs [rss-feed-reader.core.account.feed.dao/get-by-feed-id
+                              (fn [_ _ sa _ l]
+                                (cond
+                                  (not= sa starting-after) (do-report {:type     :fail,
+                                                                       :message  "wrong starting after",
+                                                                       :expected starting-after,
+                                                                       :actual   sa})
+                                  (not= l limit) (do-report {:type     :fail,
+                                                             :message  "wrong limit",
+                                                             :expected limit,
+                                                             :actual   l})
+                                  :else dao-models))
+                              rss-feed-reader.core.account.feed.logic/dao-model->logic-model (fn [_] logic-model)]
+                  ; then
+                  (let [actual (get-by-feed model :starting-after starting-after :limit limit)]
+                    (is (= actual expected)))))))
+          (testing "with default arguments"
+            ; given
+            (let [dao-models (gen/sample (s/gen :rss-feed-reader.core.feed.item.dao/model))
+                  logic-model (gen/generate (s/gen :rss-feed-reader.core.feed.item.logic/model))
+                  expected (repeat (count dao-models) logic-model)]
+              (with-redefs [rss-feed-reader.core.account.feed.dao/get-by-feed-id
+                            (fn [_ _ sa _ l]
+                              (let [default-starting-after 0
+                                    default-limit 20]
+                                (cond
+                                  (not= sa default-starting-after) (do-report {:type     :fail,
+                                                                               :message  "wrong starting after",
+                                                                               :expected default-starting-after,
+                                                                               :actual   sa})
+                                  (not= l default-limit) (do-report {:type     :fail,
+                                                                     :message  "wrong limit",
+                                                                     :expected default-limit,
+                                                                     :actual   l})
+                                  :else dao-models)))
+                            rss-feed-reader.core.account.feed.logic/dao-model->logic-model (fn [_] logic-model)]
+                ; then
+                (let [actual (get-by-feed model)]
+                  (is (= actual expected)))))))
         (testing "account and feed"
           (testing "and return nil"
             ; when
