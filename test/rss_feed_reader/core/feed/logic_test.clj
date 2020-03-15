@@ -57,7 +57,8 @@
               (is (= actual expected)))))))
     (testing "by"
       ; given
-      (let [model (gen/generate (s/gen :rss-feed-reader.core.feed.logic/model))]
+      (let [model (gen/generate (s/gen :rss-feed-reader.core.feed.logic/model))
+            models (gen/sample (s/gen :rss-feed-reader.core.feed.logic/model))]
         (testing "id"
           (testing "and return nil"
             ; when
@@ -73,6 +74,17 @@
                             rss-feed-reader.core.feed.logic/dao-model->logic-model (fn [_] expected)]
                 ; then
                 (let [actual (get-by-id model)]
+                  (is (= actual expected)))))))
+        (testing "ids"
+          (testing "and return models"
+            ; when
+            (let [dao-models (gen/sample (s/gen :rss-feed-reader.core.feed.dao/model))
+                  logic-model (gen/sample (s/gen :rss-feed-reader.core.feed.logic/model))
+                  expected (repeat (count dao-models) logic-model)]
+              (with-redefs [rss-feed-reader.core.feed.dao/get-by-ids (fn [_] dao-models)
+                            rss-feed-reader.core.feed.logic/dao-model->logic-model (fn [_] logic-model)]
+                ; then
+                (let [actual (get-by-ids models)]
                   (is (= actual expected)))))))
         (testing "link"
           (testing "and return nil"

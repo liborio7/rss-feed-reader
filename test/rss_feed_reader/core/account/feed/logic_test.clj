@@ -47,7 +47,7 @@
                                                              :expected limit,
                                                              :actual   l})
                                   :else dao-models))
-                              rss-feed-reader.core.account.feed.logic/dao-model->logic-model (fn [_] logic-model)]
+                              rss-feed-reader.core.account.feed.logic/dao-model->logic-model (fn [_ _ _] logic-model)]
                   ; then
                   (let [actual (get-by-account model :starting-after starting-after :limit limit)]
                     (is (= actual expected)))))))
@@ -70,7 +70,7 @@
                                                                      :expected default-limit,
                                                                      :actual   l})
                                   :else dao-models)))
-                            rss-feed-reader.core.account.feed.logic/dao-model->logic-model (fn [_] logic-model)]
+                            rss-feed-reader.core.account.feed.logic/dao-model->logic-model (fn [_ _ _] logic-model)]
                 ; then
                 (let [actual (get-by-account model)]
                   (is (= actual expected)))))))
@@ -95,7 +95,7 @@
                                                              :expected limit,
                                                              :actual   l})
                                   :else dao-models))
-                              rss-feed-reader.core.account.feed.logic/dao-model->logic-model (fn [_] logic-model)]
+                              rss-feed-reader.core.account.feed.logic/dao-model->logic-model (fn [_ _ _] logic-model)]
                   ; then
                   (let [actual (get-by-feed model :starting-after starting-after :limit limit)]
                     (is (= actual expected)))))))
@@ -118,7 +118,7 @@
                                                                      :expected default-limit,
                                                                      :actual   l})
                                   :else dao-models)))
-                            rss-feed-reader.core.account.feed.logic/dao-model->logic-model (fn [_] logic-model)]
+                            rss-feed-reader.core.account.feed.logic/dao-model->logic-model (fn [_ _ _] logic-model)]
                 ; then
                 (let [actual (get-by-feed model)]
                   (is (= actual expected)))))))

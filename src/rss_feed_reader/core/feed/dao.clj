@@ -33,6 +33,15 @@
         :args (s/cat :model (s/keys :req [:feed/id]))
         :ret (s/or :ok ::model :not-found nil?))
 
+(defn get-by-ids [models]
+  (if (empty? models)
+    []
+    (sql/get-multi-by-id db table :feed/id models)))
+
+(s/fdef get-by-ids
+        :args (s/cat :models (s/coll-of (s/keys :req [:feed/id])))
+        :ret (s/coll-of ::model))
+
 (defn get-by-link [{:feed/keys [link]}]
   (sql/get-by-query db table {:where [:= :feed/link link]}))
 

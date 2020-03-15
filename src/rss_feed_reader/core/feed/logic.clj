@@ -54,6 +54,18 @@
         :args (s/cat :model (s/keys :req [:feed.logic/id]))
         :ret (s/or :ok ::model :not-found nil?))
 
+(defn get-by-ids [models]
+  (log/debug "get by" (count models) "ids")
+  (let [ids (map :feed.logic/id models)
+        dao-models (->> ids
+                        (map #(assoc {} :feed/id %))
+                        (dao/get-by-ids))]
+    (map dao-model->logic-model dao-models)))
+
+(s/fdef get-by-ids
+        :args (s/cat :models (s/coll-of (s/keys :req [:feed.logic/id])))
+        :ret (s/coll-of ::model))
+
 (defn get-by-link [model]
   (log/debug "get by link" model)
   (let [link (str (:feed.logic/link model))

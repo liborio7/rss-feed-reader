@@ -27,15 +27,18 @@
 
 ;; conversion
 
-(defn- dao-model->logic-model [model]
-  (let [{:account.feed/keys [id version order_id account_id feed_id]} model
-        account (account-logic/get-by-id {:account.logic/id account_id})
-        feed (feed-logic/get-by-id {:feed.logic/id feed_id})]
-    {:account.feed.logic/id       id
-     :account.feed.logic/version  version
-     :account.feed.logic/order-id order_id
-     :account.feed.logic/account  account
-     :account.feed.logic/feed     feed}))
+(defn- dao-model->logic-model
+  ([model] (let [{:account.feed/keys [account_id feed_id]} model
+                 account (account-logic/get-by-id {:account.logic/id account_id})
+                 feed (feed-logic/get-by-id {:feed.logic/id feed_id})]
+             (dao-model->logic-model model account feed)))
+  ([model account feed]
+   (let [{:account.feed/keys [id version order_id]} model]
+     {:account.feed.logic/id       id
+      :account.feed.logic/version  version
+      :account.feed.logic/order-id order_id
+      :account.feed.logic/account  account
+      :account.feed.logic/feed     feed})))
 
 ;; get
 
@@ -53,11 +56,16 @@
 (defn get-by-account [model & {:keys [starting-after limit]
                                :or   {starting-after 0 limit 20}}]
   (log/debug "get by account" model "starting after" starting-after "limit" limit)
-  (let [account-id (:account.logic/id (:account.feed.logic/account model))
+  (let [account (:account.feed.logic/account model)
+        account-id (:account.logic/id account)
         dao-models (dao/get-by-account-id {:account.feed/account_id account-id}
                                           :starting-after starting-after
-                                          :limit limit)]
-    (map dao-model->logic-model dao-models)))
+                                          :limit limit)
+        feeds-by-feed-id (->> dao-models
+                              (map :account.feed/feed_id)
+                              (feed-logic/get-by-ids)
+                              (group-by :feed.logic/id))]
+    (map #(dao-model->logic-model % account (get feeds-by-feed-id (:account.feed/feed_id %))) dao-models)))
 
 (s/fdef get-by-account
         :args (s/cat :model (s/keys :req [:account.feed.logic/account])
@@ -67,11 +75,16 @@
 (defn get-by-feed [model & {:keys [starting-after limit]
                             :or   {starting-after 0 limit 20}}]
   (log/debug "get by feed" model "starting after" starting-after "limit" limit)
-  (let [feed-id (:feed.logic/id (:account.feed.logic/feed model))
+  (let [feed (:account.feed.logic/feed model)
+        feed-id (:feed.logic/id feed)
         dao-models (dao/get-by-feed-id {:account.feed/feed_id feed-id}
                                        :starting-after starting-after
-                                       :limit limit)]
-    (map dao-model->logic-model dao-models)))
+                                       :limit limit)
+        accounts-by-account-id (->> dao-models
+                                    (map :account.feed/account_id)
+                                    (account-logic/get-by-ids)
+                                    (group-by :account.logic/id))]
+    (map #(dao-model->logic-model % (get accounts-by-account-id (:account.feed/account_id %)) feed) dao-models)))
 
 (s/fdef get-by-feed
         :args (s/cat :model (s/keys :req [:account.feed.logic/feed])
