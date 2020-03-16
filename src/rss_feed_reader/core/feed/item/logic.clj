@@ -87,16 +87,17 @@
 
 (defn get-by-links [models]
   (log/debug "get by" (count models) "links")
-  (let [feeds-map (->> models
-                       (map :feed.item.logic/feed)
-                       (map #(hash-map (:feed.logic/id %) %)))
+  (let [feeds-by-feed-id (->> models
+                              (map :feed.item.logic/feed)
+                              (map #(hash-map (:feed.logic/id %) %))
+                              (into {}))
         links (->> models
                    (map :feed.item.logic/link)
                    (map str)
                    (map (partial assoc {} :feed.item/link)))
         data-models (dao/get-by-links links)]
     (->> data-models
-         (map #(dao-model->logic-model % (get feeds-map (:feed.item/feed_id %)))))))
+         (map #(dao-model->logic-model % (get feeds-by-feed-id (:feed.item/feed_id %)))))))
 
 (s/fdef get-by-links
         :args (s/cat :model (s/coll-of (s/keys :req [:feed.item.logic/link])))
@@ -171,9 +172,10 @@
                         {:cause   :feed-item-logic-create
                          :reason  :invalid-spec
                          :details errors})))
-      (let [feeds-map (->> models
-                           (map :feed.item.logic/feed)
-                           (map #(hash-map (:feed.logic/id %) %)))
+      (let [feeds-by-feed-id (->> models
+                                  (map :feed.item.logic/feed)
+                                  (map #(hash-map (:feed.logic/id %) %))
+                                  (into {}))
             existing-models (get-by-links models)
             existing-links (->> existing-models
                                 (map :feed.item.logic/link))
@@ -186,7 +188,7 @@
           (->> missing-models
                (logic-create-models->dao-models)
                (dao/insert-multi)
-               (map #(dao-model->logic-model % (get feeds-map (:feed.item/feed_id %))))))))))
+               (map #(dao-model->logic-model % (get feeds-by-feed-id (:feed.item/feed_id %))))))))))
 
 (s/fdef create-multi
         :args (s/cat :models (s/coll-of ::create-model))
