@@ -12,6 +12,7 @@ pom.xml.asc
 /.nrepl-port
 .hgignore
 .hg/
+/resources/repl
 /resources/dev
 /resources/test
 /logs

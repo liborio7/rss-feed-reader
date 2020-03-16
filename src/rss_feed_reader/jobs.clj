@@ -38,9 +38,13 @@
 
 (def my-pool (at/mk-pool))
 (case (:environment env)
+  "repl"
+  (do
+    ; nothing to do here
+    )
   "dev"
   (do
-    (at/every 15000 rss-feeder-job my-pool :initial-delay 5000))
+    (at/every 5000 rss-feeder-job my-pool :initial-delay 5000))
   "test"
   (do
     ; nothing to do here

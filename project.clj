@@ -36,6 +36,13 @@
   :main rss-feed-reader.app
   :resource-paths ["resources"]
   :profiles {
+             :repl       {:env            {:environment "repl"}
+                          :resource-paths ["resources/dev"]
+                          :dependencies   [[org.clojure/test.check "0.9.0"]
+                                           [orchestra "2018.12.06-2"]]
+                          :injections     [(require 'orchestra.spec.test)
+                                           (orchestra.spec.test/instrument)]}
+
              :dev        {:env            {:environment "dev"}
                           :resource-paths ["resources/dev"]
                           :dependencies   [[org.clojure/test.check "0.9.0"]
