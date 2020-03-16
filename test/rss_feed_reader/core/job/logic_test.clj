@@ -16,7 +16,7 @@
             (with-redefs [rss-feed-reader.core.job.dao/get-by-id (fn [_] nil)]
               ; then
               (let [actual (get-by-id model)]
-                (nil? actual))))
+                (is (nil? actual)))))
           (testing "and return model"
             ; when
             (let [dao-model (gen/generate (s/gen :rss-feed-reader.core.job.dao/model))
@@ -32,7 +32,7 @@
             (with-redefs [rss-feed-reader.core.job.dao/get-by-name (fn [_] nil)]
               ; then
               (let [actual (get-by-name model)]
-                (nil? actual))))
+                (is (nil? actual)))))
           (testing "and return model"
             ; when
             (let [dao-model (gen/generate (s/gen :rss-feed-reader.core.job.dao/model))

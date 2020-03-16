@@ -16,7 +16,7 @@
             (with-redefs [rss-feed-reader.core.account.feed.dao/get-by-id (fn [_] nil)]
               ; then
               (let [actual (get-by-id model)]
-                (nil? actual))))
+                (is (nil? actual)))))
           (testing "and return model"
             ; when
             (let [dao-model (gen/generate (s/gen :rss-feed-reader.core.account.feed.dao/model))
@@ -128,7 +128,7 @@
             (with-redefs [rss-feed-reader.core.account.feed.dao/get-by-account-id-and-feed-id (fn [_] nil)]
               ; then
               (let [actual (get-by-account-and-feed model)]
-                (nil? actual))))
+                (is (nil? actual)))))
           (testing "and return model"
             ; when
             (let [dao-model (gen/generate (s/gen :rss-feed-reader.core.account.feed.dao/model))

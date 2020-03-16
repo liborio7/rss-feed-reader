@@ -181,7 +181,6 @@
                                 (remove (fn [feed-item]
                                           (some #(= % (:feed.item.logic/link feed-item)) existing-links)
                                           )))]
-        (println existing-models)
         (concat
           existing-models
           (->> missing-models
