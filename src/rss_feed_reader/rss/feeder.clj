@@ -57,7 +57,7 @@
                                   (:account.feed.logic/account)
                                   (:account.logic/chat-id))
                              (->> feed-item
-                                  (:feed.item.logic/title)
+                                  (:feed.item.logic/link)
                                   (str))))))
 
 (defn feed []
