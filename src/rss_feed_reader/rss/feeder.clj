@@ -2,8 +2,10 @@
   (:require [clojure.tools.logging :as log]
             [clj-time.format :as f]
             [clojure.xml :as xml]
+            [rss-feed-reader.core.account.feed.logic :as account-feed-logic]
             [rss-feed-reader.core.feed.logic :as feed-logic]
             [rss-feed-reader.core.feed.item.logic :as feed-item-logic]
+            [rss-feed-reader.telegram.client :as telegram]
             [rss-feed-reader.utils.uri :as uris]
             [rss-feed-reader.utils.date :as dates]))
 
@@ -19,17 +21,15 @@
 (defn- filter-existing-feed-items [feed-items]
   (let [existing-links (->> feed-items
                             (feed-item-logic/get-by-links)
-                            (map :feed.item.logic/link)
-                            (reduce conj []))]
+                            (map :feed.item.logic/link))]
     (let [missing-links (->> feed-items
                              (remove (fn [feed-item]
                                        (some #(= % (:feed.item.logic/link feed-item)) existing-links)
-                                       ))
-                             (reduce conj []))]
+                                       )))]
       (log/trace "missing" (count missing-links) "link(s) out of" (count feed-items))
       missing-links)))
 
-(defn- parse [feed]
+(defn- parse-feed-items [feed]
   (log/trace "parse items for feed" feed)
   (->> (:feed.logic/link feed)
        (str)
@@ -42,6 +42,24 @@
        (map (fn [item] (reduce #(assoc %1 (:tag %2) (:content %2)) {} item)))
        (map #(->feed-item feed %))))
 
+(defn publish [feeds feed-items]
+  (let [accounts-feeds-by-feed-id (->> feeds
+                                       (map (partial assoc {} :account.feed.logic/feed))
+                                       (map account-feed-logic/get-by-feed)
+                                       (flatten)
+                                       (group-by #(:feed.logic/id (:account.feed.logic/feed %))))]
+    (doseq [feed-item feed-items
+            account-feed (->> feed-item
+                              (:feed.item.logic/feed)
+                              (:feed.logic/id)
+                              (get accounts-feeds-by-feed-id))]
+      (telegram/send-message (->> account-feed
+                                  (:account.feed.logic/account)
+                                  (:account.logic/chat-id))
+                             (->> feed-item
+                                  (:feed.item.logic/title)
+                                  (str))))))
+
 (defn feed []
   (log/trace "start feeding")
   (loop [starting-after 0
@@ -50,19 +68,17 @@
     (let [batch-size 10
           feeds (feed-logic/get-all :starting-after starting-after :limit batch-size)
           feeds-len (count feeds)
-          new-feeds-items (apply + (for [feed feeds]
-                                     (->> feed
-                                          (parse)
-                                          (filter-existing-feed-items)
-                                          (feed-item-logic/create-multi))))
+          new-feeds-items (->> feeds
+                               (map parse-feed-items)
+                               (flatten)
+                               (filter-existing-feed-items)
+                               (feed-item-logic/create-multi))
           new-feeds-items-len (count new-feeds-items)
           feeds-count (+ feeds-cont feeds-len)
           new-feeds-items-count (+ new-feeds-items-count new-feeds-items-len)
           last-feed-order-id (:feed.logic/order-id (last feeds))]
-      (log/trace new-feeds-items-len "new feed(s) item(s) created")
-
-      ; get all account feeds by feed id and send feed items to them
-
+      (publish feeds new-feeds-items)
+      (log/trace new-feeds-items-len "new feed(s) item(s) created and published")
       (if (or (empty? feeds) (< feeds-len batch-size))
         {:feed.item.job/feeds-count           feeds-count
          :feed.item.job/new-feeds-items-count new-feeds-items-count}

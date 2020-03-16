@@ -3,7 +3,7 @@
             [clojure.edn :as edn]
             [clojure.java.io :as io]))
 
-(defn- read-env-resources []
+(defn read-env-resources []
   (->> (environ/env :environment)
        (format "resources/%s")
        (io/file)
@@ -11,9 +11,9 @@
        (filter #(clojure.string/ends-with? (.getName %) ".edn"))
        (map slurp)
        (map edn/read-string)
-       (reduce into)))
+       (into {})))
 
-(defn- read-environ []
+(defn read-environ []
   (into {} environ/env))
 
 (def env

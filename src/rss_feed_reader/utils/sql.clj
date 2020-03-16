@@ -14,8 +14,7 @@
   ([db table id-keyword models opts]
    (log/trace "get by id" table id-keyword models)
    (let [ids (->> models
-                  (map id-keyword)
-                  (reduce conj []))
+                  (map id-keyword))
          query (-> (q/build :select :*
                             :from table
                             :where [:in id-keyword ids])
@@ -113,8 +112,7 @@
   ([db table id-keyword models opts]
    (log/trace "delete " table id-keyword models)
    (let [ids (->> models
-                  (map id-keyword)
-                  (reduce conj []))
+                  (map id-keyword))
          query (-> (q/build :delete-from table
                             :where [:in id-keyword ids])
                    (q/format))

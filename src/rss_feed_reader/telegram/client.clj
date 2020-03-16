@@ -2,7 +2,8 @@
   (:require [rss-feed-reader.env :refer [env]]
             [clj-http.client :as http]
             [cheshire.core :as json]
-            [clojure.spec.alpha :as s]))
+            [clojure.spec.alpha :as s]
+            [clojure.tools.logging :as log]))
 
 (def url (format "https://api.telegram.org/bot%s" (:telegram-token env)))
 
@@ -55,11 +56,13 @@
 ;; api
 
 (defn get-updates [offset]
+  (log/trace "get updates with offset" offset)
   (http/post (str url "/getUpdates")
              {:query-params {"offset" offset}
               :content-type :json}))
 
 (defn send-message [chat-id text]
+  (log/trace "send message to" chat-id ":" text)
   (http/post (str url "/sendMessage")
              {:body         (json/generate-string {:chat_id chat-id
                                                    :text    text})

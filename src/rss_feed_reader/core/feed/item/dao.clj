@@ -57,10 +57,11 @@
         :ret (s/or :ok ::model :not-found nil?))
 
 (defn get-by-links [models]
-  (let [links (->> models
-                   (map :feed.item/link)
-                   (reduce conj []))]
-    (sql/get-multi-by-query db table {:where [:in :feed.item/link links]})))
+  (if (empty? models)
+    []
+    (let [links (->> models
+                     (map :feed.item/link))]
+      (sql/get-multi-by-query db table {:where [:in :feed.item/link links]}))))
 
 (s/fdef get-by-links
         :args (s/cat :models (s/coll-of (s/keys :req [:feed.item/link])))

@@ -63,8 +63,10 @@
                                           :limit limit)
         feeds-by-feed-id (->> dao-models
                               (map :account.feed/feed_id)
+                              (map (partial assoc {} :feed.logic/id))
                               (feed-logic/get-by-ids)
-                              (group-by :feed.logic/id))]
+                              (map #(hash-map (:feed.logic/id %) %))
+                              (into {}))]
     (map #(dao-model->logic-model % account (get feeds-by-feed-id (:account.feed/feed_id %))) dao-models)))
 
 (s/fdef get-by-account
@@ -82,8 +84,10 @@
                                        :limit limit)
         accounts-by-account-id (->> dao-models
                                     (map :account.feed/account_id)
+                                    (map (partial assoc {} :account.logic/id))
                                     (account-logic/get-by-ids)
-                                    (group-by :account.logic/id))]
+                                    (map #(hash-map (:account.logic/id %) %))
+                                    (into {}))]
     (map #(dao-model->logic-model % (get accounts-by-account-id (:account.feed/account_id %)) feed) dao-models)))
 
 (s/fdef get-by-feed

@@ -88,18 +88,15 @@
 (defn get-by-links [models]
   (log/debug "get by" (count models) "links")
   (let [feeds-map (->> models
-                       (group-by #(:feed.logic/id (:feed.item.logic/feed %)))
-                       (map (fn [[k _]] [k (feed-logic/get-by-id {:feed.logic/id k})]))
-                       (into {}))
+                       (map :feed.item.logic/feed)
+                       (map #(hash-map (:feed.logic/id %) %)))
         links (->> models
                    (map :feed.item.logic/link)
                    (map str)
-                   (map #(assoc {} :feed.item/link %))
-                   (reduce conj []))
+                   (map (partial assoc {} :feed.item/link)))
         data-models (dao/get-by-links links)]
     (->> data-models
-         (map #(dao-model->logic-model % (get feeds-map (:feed.item/feed_id %))))
-         (reduce conj []))))
+         (map #(dao-model->logic-model % (get feeds-map (:feed.item/feed_id %)))))))
 
 (s/fdef get-by-links
         :args (s/cat :model (s/coll-of (s/keys :req [:feed.item.logic/link])))
@@ -162,8 +159,7 @@
 (defn- logic-create-models->dao-models [models]
   (let [now (t/now)]
     (->> models
-         (map #(logic-create-model->dao-model % now))
-         (reduce conj []))))
+         (map #(logic-create-model->dao-model % now)))))
 
 (defn create-multi [models]
   (log/info "create" (count models) "model(s)")
@@ -175,25 +171,23 @@
                         {:cause   :feed-item-logic-create
                          :reason  :invalid-spec
                          :details errors})))
-      (let [existing-models (get-by-links models)
+      (let [feeds-map (->> models
+                           (map :feed.item.logic/feed)
+                           (map #(hash-map (:feed.logic/id %) %)))
+            existing-models (get-by-links models)
             existing-links (->> existing-models
-                                (map :feed.item.logic/link)
-                                (reduce conj []))
+                                (map :feed.item.logic/link))
             missing-models (->> models
                                 (remove (fn [feed-item]
                                           (some #(= % (:feed.item.logic/link feed-item)) existing-links)
-                                          ))
-                                (reduce conj []))
-            missing-models-feeds-map (->> missing-models
-                                          (group-by #(:feed.logic/id (:feed.item.logic/feed %)))
-                                          (map (fn [[k _]] [k (feed-logic/get-by-id {:feed.logic/id k})]))
-                                          (into {}))]
+                                          )))]
+        (println existing-models)
         (concat
           existing-models
           (->> missing-models
                (logic-create-models->dao-models)
                (dao/insert-multi)
-               (map #(dao-model->logic-model % (get missing-models-feeds-map (:feed.item/feed_id %))))))))))
+               (map #(dao-model->logic-model % (get feeds-map (:feed.item/feed_id %))))))))))
 
 (s/fdef create-multi
         :args (s/cat :models (s/coll-of ::create-model))

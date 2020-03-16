@@ -58,7 +58,7 @@
   (log/debug "get by" (count models) "ids")
   (let [ids (map :feed.logic/id models)
         dao-models (->> ids
-                        (map #(assoc {} :feed/id %))
+                        (map (partial assoc {} :feed/id))
                         (dao/get-by-ids))]
     (map dao-model->logic-model dao-models)))
 
@@ -97,8 +97,8 @@
     {:feed/id          id
      :feed/version     version
      :feed/order_id    order-id
-     :feed/insert_time (tc/to-long insert-time)
-     :feed/update_time (tc/to-long update-time)
+     :feed/insert_time insert-time
+     :feed/update_time update-time
      :feed/link        (str link)}))
 
 (defn create [model]

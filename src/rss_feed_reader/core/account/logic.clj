@@ -50,7 +50,7 @@
   (log/debug "get by" (count models) "ids")
   (let [ids (map :account.logic/id models)
         dao-models (->> ids
-                        (map #(assoc {} :account/id %))
+                        (map (partial assoc {} :account/id))
                         (dao/get-by-ids))]
     (map dao-model->logic-model dao-models)))
 
