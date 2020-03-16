@@ -28,5 +28,7 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v1
+      - name: Run migrations
+        run: lein migrate
       - name: Run tests
         run: lein test
