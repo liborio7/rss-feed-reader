@@ -6,7 +6,7 @@
 
 ;; utils
 
-(def db db/connection)
+(def ds @db/datasource)
 (def table :job)
 
 ;; model
@@ -40,14 +40,14 @@
 ;; get
 
 (defn get-by-id [model]
-  (sql/get-by-id db table :job/id model))
+  (sql/get-by-id ds table :job/id model))
 
 (s/fdef get-by-id
         :args (s/cat :model (s/keys :req [:job/id]))
         :ret (s/or :ok ::model :not-found nil?))
 
 (defn get-by-name [model]
-  (sql/get-by-query db table {:where [:= :job/name (:job/name model)]}))
+  (sql/get-by-query ds table {:where [:= :job/name (:job/name model)]}))
 
 (s/fdef get-by-name
         :args (s/cat :model (s/keys :req [:job/name]))
@@ -56,7 +56,7 @@
 ;; insert
 
 (defn insert [model]
-  (sql/insert db table :job/id model))
+  (sql/insert ds table :job/id model))
 
 (s/fdef insert
         :args (s/cat :model ::model)
@@ -65,7 +65,7 @@
 ;; update
 
 (defn update [model]
-  (sql/update db table :job/id :job/version model))
+  (sql/update ds table :job/id :job/version model))
 
 (s/fdef update
         :args (s/cat :model (s/keys :req [:job/id

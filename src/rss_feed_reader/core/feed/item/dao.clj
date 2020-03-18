@@ -4,7 +4,7 @@
             [clojure.spec.alpha :as s]))
 ;; utils
 
-(def db db/connection)
+(def ds @db/datasource)
 (def table :feed_item)
 
 ;; model
@@ -34,7 +34,7 @@
 ;; get
 
 (defn get-by-id [model]
-  (sql/get-by-id db table :feed.item/id model))
+  (sql/get-by-id ds table :feed.item/id model))
 
 (s/fdef get-by-id
         :args (s/cat :model (s/keys :req [:feed.item/id]))
@@ -43,14 +43,14 @@
 (defn get-by-ids [models]
   (if (empty? models)
     []
-    (sql/get-multi-by-id db table :feed.item/id models)))
+    (sql/get-multi-by-id ds table :feed.item/id models)))
 
 (s/fdef get-by-ids
         :args (s/cat :models (s/coll-of (s/keys :req [:feed.item/id])))
         :ret (s/coll-of ::model))
 
 (defn get-by-link [{:feed.item/keys [link]}]
-  (sql/get-by-query db table {:where [:= :feed.item/link link]}))
+  (sql/get-by-query ds table {:where [:= :feed.item/link link]}))
 
 (s/fdef get-by-link
         :args (s/cat :model (s/keys :req [:feed.item/link]))
@@ -61,7 +61,7 @@
     []
     (let [links (->> models
                      (map :feed.item/link))]
-      (sql/get-multi-by-query db table {:where [:in :feed.item/link links]}))))
+      (sql/get-multi-by-query ds table {:where [:in :feed.item/link links]}))))
 
 (s/fdef get-by-links
         :args (s/cat :models (s/coll-of (s/keys :req [:feed.item/link])))
@@ -70,7 +70,7 @@
 (defn get-by-feed-id [{:feed.item/keys [feed_id]}
                       & {:keys [starting-after limit]
                          :or   {starting-after 0 limit 20}}]
-  (sql/get-multi-by-query db table {:where    [:and
+  (sql/get-multi-by-query ds table {:where    [:and
                                                [:= :feed.item/feed_id feed_id]
                                                [:> :feed.item/order_id starting-after]]
                                     :order-by [[:feed.item/order_id :asc]]
@@ -84,7 +84,7 @@
 ;; insert
 
 (defn insert [model]
-  (sql/insert db table :feed.item/id model))
+  (sql/insert ds table :feed.item/id model))
 
 (s/fdef insert
         :args (s/cat :model ::model)
@@ -93,7 +93,7 @@
 (defn insert-multi [models]
   (if (empty? models)
     []
-    (sql/insert-multi db table :feed.item/id models)))
+    (sql/insert-multi ds table :feed.item/id models)))
 
 (s/fdef insert-multi
         :args (s/cat :model (s/coll-of ::model))
@@ -102,7 +102,7 @@
 ;; delete
 
 (defn delete [model]
-  (sql/delete db table :feed.item/id model))
+  (sql/delete ds table :feed.item/id model))
 
 (s/fdef delete
         :args (s/cat :model (s/keys :req [:feed.item/id]))

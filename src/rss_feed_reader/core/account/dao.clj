@@ -5,7 +5,7 @@
 
 ;; utils
 
-(def db db/connection)
+(def ds @db/datasource)
 (def table :account)
 
 ;; model
@@ -29,7 +29,7 @@
 ;; get
 
 (defn get-by-id [model]
-  (sql/get-by-id db table :account/id model))
+  (sql/get-by-id ds table :account/id model))
 
 (s/fdef get-by-id
         :args (s/cat :model (s/keys :req [:account/id]))
@@ -38,21 +38,21 @@
 (defn get-by-ids [models]
   (if (empty? models)
     []
-    (sql/get-multi-by-id db table :account/id models)))
+    (sql/get-multi-by-id ds table :account/id models)))
 
 (s/fdef get-by-ids
         :args (s/cat :models (s/coll-of (s/keys :req [:account/id])))
         :ret (s/coll-of ::model))
 
 (defn get-by-username [{:account/keys [username]}]
-  (sql/get-by-query db table {:where [:= :account/username username]}))
+  (sql/get-by-query ds table {:where [:= :account/username username]}))
 
 (s/fdef get-by-username
         :args (s/cat :model (s/keys :req [:account/username]))
         :ret (s/or :ok ::model :not-found nil?))
 
 (defn get-by-chat-id [{:account/keys [chat_id]}]
-  (sql/get-by-query db table {:where [:= :account/chat_id chat_id]}))
+  (sql/get-by-query ds table {:where [:= :account/chat_id chat_id]}))
 
 (s/fdef get-by-chat-id
         :args (s/cat :model (s/keys :req [:account/chat_id]))
@@ -61,7 +61,7 @@
 ;; insert
 
 (defn insert [model]
-  (sql/insert db table :account/id model))
+  (sql/insert ds table :account/id model))
 
 (s/fdef insert
         :args (s/cat :model ::model)
@@ -70,7 +70,7 @@
 ;; delete
 
 (defn delete [model]
-  (sql/delete db table :account/id model))
+  (sql/delete ds table :account/id model))
 
 (s/fdef delete
         :args (s/cat :model (s/keys :req [:account/id]))

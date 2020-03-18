@@ -21,6 +21,7 @@
                  [overtone/at-at "1.2.0"]
                  [clj-time "0.15.2"]
 
+                 [hikari-cp "2.10.0"]
                  [org.clojure/java.jdbc "0.7.10"]
                  [org.postgresql/postgresql "42.2.2"]
                  [honeysql/honeysql "0.9.8"]

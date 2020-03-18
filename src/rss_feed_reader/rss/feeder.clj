@@ -42,7 +42,7 @@
        (map (fn [item] (reduce #(assoc %1 (:tag %2) (:content %2)) {} item)))
        (map #(->feed-item feed %))))
 
-(defn publish [feeds feed-items]
+(defn- publish [feeds feed-items]
   (let [accounts-feeds-by-feed-id (->> feeds
                                        (map (partial assoc {} :account.feed.logic/feed))
                                        (map account-feed-logic/get-by-feed)
@@ -60,7 +60,7 @@
                                   (:feed.item.logic/link)
                                   (str))))))
 
-(defn feed []
+(defn feed [_]
   (log/trace "start feeding")
   (loop [starting-after 0
          feeds-cont 0
@@ -80,8 +80,8 @@
       (publish feeds new-feeds-items)
       (log/trace new-feeds-items-len "new feed(s) item(s) created and published")
       (if (or (empty? feeds) (< feeds-len batch-size))
-        {:feed.item.job/feeds-count           feeds-count
-         :feed.item.job/new-feeds-items-count new-feeds-items-count}
+        {::feeds-count           feeds-count
+         ::new-feeds-items-count new-feeds-items-count}
         (recur last-feed-order-id
                feeds-count
                new-feeds-items-count)))))

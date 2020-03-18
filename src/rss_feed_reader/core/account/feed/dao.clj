@@ -5,7 +5,7 @@
 
 ;; utils
 
-(def db db/connection)
+(def ds @db/datasource)
 (def table :account_feed)
 
 ;; model
@@ -29,7 +29,7 @@
 ;; get
 
 (defn get-by-id [model]
-  (sql/get-by-id db table :account.feed/id model))
+  (sql/get-by-id ds table :account.feed/id model))
 
 (s/fdef get-by-id
         :args (s/cat :model (s/keys :req [:account.feed/id]))
@@ -38,7 +38,7 @@
 (defn get-by-account-id [{:account.feed/keys [account_id]}
                          & {:keys [starting-after limit]
                             :or   {starting-after 0 limit 20}}]
-  (sql/get-multi-by-query db table {:where    [:and
+  (sql/get-multi-by-query ds table {:where    [:and
                                                [:= :account.feed/account_id account_id]
                                                [:> :account.feed/order_id starting-after]]
                                     :order-by [[:account.feed/order_id :asc]]
@@ -52,7 +52,7 @@
 (defn get-by-feed-id [{:account.feed/keys [feed_id]}
                       & {:keys [starting-after limit]
                          :or   {starting-after 0 limit 20}}]
-  (sql/get-multi-by-query db table {:where    [:and
+  (sql/get-multi-by-query ds table {:where    [:and
                                                [:= :account.feed/feed_id feed_id]
                                                [:> :account.feed/order_id starting-after]]
                                     :order-by [[:account.feed/order_id :asc]]
@@ -64,7 +64,7 @@
         :ret (s/coll-of ::model))
 
 (defn get-by-account-id-and-feed-id [{:account.feed/keys [account_id feed_id]}]
-  (sql/get-by-query db table {:where [:and [:= :account.feed/account_id account_id] [:= :account.feed/feed_id feed_id]]}))
+  (sql/get-by-query ds table {:where [:and [:= :account.feed/account_id account_id] [:= :account.feed/feed_id feed_id]]}))
 
 (s/fdef get-by-account-id-and-feed-id
         :args (s/cat :model (s/keys :req [:account.feed/account_id
@@ -74,7 +74,7 @@
 ;; insert
 
 (defn insert [model]
-  (sql/insert db table :account.feed/id model))
+  (sql/insert ds table :account.feed/id model))
 
 (s/fdef insert
         :args (s/cat :model ::model)
@@ -83,7 +83,7 @@
 ;; delete
 
 (defn delete [model]
-  (sql/delete db table :account.feed/id model))
+  (sql/delete ds table :account.feed/id model))
 
 (s/fdef delete
         :args (s/cat :model (s/keys :req [:account.feed/id]))

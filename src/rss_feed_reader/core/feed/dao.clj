@@ -5,7 +5,7 @@
 
 ;; utils
 
-(def db db/connection)
+(def ds @db/datasource)
 (def table :feed)
 
 ;; model
@@ -27,7 +27,7 @@
 ;; get
 
 (defn get-by-id [model]
-  (sql/get-by-id db table :feed/id model))
+  (sql/get-by-id ds table :feed/id model))
 
 (s/fdef get-by-id
         :args (s/cat :model (s/keys :req [:feed/id]))
@@ -36,14 +36,14 @@
 (defn get-by-ids [models]
   (if (empty? models)
     []
-    (sql/get-multi-by-id db table :feed/id models)))
+    (sql/get-multi-by-id ds table :feed/id models)))
 
 (s/fdef get-by-ids
         :args (s/cat :models (s/coll-of (s/keys :req [:feed/id])))
         :ret (s/coll-of ::model))
 
 (defn get-by-link [{:feed/keys [link]}]
-  (sql/get-by-query db table {:where [:= :feed/link link]}))
+  (sql/get-by-query ds table {:where [:= :feed/link link]}))
 
 (s/fdef get-by-link
         :args (s/cat :model (s/keys :req [:feed/link]))
@@ -51,7 +51,7 @@
 
 (defn get-all [& {:keys [starting-after limit]
                   :or   {starting-after 0 limit 20}}]
-  (sql/get-multi-by-query db table {:where    [:> :feed/order_id starting-after]
+  (sql/get-multi-by-query ds table {:where    [:> :feed/order_id starting-after]
                                     :order-by [[:feed/order_id :asc]]
                                     :limit    limit}))
 
@@ -62,7 +62,7 @@
 ;; insert
 
 (defn insert [model]
-  (sql/insert db table :feed/id model))
+  (sql/insert ds table :feed/id model))
 
 (s/fdef insert
         :args (s/cat :model ::model)
@@ -71,7 +71,7 @@
 ;; delete
 
 (defn delete [model]
-  (sql/delete db table :feed/id model))
+  (sql/delete ds table :feed/id model))
 
 (s/fdef delete
         :args (s/cat :model (s/keys :req [:feed/id]))
