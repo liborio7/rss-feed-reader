@@ -53,17 +53,21 @@
     )
   "dev"
   (do
-    (at/every 5000 rss-feeder-job my-pool :initial-delay 5000))
+    (at/every 5000 rss-feeder-job my-pool :initial-delay 5000)
+    (at/every 1000 telegram-updater-job my-pool :initial-delay 5000))
   "test"
   (do
     ; nothing to do here
     )
   "testing"
   (do
-    (at/every 15000 rss-feeder-job my-pool :initial-delay 5000))
+    (at/every 15000 rss-feeder-job my-pool :initial-delay 5000)
+    (at/every 1000 telegram-updater-job my-pool :initial-delay 5000))
   "staging"
   (do
-    (at/every 15000 rss-feeder-job my-pool :initial-delay 5000))
+    (at/every 15000 rss-feeder-job my-pool :initial-delay 5000)
+    (at/every 500 telegram-updater-job my-pool :initial-delay 5000))
   "production"
   (do
-    (at/every 15000 rss-feeder-job my-pool :initial-delay 5000)))
+    (at/every 15000 rss-feeder-job my-pool :initial-delay 5000)
+    (at/every 500 telegram-updater-job my-pool :initial-delay 5000)))
