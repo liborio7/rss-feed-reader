@@ -7,6 +7,7 @@
             [rss-feed-reader.core.feed.item.logic :as feed-item-logic]
             [rss-feed-reader.telegram.client :as telegram]
             [rss-feed-reader.utils.uri :as uris]
+            [rss-feed-reader.utils.rss :as rss]
             [rss-feed-reader.utils.date :as dates]))
 
 (def date-formatter (f/formatter "E, dd MMM yyyy HH:mm:ss Z"))
@@ -60,28 +61,31 @@
                                   (:feed.item.logic/link)
                                   (str))))))
 
-(defn feed [_]
-  (log/trace "start feeding")
-  (loop [starting-after 0
-         feeds-cont 0
-         new-feeds-items-count 0]
-    (let [batch-size 10
-          feeds (feed-logic/get-all :starting-after starting-after :limit batch-size)
-          feeds-len (count feeds)
-          new-feeds-items (->> feeds
-                               (map parse-feed-items)
-                               (flatten)
-                               (filter-existing-feed-items)
-                               (feed-item-logic/create-multi))
-          new-feeds-items-len (count new-feeds-items)
-          feeds-count (+ feeds-cont feeds-len)
-          new-feeds-items-count (+ new-feeds-items-count new-feeds-items-len)
-          last-feed-order-id (:feed.logic/order-id (last feeds))]
-      (publish feeds new-feeds-items)
-      (log/trace new-feeds-items-len "new feed(s) item(s) created and published")
-      (if (or (empty? feeds) (< feeds-len batch-size))
-        {::feeds-count           feeds-count
-         ::new-feeds-items-count new-feeds-items-count}
-        (recur last-feed-order-id
-               feeds-count
-               new-feeds-items-count)))))
+(defn feed
+  ([] (feed {}))
+  ([_]
+   (log/trace "start feeding")
+   (loop [starting-after 0
+          feeds-cont 0
+          new-feeds-items-count 0]
+     (let [batch-size 10
+           feeds (feed-logic/get-all :starting-after starting-after :limit batch-size)
+           feeds-len (count feeds)
+           new-feeds-items (->> feeds
+                                (map :feed.logic/link)
+                                (map rss/parse)
+                                (flatten)
+                                (filter-existing-feed-items)
+                                (feed-item-logic/create-multi))
+           new-feeds-items-len (count new-feeds-items)
+           feeds-count (+ feeds-cont feeds-len)
+           new-feeds-items-count (+ new-feeds-items-count new-feeds-items-len)
+           last-feed-order-id (:feed.logic/order-id (last feeds))]
+       (publish feeds new-feeds-items)
+       (log/trace new-feeds-items-len "new feed(s) item(s) created and published")
+       (if (or (empty? feeds) (< feeds-len batch-size))
+         {::feeds-count           feeds-count
+          ::new-feeds-items-count new-feeds-items-count}
+         (recur last-feed-order-id
+                feeds-count
+                new-feeds-items-count))))))

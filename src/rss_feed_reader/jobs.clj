@@ -36,7 +36,7 @@
 
 (def rss-feeder-job
   (partial run
-           {:job.logic/name        "feed"
+           {:job.logic/name        "rss-feeder"
             :job.logic/description "Fetch feed items"}
            (partial rss-feeder/feed)))
 

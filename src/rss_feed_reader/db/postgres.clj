@@ -5,19 +5,20 @@
             [rss-feed-reader.env :refer [env]]
             [ragtime.jdbc :as jdbc]
             [ragtime.repl :as repl])
-  (:import (org.postgresql.util PGobject)))
+  (:import (org.postgresql.util PGobject)
+           (clojure.lang IPersistentMap)))
 
 (extend-protocol clojure.java.jdbc/ISQLValue
-  clojure.lang.IPersistentMap
+  IPersistentMap
   (sql-value [value] (doto (PGobject.)
                        (.setType "jsonb")
-                       (.setValue (cheshire.core/generate-string value)))))
+                       (.setValue (json/generate-string value)))))
 
 (extend-protocol clojure.java.jdbc/IResultSetReadColumn
-  org.postgresql.util.PGobject
-  (result-set-read-column [pgobj _ _]
-    (let [type (.getType pgobj)
-          value (.getValue pgobj)]
+  PGobject
+  (result-set-read-column [pg-obj _ _]
+    (let [type (.getType pg-obj)
+          value (.getValue pg-obj)]
       (case type
         "json" (json/parse-string value true)
         "jsonb" (json/parse-string value true)
