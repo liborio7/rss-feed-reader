@@ -64,10 +64,8 @@
   ([] (update {::last-offset 0}))
   ([payload]
    (log/trace "start updating" payload)
-   (let [offset (-> payload
-                    (::last-offset)
-                    (inc))
-         updates (telegram/get-updates offset)
+   (let [offset (::last-offset payload)
+         updates (telegram/get-updates (inc offset))
          messages (map :telegram.update/message updates)]
      (doseq [message messages]
        (let [text (-> message
