@@ -39,13 +39,19 @@
             account-feed (->> feed-item
                               (:feed.item.logic/feed)
                               (:feed.logic/id)
-                              (get accounts-feeds-by-feed-id))]
-      (telegram/send-message (->> account-feed
-                                  (:account.feed.logic/account)
-                                  (:account.logic/chat-id))
-                             (->> feed-item
-                                  (:feed.item.logic/link)
-                                  (str))))))
+                              (get accounts-feeds-by-feed-id))
+            :let [chat-id (->> account-feed
+                               (:account.feed.logic/account)
+                               (:account.logic/chat-id))
+                  feed-link (->> feed-item
+                                 (:feed.item.logic/feed)
+                                 (:feed.logic/link)
+                                 (str))
+                  feed-item-link (->> feed-item
+                                      (:feed.item.logic/link)
+                                      (str))
+                  msg (format "From %s:\n\n%s" feed-link feed-item-link)]]
+      (telegram/send-message chat-id msg))))
 
 (defn feed
   ([] (feed {}))

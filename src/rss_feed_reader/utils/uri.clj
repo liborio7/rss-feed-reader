@@ -1,11 +1,11 @@
 (ns rss-feed-reader.utils.uri
-  (:require [clojure.java.io :as jio]
+  (:require [clojure.java.io :as io]
             [clojure.spec.alpha :as s])
   (:import (java.net URI)))
 
 (defn from-string [s]
   (try
-    (-> (jio/as-url s)
+    (-> (io/as-url s)
         .toString
         URI.)
     (catch Exception _)))
