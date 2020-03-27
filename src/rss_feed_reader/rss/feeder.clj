@@ -1,7 +1,6 @@
 (ns rss-feed-reader.rss.feeder
   (:require [clojure.tools.logging :as log]
             [clj-time.format :as f]
-            [clojure.xml :as xml]
             [rss-feed-reader.core.account.feed.logic :as account-feed-logic]
             [rss-feed-reader.core.feed.logic :as feed-logic]
             [rss-feed-reader.core.feed.item.logic :as feed-item-logic]
@@ -29,19 +28,6 @@
                                        )))]
       (log/trace "missing" (count missing-links) "link(s) out of" (count feed-items))
       missing-links)))
-
-(defn- parse-feed-items [feed]
-  (log/trace "parse items for feed" feed)
-  (->> (:feed.logic/link feed)
-       (str)
-       (xml/parse)
-       (:content)
-       (first)
-       (:content)
-       (filter (comp #{:item} :tag))
-       (map :content)
-       (map (fn [item] (reduce #(assoc %1 (:tag %2) (:content %2)) {} item)))
-       (map #(->feed-item feed %))))
 
 (defn- publish [feeds feed-items]
   (let [accounts-feeds-by-feed-id (->> feeds
@@ -71,12 +57,15 @@
      (let [batch-size 10
            feeds (feed-logic/get-all :starting-after starting-after :limit batch-size)
            feeds-len (count feeds)
-           new-feeds-items (->> feeds
-                                (map :feed.logic/link)
-                                (map rss/parse)
-                                (flatten)
-                                (filter-existing-feed-items)
-                                (feed-item-logic/create-multi))
+           new-feeds-items (apply concat
+                                  (for [feed feeds]
+                                    (->> feed
+                                         (:feed.logic/link)
+                                         (rss/parse)
+                                         (flatten)
+                                         (map (partial ->feed-item feed))
+                                         (filter-existing-feed-items)
+                                         (feed-item-logic/create-multi))))
            new-feeds-items-len (count new-feeds-items)
            feeds-count (+ feeds-cont feeds-len)
            new-feeds-items-count (+ new-feeds-items-count new-feeds-items-len)
