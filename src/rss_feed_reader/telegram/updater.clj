@@ -15,7 +15,7 @@
 (defn help [chat]
   (let [chat-id (:telegram.message.chat/id chat)]
     (telegram/send-message chat-id "Available commands:
-  /list         Show RSS feeds subscriptions
+  /list        Show RSS feeds subscriptions
   /add [rss]   Subscribe to RSS feed URL
   /del [rss]   Unsubscribe to RSS feed URL")))
 
@@ -50,14 +50,24 @@
             feed (feed-logic/create {:feed.logic/link link})]
         (account-feed-logic/create {:account.feed.logic/account account
                                     :account.feed.logic/feed    feed})
-        (telegram/send-message chat-id (format "RSS \"%s\" added" rss))))))
+        (telegram/send-message chat-id (format "RSS %s added" rss))))))
 
 (defn del [chat rss]
   (log/trace "delete" rss " for chat" chat)
-  (let [chat-id (:telegram.message.chat/id chat)]
-    (if (empty? rss)
-      (telegram/send-message chat-id "Usage: /del [rss]")
-      (telegram/send-message chat-id (format "RSS \"%s\" deleted" rss)))))
+  (let [chat-id (:telegram.message.chat/id chat)
+        link (uris/from-string rss)]
+    (if (nil? link)
+      (telegram/send-message chat-id "Usage: /del [rss]
+      - [rss] should be a valid RSS feed URL")
+      (let [username (:telegram.message.chat/username chat)
+            account (account-logic/create {:account.logic/username username
+                                           :account.logic/chat-id  chat-id})
+            feed (feed-logic/get-by-link {:feed.logic/link link})
+            account-feed (account-feed-logic/get-by-account-and-feed {:account.feed.logic/account account
+                                                                      :account.feed.logic/feed    feed})]
+        (if ((comp not nil?) account-feed)
+          (account-feed-logic/delete account-feed))
+        (telegram/send-message chat-id (format "RSS %s deleted" rss))))))
 
 (defn update
   ([] (update {::last-offset 0}))
