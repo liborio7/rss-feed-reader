@@ -7,9 +7,7 @@
             [rss-feed-reader.core.feed.logic :as feed-logic]
             [rss-feed-reader.core.account.logic :as account-logic]
             [rss-feed-reader.core.account.feed.logic :as account-feed-logic]
-            [rss-feed-reader.utils.xml :as xmls]
-            [rss-feed-reader.utils.uri :as uris]
-            [rss-feed-reader.utils.rss :as rss]))
+            [rss-feed-reader.rss.parser :as rss]))
 
 (s/def ::last-offset nat-int?)
 
