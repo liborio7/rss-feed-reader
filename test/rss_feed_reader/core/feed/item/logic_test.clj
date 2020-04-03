@@ -126,27 +126,27 @@
                       {:keys [cause reason details]} data]
                   (is (= :feed-item-logic-create cause))
                   (is (= :invalid-spec reason))
-                  (is (= specs-errors details)))))))
-        (testing "and return existing model"
-          ; when
-          (let [expected (gen/generate (s/gen :rss-feed-reader.core.feed.item.logic/model))]
-            (with-redefs [rss-feed-reader.utils.spec/errors (fn [_ _] {})
-                          rss-feed-reader.core.feed.item.logic/get-by-link (fn [_] expected)]
-              ; then
-              (let [actual (create create-model)]
-                (is (= actual expected))))))
-        (testing "and return new model"
-          ; when
-          (let [dao-model (gen/generate (s/gen :rss-feed-reader.core.feed.item.dao/model))
-                expected (gen/generate (s/gen :rss-feed-reader.core.feed.item.logic/model))]
-            (with-redefs [rss-feed-reader.utils.spec/errors (fn [_ _] {})
-                          rss-feed-reader.core.feed.item.logic/get-by-link (fn [_] nil)
-                          rss-feed-reader.core.feed.item.logic/logic-create-model->dao-model (fn [_] dao-model)
-                          rss-feed-reader.core.feed.item.dao/insert (fn [_] dao-model)
-                          rss-feed-reader.core.feed.item.logic/dao-model->logic-model (fn [_] expected)]
-              ; then
-              (let [actual (create create-model)]
-                (is (= actual expected)))))))
+                  (is (= specs-errors details))))))))
+      (testing "and return existing model"
+        ; when
+        (let [expected (gen/generate (s/gen :rss-feed-reader.core.feed.item.logic/model))]
+          (with-redefs [rss-feed-reader.utils.spec/errors (fn [_ _] {})
+                        rss-feed-reader.core.feed.item.logic/get-by-link (fn [_] expected)]
+            ; then
+            (let [actual (create create-model)]
+              (is (= actual expected))))))
+      (testing "and return new model"
+        ; when
+        (let [dao-model (gen/generate (s/gen :rss-feed-reader.core.feed.item.dao/model))
+              expected (gen/generate (s/gen :rss-feed-reader.core.feed.item.logic/model))]
+          (with-redefs [rss-feed-reader.utils.spec/errors (fn [_ _] {})
+                        rss-feed-reader.core.feed.item.logic/get-by-link (fn [_] nil)
+                        rss-feed-reader.core.feed.item.logic/logic-create-model->dao-model (fn [_] dao-model)
+                        rss-feed-reader.core.feed.item.dao/insert (fn [_] dao-model)
+                        rss-feed-reader.core.feed.item.logic/dao-model->logic-model (fn [_] expected)]
+            ; then
+            (let [actual (create create-model)]
+              (is (= actual expected))))))
       (testing "multi"
         (testing "throwing specs exception"
           ; when
@@ -164,23 +164,23 @@
                         {:keys [cause reason details]} data]
                     (is (= :feed-item-logic-create cause))
                     (is (= :invalid-spec reason))
-                    (is (= specs-errors details)))))))
-          (testing "and return models"
-            ; when
-            (let [expected-existing (gen/sample (s/gen :rss-feed-reader.core.feed.item.logic/model))
-                  feed (gen/generate (s/gen :rss-feed-reader.core.feed.logic/model))
-                  dao-models (gen/sample (s/gen :rss-feed-reader.core.feed.item.dao/model))
-                  logic-model (gen/sample (s/gen :rss-feed-reader.core.feed.item.logic/model))
-                  expected (repeat (count dao-models) logic-model)]
-              (with-redefs [rss-feed-reader.utils.spec/errors (fn [_ _] {})
-                            rss-feed-reader.core.feed.item.logic/get-by-links (fn [_] expected-existing)
-                            rss-feed-reader.core.feed.logic/get-by-id (fn [_] feed)
-                            rss-feed-reader.core.feed.item.logic/logic-create-models->dao-models (fn [_] dao-models)
-                            rss-feed-reader.core.feed.item.dao/insert-multi (fn [_] dao-models)
-                            rss-feed-reader.core.feed.item.logic/dao-model->logic-model (fn [_ _] logic-model)]
-                ; then
-                (let [actual (create-multi create-models)]
-                  (= actual (merge expected-existing expected)))))))))))
+                    (is (= specs-errors details))))))))
+        (testing "and return models"
+          ; when
+          (let [expected-existing (gen/sample (s/gen :rss-feed-reader.core.feed.item.logic/model))
+                feed (gen/generate (s/gen :rss-feed-reader.core.feed.logic/model))
+                dao-models (gen/sample (s/gen :rss-feed-reader.core.feed.item.dao/model))
+                logic-model (gen/sample (s/gen :rss-feed-reader.core.feed.item.logic/model))
+                expected (repeat (count dao-models) logic-model)]
+            (with-redefs [rss-feed-reader.utils.spec/errors (fn [_ _] {})
+                          rss-feed-reader.core.feed.item.logic/get-by-links (fn [_] expected-existing)
+                          rss-feed-reader.core.feed.logic/get-by-id (fn [_] feed)
+                          rss-feed-reader.core.feed.item.logic/logic-create-models->dao-models (fn [_] dao-models)
+                          rss-feed-reader.core.feed.item.dao/insert-multi (fn [_] dao-models)
+                          rss-feed-reader.core.feed.item.logic/dao-model->logic-model (fn [_ _] logic-model)]
+              ; then
+              (let [actual (create-multi create-models)]
+                (= actual (merge expected-existing expected))))))))))
 
 (deftest should-delete
   (testing "should delete"
