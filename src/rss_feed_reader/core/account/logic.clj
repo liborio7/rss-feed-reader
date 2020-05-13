@@ -14,7 +14,7 @@
 (s/def :account.logic/order-id nat-int?)
 (s/def :account.logic/insert-time inst?)
 (s/def :account.logic/update-time (s/nilable inst?))
-(s/def :account.logic/username string?)
+(s/def :account.logic/username (s/nilable string?))
 (s/def :account.logic/chat-id int?)
 
 (s/def ::model (s/keys :req [:account.logic/id
@@ -25,7 +25,7 @@
 
 ;; conversion
 
-(defn- dao-model->logic-model [model]
+(defn dao-model->logic-model [model]
   (let [{:account/keys [id version order_id username chat_id]} model]
     {:account.logic/id       id
      :account.logic/version  version
@@ -82,9 +82,9 @@
 
 ;; create
 
-(s/def ::create-model (s/keys :req [:account.logic/username
-                                    :account.logic/chat-id]
+(s/def ::create-model (s/keys :req [:account.logic/chat-id]
                               :opt [:account.logic/id
+                                    :account.logic/username
                                     :account.logic/version
                                     :account.logic/order-id
                                     :account.logic/insert-time

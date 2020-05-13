@@ -15,7 +15,7 @@
 (s/def :account/order_id nat-int?)
 (s/def :account/insert_time inst?)
 (s/def :account/update_time (s/nilable inst?))
-(s/def :account/username string?)
+(s/def :account/username (s/nilable string?))
 (s/def :account/chat_id int?)
 
 (s/def ::model (s/keys :req [:account/id
