@@ -5,6 +5,7 @@
             [ring.middleware.params :as params]
             [ring.middleware.keyword-params :as kw-params]
             [ring.middleware.json :as json]
+            [ring.middleware.cors :as cors]
             [clojure.tools.logging :as log]
             [clj-time.coerce :as tc]
             [clj-time.core :as t]
@@ -44,20 +45,35 @@
         (->> (maps/->unq-map resp-body)
              (assoc response :body))))))
 
+(def middlewares
+  (let [m [[wrap-logger]
+           [wrap-server-error]
+           [params/wrap-params]
+           [kw-params/wrap-keyword-params]
+           [json/wrap-json-body {:keywords? true :bigdecimals? true}]
+           [json/wrap-json-response {:pretty true}]
+           [wrap-json-response-body]]]
+    (case (:environment env)
+      "repl"
+      (do
+        (into [[cors/wrap-cors
+                :access-control-allow-origin [#".*"]
+                :access-control-allow-methods [:get :post :put :delete]]]
+              m))
+      "dev"
+      (do
+        (into [[cors/wrap-cors
+                :access-control-allow-origin [#".*"]
+                :access-control-allow-methods [:get :post :put :delete]]]
+              m))
+      m)))
+
 (def app
   (ring/ring-handler
     (ring/router [feed/routes
                   account/routes])
     (ring/create-default-handler)
-    {:middleware [
-                  [wrap-logger]
-                  [wrap-server-error]
-                  [params/wrap-params]
-                  [kw-params/wrap-keyword-params]
-                  [json/wrap-json-body {:keywords? true :bigdecimals? true}]
-                  [json/wrap-json-response {:pretty true}]
-                  [wrap-json-response-body]
-                  ]}))
+    {:middleware middlewares}))
 
 (defn -main [& _args]
   (cid/set-new)

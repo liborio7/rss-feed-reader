@@ -15,6 +15,7 @@
                  [ring/ring-core "1.6.3"]
                  [ring/ring-json "0.5.0"]
                  [ring/ring-jetty-adapter "1.6.3"]
+                 [ring-cors "0.1.13"]
 
                  [metosin/reitit "0.3.10"]
 
@@ -31,7 +32,8 @@
                  ]
   :plugins [[lein-ring "0.12.5"]
             [lein-environ "1.1.0"]]
-  :aliases {"migrate"  ["run" "-m" "rss-feed-reader.db.postgres/migrate"]
+  :aliases {"dev"      ["with-profile" "dev" "run"]
+            "migrate"  ["run" "-m" "rss-feed-reader.db.postgres/migrate"]
             "rollback" ["run" "-m" "rss-feed-reader.db.postgres/rollback"]}
   :repl-options {:init-ns rss-feed-reader.app}
   :main rss-feed-reader.app
