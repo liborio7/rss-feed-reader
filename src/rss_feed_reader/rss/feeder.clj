@@ -9,13 +9,11 @@
             [rss-feed-reader.utils.uri :as uris]
             [rss-feed-reader.utils.date :as dates]))
 
-(def date-formatter (f/formatter "E, dd MMM yyyy HH:mm:ss Z"))
-
 (defn- ->feed-item [feed item]
   {:feed.item.logic/feed        feed
    :feed.item.logic/title       (first (:title item))
    :feed.item.logic/link        (uris/from-string (first (:link item)))
-   :feed.item.logic/pub-time    (dates/parse-date (first (:pubDate item)) date-formatter)
+   :feed.item.logic/pub-time    (dates/parse-date (first (:pubDate item)))
    :feed.item.logic/description (first (:description item))})
 
 (defn- filter-existing-feed-items [feed-items]

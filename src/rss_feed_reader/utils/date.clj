@@ -5,13 +5,11 @@
 (def date-formatter (f/formatter "yyyy-MM-dd"))
 (def date-time-formatter (f/formatter "yyyy-MM-dd HH:mm:ss"))
 
-(defn parse-date
-  ([s] (parse-date s date-formatter))
-  ([s formatter]
-   (try
-     (f/parse formatter s)
-     (catch Exception _
-       (log/warn "fail to parse date" s)))))
+(defn parse-date [s]
+  (try
+    (f/parse s)
+    (catch Exception _
+      (log/warn "fail to parse date" s))))
 
 (defn unparse-date
   ([inst] (unparse-date inst date-formatter))
