@@ -32,40 +32,40 @@
                  ]
   :plugins [[lein-ring "0.12.5"]
             [lein-environ "1.1.0"]]
-  :aliases {"dev"      ["with-profile" "dev" "run"]
+  :aliases {"dev"      ["with-profile" "dev" "run" "-m" "rss-feed-reader.app"]
             "migrate"  ["run" "-m" "rss-feed-reader.db.postgres/migrate"]
             "rollback" ["run" "-m" "rss-feed-reader.db.postgres/rollback"]}
   :repl-options {:init-ns rss-feed-reader.app}
-  :main rss-feed-reader.app
+  :target-path "target/%s"
   :resource-paths ["resources"]
   :profiles {
-             :repl       {:env            {:environment "repl"}
-                          :resource-paths ["resources/dev"]
-                          :dependencies   [[org.clojure/test.check "0.9.0"]
-                                           [orchestra "2018.12.06-2"]]
-                          :injections     [(require 'orchestra.spec.test)
-                                           (orchestra.spec.test/instrument)]}
+             :project/instrument {:dependencies [[org.clojure/test.check "0.9.0"]
+                                                 [orchestra "2018.12.06-2"]]
+                                  :injections   [(require 'orchestra.spec.test)
+                                                 (orchestra.spec.test/instrument)]}
 
-             :dev        {:env            {:environment "dev"}
-                          :resource-paths ["resources/dev"]
-                          :dependencies   [[org.clojure/test.check "0.9.0"]
-                                           [orchestra "2018.12.06-2"]]
-                          :injections     [(require 'orchestra.spec.test)
-                                           (orchestra.spec.test/instrument)]}
+             :project/dev        {:source-paths ["dev"]}
 
-             :test       {:env            {:environment "test"}
-                          :resource-paths ["resources/test"]
-                          :dependencies   [[org.clojure/test.check "0.9.0"]
-                                           [orchestra "2018.12.06-2"]]
-                          :injections     [(require 'orchestra.spec.test)
-                                           (orchestra.spec.test/instrument)]}
+             :repl               [:project/instrument
+                                  :project/dev
+                                  {:env            {:environment "repl"}
+                                   :resource-paths ["resources/dev"]}]
 
-             :testing    {:env            {:environment "testing"}
-                          :resource-paths ["resources/testing"]}
+             :dev                [:project/instrument
+                                  :project/dev
+                                  {:env            {:environment "dev"}
+                                   :resource-paths ["resources/dev"]}]
 
-             :staging    {:env            {:environment "staging"}
-                          :resource-paths ["resources/staging"]}
+             :test               [:project/instrument
+                                  {:env            {:environment "test"}
+                                   :resource-paths ["resources/test"]}]
 
-             :production {:env            {:environment "production"}
-                          :resource-paths ["resources/production"]}
+             :testing            {:env            {:environment "testing"}
+                                  :resource-paths ["resources/testing"]}
+
+             :staging            {:env            {:environment "staging"}
+                                  :resource-paths ["resources/staging"]}
+
+             :production         {:env            {:environment "production"}
+                                  :resource-paths ["resources/production"]}
              })
