@@ -47,7 +47,7 @@
   (log/debug "get by id" model)
   (let [id (:feed.logic/id model)
         dao-model (dao/get-by-id {:feed/id id})]
-    (if-not (nil? dao-model)
+    (when dao-model
       (dao-model->logic-model dao-model))))
 
 (s/fdef get-by-id
@@ -70,7 +70,7 @@
   (log/debug "get by link" model)
   (let [link (str (:feed.logic/link model))
         dao-model (dao/get-by-link {:feed/link link})]
-    (if-not (nil? dao-model)
+    (when dao-model
       (dao-model->logic-model dao-model))))
 
 (s/fdef get-by-link

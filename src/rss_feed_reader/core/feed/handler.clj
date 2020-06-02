@@ -53,12 +53,12 @@
         starting-after-id (uuids/from-string (:starting-after req-query))
         limit (ints/parse-int (:limit req-query))]
     (log/info "get feeds" req-path req-query)
-    (let [starting-after-feed (if-not (nil? starting-after-id)
+    (let [starting-after-feed (when starting-after-id
                                 (feed-logic/get-by-id {:feed.logic/id starting-after-id}))
-          starting-after (if-not (nil? starting-after-feed)
+          starting-after (if starting-after-feed
                            (:feed.logic/order-id starting-after-feed)
                            0)
-          limit (if-not (nil? limit)
+          limit (if limit
                   (max 0 (min 40 limit))
                   20)
           feeds (feed-logic/get-all :starting-after starting-after
@@ -91,12 +91,12 @@
       (let [feed (feed-logic/get-by-id {:feed.logic/id feed-id})]
         (if (nil? feed)
           (r/not-found)
-          (let [starting-after-feed-item (if-not (nil? starting-after-id)
+          (let [starting-after-feed-item (when starting-after-id
                                            (feed-item-logic/get-by-id {:feed.item.logic/id starting-after-id}))
-                starting-after (if-not (nil? starting-after-feed-item)
+                starting-after (when starting-after-feed-item
                                  (:feed.item.logic/order-id starting-after-feed-item)
                                  0)
-                limit (if-not (nil? limit)
+                limit (if limit
                         (max 0 (min 40 limit))
                         20)
                 feed-items (feed-item-logic/get-by-feed {:feed.item.logic/feed feed}

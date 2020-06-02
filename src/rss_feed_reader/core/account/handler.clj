@@ -66,12 +66,12 @@
       (let [account (account-logic/get-by-id {:account.logic/id account-id})]
         (if (nil? account)
           (r/not-found)
-          (let [starting-after-account-feed (if-not (nil? starting-after-id)
+          (let [starting-after-account-feed (when starting-after-id
                                               (account-feed-logic/get-by-id {:account.feed.logic/id starting-after-id}))
-                starting-after (if-not (nil? starting-after-account-feed)
+                starting-after (if starting-after-account-feed
                                  (:account.feed.logic/order-id starting-after-account-feed)
                                  0)
-                limit (if-not (nil? limit)
+                limit (if limit
                         (max 0 (min 40 limit))
                         20)
                 account-feeds (account-feed-logic/get-by-account {:account.feed.logic/account account}

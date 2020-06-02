@@ -54,7 +54,7 @@
   (log/debug "get by id" model)
   (let [id (:job.logic/id model)
         dao-model (dao/get-by-id {:job/id id})]
-    (if-not (nil? dao-model)
+    (when dao-model
       (dao-model->logic-model dao-model))))
 
 (s/fdef get-by-id
@@ -65,7 +65,7 @@
   (log/debug "get by name" model)
   (let [name (:job.logic/name model)
         dao-model (dao/get-by-name {:job/name name})]
-    (if-not (nil? dao-model)
+    (when dao-model
       (dao-model->logic-model dao-model))))
 
 (s/fdef get-by-name

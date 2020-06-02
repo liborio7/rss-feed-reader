@@ -39,7 +39,7 @@
   (log/debug "get by id" model)
   (let [id (:account.logic/id model)
         dao-model (dao/get-by-id {:account/id id})]
-    (if-not (nil? dao-model)
+    (when dao-model
       (dao-model->logic-model dao-model))))
 
 (s/fdef get-by-id
@@ -62,7 +62,7 @@
   (log/debug "get by username" model)
   (let [username (:account.logic/username model)
         dao-model (dao/get-by-username {:account/username username})]
-    (if-not (nil? dao-model)
+    (when dao-model
       (dao-model->logic-model dao-model))))
 
 (s/fdef get-by-username
@@ -73,7 +73,7 @@
   (log/debug "get by chat id" model)
   (let [chat-id (:account.logic/chat-id model)
         dao-model (dao/get-by-chat-id {:account/chat_id chat-id})]
-    (if-not (nil? dao-model)
+    (when dao-model
       (dao-model->logic-model dao-model))))
 
 (s/fdef get-by-chat-id

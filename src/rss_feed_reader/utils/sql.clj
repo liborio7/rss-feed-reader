@@ -2,15 +2,16 @@
   (:refer-clojure :exclude [update])
   (:require [clojure.tools.logging :as log]
             [clojure.java.jdbc :as jdbc]
-            [clojure.walk :refer [postwalk]]
+            [clojure.walk :refer [walk]]
+            [clojure.string :as str]
             [honeysql.core :as q]
             [honeysql.format :as qf]))
 
 (defn- default-opts [table]
-  {:qualifier (clojure.string/replace (name table) "_" ".")})
+  {:qualifier (str/replace (name table) "_" ".")})
 
 (defn- format-values [m]
-  (clojure.walk/walk
+  (walk
     (fn [[k v]] [k (qf/value v)])
     identity
     m))
@@ -37,7 +38,7 @@
   ([ds table id-keyword model] (get-by-id ds table id-keyword model {}))
   ([ds table id-keyword model opts]
    (let [result (get-multi-by-id ds table id-keyword (conj [] model) opts)]
-     (if (> (count result) 1)
+     (when (> (count result) 1)
        (log/warn "unexpected multiple results"))
      (first result))))
 
@@ -59,7 +60,7 @@
   ([ds table clause] (get-by-query ds table clause {}))
   ([ds table clause opts]
    (let [result (get-multi-by-query ds table clause opts)]
-     (if (> (count result) 1)
+     (when (> (count result) 1)
        (log/warn "unexpected multiple results"))
      (first result))))
 
@@ -79,7 +80,7 @@
          affected-rows (jdbc/with-db-connection [conn {:datasource ds}]
                                                 (jdbc/execute! conn query opts))]
      (log/trace query "affects" affected-rows "row(s)")
-     (if (empty? affected-rows)
+     (when (empty? affected-rows)
        (throw (ex-info "no rows has been inserted"
                        {:cause   :sql-insert
                         :reason  :no-rows-affected
@@ -90,7 +91,7 @@
   ([ds table id-keyword model] (insert ds table id-keyword model {}))
   ([ds table id-keyword model opts]
    (let [result (insert-multi ds table id-keyword (conj [] model) opts)]
-     (if (> (count result) 1)
+     (when (> (count result) 1)
        (log/warn "unexpected multiple results"))
      (first result))))
 
@@ -114,7 +115,7 @@
          affected-rows (jdbc/with-db-connection [conn {:datasource ds}]
                                                 (jdbc/execute! conn query opts))]
      (log/trace query "affects" affected-rows "row(s)")
-     (if (empty? affected-rows)
+     (when (empty? affected-rows)
        (throw (ex-info "no rows has been updated"
                        {:cause   :sql-update
                         :reason  :no-rows-affected
@@ -142,6 +143,6 @@
   ([ds table id-keyword model] (delete ds table id-keyword model {}))
   ([ds table id-keyword model opts]
    (let [affected-rows (delete-multi ds table id-keyword (conj [] model) opts)]
-     (if (> 1 affected-rows)
+     (when (> affected-rows 1)
        (log/warn "unexpected multiple results"))
      affected-rows)))

@@ -46,7 +46,7 @@
   (log/debug "get by id" model)
   (let [id (:account.feed.logic/id model)
         dao-model (dao/get-by-id {:account.feed/id id})]
-    (if-not (nil? dao-model)
+    (when dao-model
       (dao-model->logic-model dao-model))))
 
 (s/fdef get-by-id
@@ -101,7 +101,7 @@
         feed-id (:feed.logic/id (:account.feed.logic/feed model))
         dao-model (dao/get-by-account-id-and-feed-id {:account.feed/account_id account-id
                                                       :account.feed/feed_id    feed-id})]
-    (if-not (nil? dao-model)
+    (when dao-model
       (dao-model->logic-model dao-model))))
 
 (s/fdef get-by-account-and-feed
@@ -149,7 +149,7 @@
             feed (:account.feed.logic/feed model)
             account-feed (get-by-account-and-feed {:account.feed.logic/account account
                                                    :account.feed.logic/feed    feed})]
-        (if-not (nil? account-feed)
+        (if account-feed
           account-feed
           (-> model
               (logic-create-model->dao-model)

@@ -5,36 +5,43 @@
             :url  "https://www.eclipse.org/legal/epl-2.0/"}
   :dependencies [
                  [org.clojure/clojure "1.10.0"]
+                 [clj-kondo "RELEASE"]
+                 [clj-time "0.15.2"]
 
+                 ; env
                  [environ "1.1.0"]
-                 [ragtime "0.8.0"]
 
+                 ; logging
                  [org.clojure/tools.logging "0.5.0"]
                  [ch.qos.logback/logback-classic "1.2.3"]
 
+                 ; web server & routing
                  [ring/ring-core "1.6.3"]
                  [ring/ring-json "0.5.0"]
                  [ring/ring-jetty-adapter "1.6.3"]
                  [ring-cors "0.1.13"]
-
                  [metosin/reitit "0.3.10"]
 
-                 [overtone/at-at "1.2.0"]
-                 [clj-time "0.15.2"]
-
+                 ; db & migration
                  [hikari-cp "2.10.0"]
                  [org.clojure/java.jdbc "0.7.10"]
                  [org.postgresql/postgresql "42.2.2"]
                  [honeysql/honeysql "0.9.8"]
+                 [ragtime "0.8.0"]
 
+                 ; scheduler
+                 [overtone/at-at "1.2.0"]
+
+                 ; http & json
                  [clj-http "3.10.0"]
                  [cheshire "5.10.0"]
                  ]
   :plugins [[lein-ring "0.12.5"]
             [lein-environ "1.1.0"]]
-  :aliases {"dev"      ["with-profile" "dev" "run" "-m" "rss-feed-reader.app"]
-            "migrate"  ["run" "-m" "rss-feed-reader.db.postgres/migrate"]
-            "rollback" ["run" "-m" "rss-feed-reader.db.postgres/rollback"]}
+  :aliases {"clj-kondo" ["run" "-m" "clj-kondo.main"]
+            "dev"       ["with-profile" "dev" "run" "-m" "rss-feed-reader.app"]
+            "migrate"   ["run" "-m" "rss-feed-reader.db.postgres/migrate"]
+            "rollback"  ["run" "-m" "rss-feed-reader.db.postgres/rollback"]}
   :repl-options {:init-ns rss-feed-reader.app}
   :target-path "target/%s"
   :resource-paths ["resources"]

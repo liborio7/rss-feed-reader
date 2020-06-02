@@ -1,5 +1,6 @@
 (ns rss-feed-reader.env
-  (:require [environ.core :as environ]
+  (:require [clojure.string :refer [ends-with?]]
+            [environ.core :as environ]
             [clojure.edn :as edn]
             [clojure.java.io :as io]))
 
@@ -8,7 +9,7 @@
        (format "resources/%s")
        (io/file)
        (file-seq)
-       (filter #(clojure.string/ends-with? (.getName %) ".edn"))
+       (filter #(ends-with? (.getName %) ".edn"))
        (map slurp)
        (map edn/read-string)
        (into {})))

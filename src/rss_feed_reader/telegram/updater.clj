@@ -65,7 +65,7 @@
             feed (feed-logic/get-by-link {:feed.logic/link link})
             account-feed (account-feed-logic/get-by-account-and-feed {:account.feed.logic/account account
                                                                       :account.feed.logic/feed    feed})]
-        (if ((comp not nil?) account-feed)
+        (when account-feed
           (account-feed-logic/delete account-feed))
         (telegram/send-message chat-id (format "RSS %s deleted" rss))))))
 

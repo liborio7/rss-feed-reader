@@ -55,17 +55,15 @@
            [wrap-json-response-body]]]
     (case (:environment env)
       "repl"
-      (do
-        (into [[cors/wrap-cors
-                :access-control-allow-origin [#".*"]
-                :access-control-allow-methods [:get :post :put :delete]]]
-              m))
+      (into [[cors/wrap-cors
+              :access-control-allow-origin [#".*"]
+              :access-control-allow-methods [:get :post :put :delete]]]
+            m)
       "dev"
-      (do
-        (into [[cors/wrap-cors
-                :access-control-allow-origin [#".*"]
-                :access-control-allow-methods [:get :post :put :delete]]]
-              m))
+      (into [[cors/wrap-cors
+              :access-control-allow-origin [#".*"]
+              :access-control-allow-methods [:get :post :put :delete]]]
+            m)
       m)))
 
 (def app
@@ -77,5 +75,5 @@
 
 (defn -main [& _args]
   (cid/set-new)
-  (log/info "environment:" (:environment env))
+  (log/info "environment:" (:environment env))+
   (jetty/run-jetty app {:port 3000}))

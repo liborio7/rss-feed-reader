@@ -1,5 +1,6 @@
 (ns rss-feed-reader.db.postgres
   (:require [clj-time.jdbc]
+            [clojure.java.jdbc :refer [ISQLValue IResultSetReadColumn]]
             [hikari-cp.core :as hikari]
             [cheshire.core :as json]
             [rss-feed-reader.env :refer [env]]
@@ -8,13 +9,13 @@
   (:import (org.postgresql.util PGobject)
            (clojure.lang IPersistentMap)))
 
-(extend-protocol clojure.java.jdbc/ISQLValue
+(extend-protocol ISQLValue
   IPersistentMap
   (sql-value [value] (doto (PGobject.)
                        (.setType "jsonb")
                        (.setValue (json/generate-string value)))))
 
-(extend-protocol clojure.java.jdbc/IResultSetReadColumn
+(extend-protocol IResultSetReadColumn
   PGobject
   (result-set-read-column [pg-obj _ _]
     (let [type (.getType pg-obj)
@@ -40,7 +41,7 @@
                    :password           (:postgres-password env)
                    :database-name      (:postgres-db env)
                    :server-name        (:postgres-host env)
-                   :port-number        5432
+                   :port-number        (:postgres-port env)
                    :register-mbeans    false})))
 
 (def ragtime-config

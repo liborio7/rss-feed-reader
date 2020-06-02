@@ -1,6 +1,5 @@
 (ns rss-feed-reader.rss.feeder
   (:require [clojure.tools.logging :as log]
-            [clj-time.format :as f]
             [rss-feed-reader.core.account.feed.logic :as account-feed-logic]
             [rss-feed-reader.core.feed.logic :as feed-logic]
             [rss-feed-reader.core.feed.item.logic :as feed-item-logic]
