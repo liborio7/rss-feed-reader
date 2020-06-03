@@ -1,8 +1,8 @@
 (ns rss-feed-reader.rss.feeder
   (:require [clojure.tools.logging :as log]
-            [rss-feed-reader.core.account.feed.logic :as account-feed-logic]
-            [rss-feed-reader.core.feed.logic :as feed-logic]
-            [rss-feed-reader.core.feed.item.logic :as feed-item-logic]
+            [rss-feed-reader.domain.account.feed.logic :as account-feed-logic]
+            [rss-feed-reader.domain.feed.logic :as feed-logic]
+            [rss-feed-reader.domain.feed.item.logic :as feed-item-logic]
             [rss-feed-reader.telegram.client :as telegram]
             [rss-feed-reader.rss.parser :as rss]
             [rss-feed-reader.utils.uri :as uris]

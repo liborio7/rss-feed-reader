@@ -1,6 +1,6 @@
-(ns rss-feed-reader.core.job.logic-test
+(ns rss-feed-reader.domain.job.logic-test
   (:require [clojure.test :refer :all]
-            [rss-feed-reader.core.job.logic :refer :all]
+            [rss-feed-reader.domain.job.logic :refer :all]
             [clojure.spec.gen.alpha :as gen]
             [clojure.spec.alpha :as s])
   (:import (clojure.lang ExceptionInfo)))
@@ -9,36 +9,36 @@
   (testing "should get"
     ; given
     (testing "by"
-      (let [model (gen/generate (s/gen :rss-feed-reader.core.job.logic/model))]
+      (let [model (gen/generate (s/gen :rss-feed-reader.domain.job.logic/model))]
         (testing "id"
           (testing "and return nil"
             ; when
-            (with-redefs [rss-feed-reader.core.job.dao/get-by-id (fn [_] nil)]
+            (with-redefs [rss-feed-reader.domain.job.dao/get-by-id (fn [_] nil)]
               ; then
               (let [actual (get-by-id model)]
                 (is (nil? actual)))))
           (testing "and return model"
             ; when
-            (let [dao-model (gen/generate (s/gen :rss-feed-reader.core.job.dao/model))
-                  expected (gen/generate (s/gen :rss-feed-reader.core.job.logic/model))]
-              (with-redefs [rss-feed-reader.core.job.dao/get-by-id (fn [_] dao-model)
-                            rss-feed-reader.core.job.logic/dao-model->logic-model (fn [_] expected)]
+            (let [dao-model (gen/generate (s/gen :rss-feed-reader.domain.job.dao/model))
+                  expected (gen/generate (s/gen :rss-feed-reader.domain.job.logic/model))]
+              (with-redefs [rss-feed-reader.domain.job.dao/get-by-id (fn [_] dao-model)
+                            rss-feed-reader.domain.job.logic/dao-model->logic-model (fn [_] expected)]
                 ; then
                 (let [actual (get-by-id model)]
                   (is (= actual expected)))))))
         (testing "name"
           (testing "and return nil"
             ; when
-            (with-redefs [rss-feed-reader.core.job.dao/get-by-name (fn [_] nil)]
+            (with-redefs [rss-feed-reader.domain.job.dao/get-by-name (fn [_] nil)]
               ; then
               (let [actual (get-by-name model)]
                 (is (nil? actual)))))
           (testing "and return model"
             ; when
-            (let [dao-model (gen/generate (s/gen :rss-feed-reader.core.job.dao/model))
-                  expected (gen/generate (s/gen :rss-feed-reader.core.job.logic/model))]
-              (with-redefs [rss-feed-reader.core.job.dao/get-by-name (fn [_] dao-model)
-                            rss-feed-reader.core.job.logic/dao-model->logic-model (fn [_] expected)]
+            (let [dao-model (gen/generate (s/gen :rss-feed-reader.domain.job.dao/model))
+                  expected (gen/generate (s/gen :rss-feed-reader.domain.job.logic/model))]
+              (with-redefs [rss-feed-reader.domain.job.dao/get-by-name (fn [_] dao-model)
+                            rss-feed-reader.domain.job.logic/dao-model->logic-model (fn [_] expected)]
                 ; then
                 (let [actual (get-by-name model)]
                   (is (= actual expected)))))))))))
@@ -46,7 +46,7 @@
 (deftest should-create
   (testing "should create"
     ; given
-    (let [create-model (gen/generate (s/gen :rss-feed-reader.core.job.logic/create-model))]
+    (let [create-model (gen/generate (s/gen :rss-feed-reader.domain.job.logic/create-model))]
       (testing "throwing specs exception"
         ; when
         (let [specs-errors (gen/generate (s/gen map?))]
@@ -66,21 +66,21 @@
                   (is (= specs-errors details))))))))
       (testing "and return existing model"
         ; when
-        (let [expected (gen/generate (s/gen :rss-feed-reader.core.job.logic/model))]
+        (let [expected (gen/generate (s/gen :rss-feed-reader.domain.job.logic/model))]
           (with-redefs [rss-feed-reader.utils.spec/errors (fn [_ _] {})
-                        rss-feed-reader.core.job.logic/get-by-name (fn [_] expected)]
+                        rss-feed-reader.domain.job.logic/get-by-name (fn [_] expected)]
             ; then
             (let [actual (create create-model)]
               (is (= actual expected))))))
       (testing "and return new model"
         ; when
-        (let [dao-model (gen/generate (s/gen :rss-feed-reader.core.job.dao/model))
-              expected (gen/generate (s/gen :rss-feed-reader.core.job.logic/model))]
+        (let [dao-model (gen/generate (s/gen :rss-feed-reader.domain.job.dao/model))
+              expected (gen/generate (s/gen :rss-feed-reader.domain.job.logic/model))]
           (with-redefs [rss-feed-reader.utils.spec/errors (fn [_ _] {})
-                        rss-feed-reader.core.job.logic/get-by-name (fn [_] nil)
-                        rss-feed-reader.core.job.logic/logic-create-model->dao-model (fn [_] dao-model)
-                        rss-feed-reader.core.job.dao/insert (fn [_] dao-model)
-                        rss-feed-reader.core.job.logic/dao-model->logic-model (fn [_] expected)]
+                        rss-feed-reader.domain.job.logic/get-by-name (fn [_] nil)
+                        rss-feed-reader.domain.job.logic/logic-create-model->dao-model (fn [_] dao-model)
+                        rss-feed-reader.domain.job.dao/insert (fn [_] dao-model)
+                        rss-feed-reader.domain.job.logic/dao-model->logic-model (fn [_] expected)]
             ; then
             (let [actual (create create-model)]
               (is (= actual expected)))))))))

@@ -1,7 +1,7 @@
-(ns rss-feed-reader.core.account.feed.logic
-  (:require [rss-feed-reader.core.account.feed.dao :as dao]
-            [rss-feed-reader.core.feed.logic :as feed-logic]
-            [rss-feed-reader.core.account.logic :as account-logic]
+(ns rss-feed-reader.domain.account.feed.logic
+  (:require [rss-feed-reader.domain.account.feed.dao :as dao]
+            [rss-feed-reader.domain.feed.logic :as feed-logic]
+            [rss-feed-reader.domain.account.logic :as account-logic]
             [rss-feed-reader.utils.spec :as specs]
             [clojure.spec.alpha :as s]
             [clj-time.core :as t]

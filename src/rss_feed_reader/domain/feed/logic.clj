@@ -1,5 +1,5 @@
-(ns rss-feed-reader.core.feed.logic
-  (:require [rss-feed-reader.core.feed.dao :as dao]
+(ns rss-feed-reader.domain.feed.logic
+  (:require [rss-feed-reader.domain.feed.dao :as dao]
             [rss-feed-reader.utils.spec :as specs]
             [rss-feed-reader.utils.uri :as uris]
             [clojure.spec.alpha :as s]

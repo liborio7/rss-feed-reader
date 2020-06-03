@@ -1,5 +1,5 @@
-(ns rss-feed-reader.core.job.logic
-  (:require [rss-feed-reader.core.job.dao :as dao]
+(ns rss-feed-reader.domain.job.logic
+  (:require [rss-feed-reader.domain.job.dao :as dao]
             [clojure.spec.alpha :as s]
             [clojure.tools.logging :as log]
             [clj-time.core :as t]

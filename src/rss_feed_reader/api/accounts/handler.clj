@@ -1,9 +1,9 @@
 (ns rss-feed-reader.api.accounts.handler
   (:require [clojure.spec.alpha :as s]
             [clojure.tools.logging :as log]
-            [rss-feed-reader.core.account.logic :as account-logic]
-            [rss-feed-reader.core.account.feed.logic :as account-feed-logic]
-            [rss-feed-reader.core.feed.logic :as feed-logic]
+            [rss-feed-reader.domain.account.logic :as account-logic]
+            [rss-feed-reader.domain.account.feed.logic :as account-feed-logic]
+            [rss-feed-reader.domain.feed.logic :as feed-logic]
             [rss-feed-reader.utils.uuid :as uuids]
             [rss-feed-reader.utils.int :as ints]
             [rss-feed-reader.utils.response :as r]

@@ -1,7 +1,7 @@
 (ns rss-feed-reader.jobs
   (:require [rss-feed-reader.env :refer [env]]
             [overtone.at-at :as at]
-            [rss-feed-reader.core.job.logic :as job]
+            [rss-feed-reader.domain.job.logic :as job]
             [rss-feed-reader.rss.feeder :as rss-feeder]
             [rss-feed-reader.telegram.updater :as telegram-updater]
             [rss-feed-reader.utils.cid :as cid]

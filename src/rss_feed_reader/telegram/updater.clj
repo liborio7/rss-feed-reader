@@ -4,9 +4,9 @@
             [clojure.spec.alpha :as s]
             [clojure.string :as string]
             [rss-feed-reader.telegram.client :as telegram]
-            [rss-feed-reader.core.feed.logic :as feed-logic]
-            [rss-feed-reader.core.account.logic :as account-logic]
-            [rss-feed-reader.core.account.feed.logic :as account-feed-logic]
+            [rss-feed-reader.domain.feed.logic :as feed-logic]
+            [rss-feed-reader.domain.account.logic :as account-logic]
+            [rss-feed-reader.domain.account.feed.logic :as account-feed-logic]
             [rss-feed-reader.rss.parser :as rss]
             [rss-feed-reader.utils.uri :as uris]))
 

@@ -1,4 +1,4 @@
-(ns rss-feed-reader.core.job.dao
+(ns rss-feed-reader.domain.job.dao
   (:refer-clojure :exclude [update])
   (:require [rss-feed-reader.db.postgres :as db]
             [rss-feed-reader.utils.sql :as sql]

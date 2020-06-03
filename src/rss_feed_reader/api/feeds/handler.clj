@@ -1,8 +1,8 @@
 (ns rss-feed-reader.api.feeds.handler
   (:require [clojure.spec.alpha :as s]
             [clojure.tools.logging :as log]
-            [rss-feed-reader.core.feed.logic :as feed-logic]
-            [rss-feed-reader.core.feed.item.logic :as feed-item-logic]
+            [rss-feed-reader.domain.feed.logic :as feed-logic]
+            [rss-feed-reader.domain.feed.item.logic :as feed-item-logic]
             [rss-feed-reader.utils.uuid :as uuids]
             [rss-feed-reader.utils.uri :as uris]
             [rss-feed-reader.utils.response :as r]

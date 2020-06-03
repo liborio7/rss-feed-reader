@@ -1,4 +1,4 @@
-(ns rss-feed-reader.core.account.dao
+(ns rss-feed-reader.domain.account.dao
   (:require [rss-feed-reader.db.postgres :as db]
             [rss-feed-reader.utils.sql :as sql]
             [clojure.spec.alpha :as s]))
