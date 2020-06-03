@@ -62,4 +62,5 @@
   "production"
   (do
     (at/every 15000 rss-feeder-job my-pool :initial-delay 5000)
-    (at/every 500 telegram-updater-job my-pool :initial-delay 5000)))
+    (at/every 500 telegram-updater-job my-pool :initial-delay 5000))
+  :nop)

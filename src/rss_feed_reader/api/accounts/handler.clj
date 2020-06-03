@@ -1,4 +1,4 @@
-(ns rss-feed-reader.core.account.handler
+(ns rss-feed-reader.api.accounts.handler
   (:require [clojure.spec.alpha :as s]
             [clojure.tools.logging :as log]
             [rss-feed-reader.core.account.logic :as account-logic]
