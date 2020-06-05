@@ -1,7 +1,10 @@
-version: "2"
+version: "3"
 services:
   server:
-    build: .
+    build:
+      context: .
+      args:
+        - env=${ENV}
     depends_on:
       - postgres
     env_file:
