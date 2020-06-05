@@ -3,7 +3,7 @@
             [rss-feed-reader.domain.account.feed.logic :as account-feed-logic]
             [rss-feed-reader.domain.feed.logic :as feed-logic]
             [rss-feed-reader.domain.feed.item.logic :as feed-item-logic]
-            [rss-feed-reader.telegram.client :as telegram]
+            [rss-feed-reader.bot.client :as bot]
             [rss-feed-reader.rss.parser :as rss]
             [rss-feed-reader.utils.uri :as uris]
             [rss-feed-reader.utils.date :as dates]))
@@ -43,7 +43,7 @@
                                     (:feed.item.logic/link)
                                     (str))
                 msg (format "From %s:\n\n%s" feed-link feed-item-link)]]
-    (telegram/send-message chat-id msg)))
+    (bot/send-message chat-id msg)))
 
 (defn feed
   ([] (feed {}))

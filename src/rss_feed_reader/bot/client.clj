@@ -1,9 +1,10 @@
-(ns rss-feed-reader.telegram.client
+(ns rss-feed-reader.bot.client
   (:require [rss-feed-reader.env :refer [env]]
-            [clj-http.client :as http]
             [cheshire.core :as json]
-            [clojure.spec.alpha :as s]
-            [clojure.tools.logging :as log]))
+            [clj-http.client :as http]
+            [clojure.tools.logging :as log]
+            [clojure.spec.alpha :as s]))
+
 
 (def url (format "https://api.telegram.org/bot%s" (:telegram-token env)))
 

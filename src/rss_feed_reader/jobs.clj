@@ -3,7 +3,6 @@
             [overtone.at-at :as at]
             [rss-feed-reader.domain.job.logic :as job]
             [rss-feed-reader.rss.feeder :as rss-feeder]
-            [rss-feed-reader.telegram.updater :as telegram-updater]
             [rss-feed-reader.utils.cid :as cid]
             [clojure.tools.logging :as log]
             [clj-time.coerce :as tc]
@@ -38,29 +37,20 @@
   (partial run
            {:job.logic/name        "rss-feeder"
             :job.logic/description "Fetch feed items"}
-           (partial rss-feeder/feed)))
-
-(def telegram-updater-job
-  (partial run {:job.logic/name        "telegram-updater"
-                :job.logic/description "Handle telegram updates"}
-           (partial telegram-updater/update)))
+           rss-feeder/feed))
 
 (def my-pool (at/mk-pool))
 (case (:environment env)
   "dev"
-  (do
-    (at/every 5000 rss-feeder-job my-pool :initial-delay 5000)
-    (at/every 1000 telegram-updater-job my-pool :initial-delay 5000))
+  (at/every 5000 rss-feeder-job my-pool :initial-delay 5000)
+
   "testing"
-  (do
-    (at/every 15000 rss-feeder-job my-pool :initial-delay 5000)
-    (at/every 1000 telegram-updater-job my-pool :initial-delay 5000))
+  (at/every 15000 rss-feeder-job my-pool :initial-delay 5000)
+
   "staging"
-  (do
-    (at/every 15000 rss-feeder-job my-pool :initial-delay 5000)
-    (at/every 500 telegram-updater-job my-pool :initial-delay 5000))
+  (at/every 15000 rss-feeder-job my-pool :initial-delay 5000)
+
   "production"
-  (do
-    (at/every 15000 rss-feeder-job my-pool :initial-delay 5000)
-    (at/every 500 telegram-updater-job my-pool :initial-delay 5000))
+  (at/every 15000 rss-feeder-job my-pool :initial-delay 5000)
+
   :nop)
