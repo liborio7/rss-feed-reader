@@ -7,6 +7,7 @@
 (defn read-env-resources []
   (->> ["postgres.edn" "scheduler.edn" "telegram.edn"]
        (map io/resource)
+       (filter identity)
        (map slurp)
        (map edn/read-string)
        (into {})))
