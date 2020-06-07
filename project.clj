@@ -38,10 +38,11 @@
                  ]
   :plugins [[lein-ring "0.12.5"]
             [lein-environ "1.1.0"]]
-  :aliases {"clj-kondo" ["run" "-m" "clj-kondo.main"]
-            "dev"       ["with-profile" "dev" "run" "-m" "rss-feed-reader.app"]
-            "migrate"   ["run" "-m" "rss-feed-reader.db.postgres/migrate"]
-            "rollback"  ["run" "-m" "rss-feed-reader.db.postgres/rollback"]}
+  :aliases {"kondo"    ["run" "-m" "clj-kondo.main" "--lint" "src"]
+            "midje"    ["with-profile" "test" "midje"]
+            "dev"      ["with-profile" "dev" "run" "-m" "rss-feed-reader.app"]
+            "migrate"  ["run" "-m" "rss-feed-reader.db.postgres/migrate"]
+            "rollback" ["run" "-m" "rss-feed-reader.db.postgres/rollback"]}
   :repl-options {:init-ns rss-feed-reader.app}
   :target-path "target/%s"
   :resource-paths ["resources"]
@@ -53,10 +54,13 @@
 
              :project/dev        {:source-paths ["dev"]}
 
+             :project/test       {:dependencies [[midje "1.9.9"]]
+                                  :plugins      [[lein-midje "3.1.3"]]}
+
              :repl               [:project/instrument
                                   :project/dev
                                   {:env            {:environment "repl"}
-                                   :resource-paths ["resources/dev"]}]
+                                   :resource-paths ["resources/repl"]}]
 
              :dev                [:project/instrument
                                   :project/dev
@@ -64,6 +68,7 @@
                                    :resource-paths ["resources/dev"]}]
 
              :test               [:project/instrument
+                                  :project/test
                                   {:env            {:environment "test"}
                                    :resource-paths ["resources/test"]}]
 

@@ -1,11 +1,11 @@
 (ns rss-feed-reader.api.feeds.handler
   (:require [clojure.spec.alpha :as s]
             [clojure.tools.logging :as log]
+            [rss-feed-reader.api.response :as response]
             [rss-feed-reader.domain.feed.logic :as feed-logic]
             [rss-feed-reader.domain.feed.item.logic :as feed-item-logic]
             [rss-feed-reader.utils.uuid :as uuids]
             [rss-feed-reader.utils.uri :as uris]
-            [rss-feed-reader.utils.response :as r]
             [rss-feed-reader.utils.date :as dates]
             [rss-feed-reader.utils.int :as ints])
   (:import (clojure.lang ExceptionInfo)))
@@ -63,21 +63,21 @@
                   20)
           feeds (feed-logic/get-all :starting-after starting-after
                                     :limit (+ 1 limit))]
-      (-> (r/paginate feeds feed-logic-model->handler-model limit)
-          (r/ok)))))
+      (-> (response/paginate feeds feed-logic-model->handler-model limit)
+          (response/ok)))))
 
 (defn get-feed [req]
   (let [req-path (:path-params req)
         id (uuids/from-string (:feed-id req-path))]
     (log/info "get feed" req-path)
     (if (nil? id)
-      (r/not-found)
+      (response/not-found)
       (let [feed (feed-logic/get-by-id {:feed.logic/id id})]
         (if (nil? feed)
-          (r/not-found)
+          (response/not-found)
           (-> feed
               (feed-logic-model->handler-model)
-              (r/ok)))))))
+              (response/ok)))))))
 
 (defn get-feed-items [req]
   (let [req-path (:path-params req)
@@ -87,10 +87,10 @@
         limit (ints/parse-int (:limit req-query))]
     (log/info "get feed items" req-path req-query)
     (if (nil? feed-id)
-      (r/not-found)
+      (response/not-found)
       (let [feed (feed-logic/get-by-id {:feed.logic/id feed-id})]
         (if (nil? feed)
-          (r/not-found)
+          (response/not-found)
           (let [starting-after-feed-item (when starting-after-id
                                            (feed-item-logic/get-by-id {:feed.item.logic/id starting-after-id}))
                 starting-after (when starting-after-feed-item
@@ -102,8 +102,8 @@
                 feed-items (feed-item-logic/get-by-feed {:feed.item.logic/feed feed}
                                                         :starting-after starting-after
                                                         :limit (+ 1 limit))]
-            (-> (r/paginate feed-items feed-item-logic-model->handler-model limit)
-                (r/ok))))))))
+            (-> (response/paginate feed-items feed-item-logic-model->handler-model limit)
+                (response/ok))))))))
 
 ;; post
 
@@ -115,12 +115,12 @@
       (-> {:feed.logic/link link}
           (feed-logic/create)
           (feed-logic-model->handler-model)
-          (r/ok))
+          (response/ok))
       (catch ExceptionInfo e
         (let [data (ex-data e)
               {:keys [cause reason]} data]
           (case [cause reason]
-            [:feed-logic-create :invalid-spec] (r/bad-request {:code 1 :message "invalid request"})
+            [:feed-logic-create :invalid-spec] (response/bad-request {:code 1 :message "invalid request"})
             (throw e)))))))
 
 ;; delete
@@ -130,7 +130,7 @@
         id (uuids/from-string (:feed-id req-path))]
     (log/info "delete feed" req-path)
     (if (nil? id)
-      (r/no-content)
+      (response/no-content)
       (do
         (feed-logic/delete {:feed.logic/id id})
-        (r/no-content)))))
+        (response/no-content)))))

@@ -1,12 +1,12 @@
 (ns rss-feed-reader.api.accounts.handler
   (:require [clojure.spec.alpha :as s]
             [clojure.tools.logging :as log]
+            [rss-feed-reader.api.response :as response]
             [rss-feed-reader.domain.account.logic :as account-logic]
             [rss-feed-reader.domain.account.feed.logic :as account-feed-logic]
             [rss-feed-reader.domain.feed.logic :as feed-logic]
             [rss-feed-reader.utils.uuid :as uuids]
             [rss-feed-reader.utils.int :as ints]
-            [rss-feed-reader.utils.response :as r]
             [rss-feed-reader.utils.uri :as uris])
   (:import (clojure.lang ExceptionInfo)))
 
@@ -46,13 +46,13 @@
         id (uuids/from-string (:account-id req-path))]
     (log/info "get account" req-path)
     (if (nil? id)
-      (r/not-found)
+      (response/not-found)
       (let [account (account-logic/get-by-id {:account.logic/id id})]
         (if (nil? account)
-          (r/not-found)
+          (response/not-found)
           (-> account
               (account-logic-model->handler-model)
-              (r/ok)))))))
+              (response/ok)))))))
 
 (defn get-account-feeds [req]
   (let [req-path (:path-params req)
@@ -62,10 +62,10 @@
         limit (ints/parse-int (:limit req-query))]
     (log/info "get account feeds" req-path req-query)
     (if (nil? account-id)
-      (r/not-found)
+      (response/not-found)
       (let [account (account-logic/get-by-id {:account.logic/id account-id})]
         (if (nil? account)
-          (r/not-found)
+          (response/not-found)
           (let [starting-after-account-feed (when starting-after-id
                                               (account-feed-logic/get-by-id {:account.feed.logic/id starting-after-id}))
                 starting-after (if starting-after-account-feed
@@ -77,8 +77,8 @@
                 account-feeds (account-feed-logic/get-by-account {:account.feed.logic/account account}
                                                                  :starting-after starting-after
                                                                  :limit (+ 1 limit))]
-            (-> (r/paginate account-feeds account-feed-logic-model->handler-model limit)
-                (r/ok))))))))
+            (-> (response/paginate account-feeds account-feed-logic-model->handler-model limit)
+                (response/ok))))))))
 
 (defn get-account-feed [req]
   (let [req-path (:path-params req)
@@ -86,13 +86,13 @@
         account-feed-id (uuids/from-string (:account-feed-id req-path))]
     (log/info "get account feed" req-path)
     (if (some nil? [account-id account-feed-id])
-      (r/not-found)
+      (response/not-found)
       (let [account-feed (account-feed-logic/get-by-id {:account.feed.logic/id account-feed-id})]
         (if (not= account-id (:account.logic/id (:account.feed.logic/account account-feed)))
-          (r/not-found)
+          (response/not-found)
           (-> account-feed
               (account-feed-logic-model->handler-model)
-              (r/ok)))))))
+              (response/ok)))))))
 
 ;; post
 
@@ -106,12 +106,12 @@
            :account.logic/chat-id  chat-id}
           (account-logic/create)
           (account-logic-model->handler-model)
-          (r/ok))
+          (response/ok))
       (catch ExceptionInfo e
         (let [data (ex-data e)
               {:keys [cause reason]} data]
           (case [cause reason]
-            [:account-logic-create :invalid-spec] (r/bad-request {:code 1 :message "invalid request"})
+            [:account-logic-create :invalid-spec] (response/bad-request {:code 1 :message "invalid request"})
             (throw e)))))))
 
 (defn create-account-feed [req]
@@ -122,20 +122,20 @@
     (log/info "create account feed" req-path req-body)
     (let [account (account-logic/get-by-id {:account.logic/id account-id})]
       (if (nil? account)
-        (r/not-found)
+        (response/not-found)
         (try
           (let [feed (feed-logic/create {:feed.logic/link link})]
             (-> {:account.feed.logic/account account
                  :account.feed.logic/feed    feed}
                 (account-feed-logic/create)
                 (account-feed-logic-model->handler-model)
-                (r/ok)))
+                (response/ok)))
           (catch ExceptionInfo e
             (let [data (ex-data e)
                   {:keys [cause reason]} data]
               (case [cause reason]
-                [:feed-logic-create :invalid-spec] (r/bad-request {:code 1 :message "invalid request"})
-                [:account-feed-logic-create :invalid-spec] (r/bad-request {:code 1 :message "invalid request"})
+                [:feed-logic-create :invalid-spec] (response/bad-request {:code 1 :message "invalid request"})
+                [:account-feed-logic-create :invalid-spec] (response/bad-request {:code 1 :message "invalid request"})
                 (throw e)))))))))
 
 ;; delete
@@ -145,10 +145,10 @@
         account-id (uuids/from-string (:account-id req-path))]
     (log/info "delete account" req-path)
     (if (nil? account-id)
-      (r/no-content)
+      (response/no-content)
       (do
         (account-logic/delete {:account.logic/id account-id})
-        (r/no-content)))))
+        (response/no-content)))))
 
 (defn delete-account-feed [req]
   (let [req-path (:path-params req)
@@ -156,10 +156,10 @@
         account-feed-id (uuids/from-string (:account-feed-id req-path))]
     (log/info "delete account feed" req-path)
     (if (some nil? [account-id account-feed-id])
-      (r/not-found)
+      (response/not-found)
       (let [account-feed (account-feed-logic/get-by-id {:account.feed.logic/id account-feed-id})]
         (if (not= account-id (:account.logic/id (:account.feed.logic/account account-feed)))
-          (r/no-content)
+          (response/no-content)
           (do
             (account-feed-logic/delete account-feed)
-            (r/no-content)))))))
+            (response/no-content)))))))

@@ -1,8 +1,10 @@
 (ns rss-feed-reader.domain.feed.logic-test
+  (:use midje.sweet)
   (:require [clojure.test :refer :all]
-            [rss-feed-reader.domain.feed.logic :refer :all]
+            [clojure.spec.alpha :as s]
             [clojure.spec.gen.alpha :as gen]
-            [clojure.spec.alpha :as s])
+            [rss-feed-reader.domain.feed.logic :refer :all]
+            [rss-feed-reader.domain.feed.dao :as dao])
   (:import (clojure.lang ExceptionInfo)))
 
 (deftest should-get
@@ -10,27 +12,27 @@
     (testing "all"
       (testing "with provided arguments"
         ; given
-        (let [starting-after (gen/generate (s/gen nat-int?))
-              limit (gen/generate (s/gen nat-int?))]
+        (let [starting-after (gen/generate (s/gen nat-int?))]
           ; when
           (let [dao-models (gen/sample (s/gen :rss-feed-reader.domain.feed.dao/model))
-                logic-model (gen/sample (s/gen :rss-feed-reader.domain.feed.logic/model))
+                logic-model (gen/generate (s/gen :rss-feed-reader.domain.feed.logic/model))
                 expected (repeat (count dao-models) logic-model)]
             (with-redefs [rss-feed-reader.domain.feed.dao/get-all
-                          (fn [_ sa _ l]
-                            (cond
-                              (not= sa starting-after) (do-report {:type     :fail,
-                                                                   :message  "wrong starting after",
-                                                                   :expected starting-after,
-                                                                   :actual   sa})
-                              (not= l limit) (do-report {:type     :fail,
-                                                         :message  "wrong limit",
-                                                         :expected limit,
-                                                         :actual   l})
-                              :else dao-models))
+                          (let [times (atom 0)]
+                            (fn [_ sa]
+                              (if (pos? @times)
+                                dao-models
+                                (do
+                                  (swap! times inc)
+                                  (cond
+                                    (not= sa starting-after) (do-report {:type     :fail,
+                                                                         :message  "wrong starting after",
+                                                                         :expected starting-after,
+                                                                         :actual   sa})
+                                    :else dao-models)))))
                           rss-feed-reader.domain.feed.logic/dao-model->logic-model (fn [_] logic-model)]
               ; then
-              (let [actual (get-all :starting-after starting-after :limit limit)]
+              (let [actual (take (count expected) (get-all :starting-after starting-after))]
                 (is (= actual expected)))))))
       (testing "with default arguments"
         ; given
@@ -38,22 +40,22 @@
               logic-model (gen/sample (s/gen :rss-feed-reader.domain.feed.logic/model))
               expected (repeat (count dao-models) logic-model)]
           (with-redefs [rss-feed-reader.domain.feed.dao/get-all
-                        (fn [_ sa _ l]
-                          (let [default-starting-after 0
-                                default-limit 20]
-                            (cond
-                              (not= sa default-starting-after) (do-report {:type     :fail,
-                                                                           :message  "wrong starting after",
-                                                                           :expected default-starting-after,
-                                                                           :actual   sa})
-                              (not= l default-limit) (do-report {:type     :fail,
-                                                                 :message  "wrong limit",
-                                                                 :expected default-limit,
-                                                                 :actual   l})
-                              :else dao-models)))
+                        (let [default-starting-after 0
+                              times (atom 0)]
+                          (fn [_ sa]
+                            (if (pos? @times)
+                              dao-models
+                              (do
+                                (swap! times inc)
+                                (cond
+                                  (not= sa default-starting-after) (do-report {:type     :fail,
+                                                                               :message  "wrong starting after",
+                                                                               :expected default-starting-after,
+                                                                               :actual   sa})
+                                  :else dao-models)))))
                         rss-feed-reader.domain.feed.logic/dao-model->logic-model (fn [_] logic-model)]
             ; then
-            (let [actual (get-all)]
+            (let [actual (take (count expected) (get-all))]
               (is (= actual expected)))))))
     (testing "by"
       ; given
@@ -145,13 +147,23 @@
             (let [actual (create create-model)]
               (is (= actual expected)))))))))
 
-(deftest should-delete
-  (testing "should delete"
-    ; given
-    (let [model (gen/generate (s/gen :rss-feed-reader.domain.feed.logic/model))]
-      ; when
-      (let [expected (gen/generate (s/gen int?))]
-        (with-redefs [rss-feed-reader.domain.feed.dao/delete (fn [_] expected)]
-          ; then
-          (let [actual (delete model)]
-            (is (= actual expected))))))))
+(fact "2 + 2 should be equal to 4"
+      (+ 2 2) => 5)
+
+(fact "should delete"
+      (let [model (gen/generate (s/gen :rss-feed-reader.domain.feed.logic/model))
+            expected (gen/generate (s/gen int?))]
+        (delete model) => expected
+        (provided (dao/delete model) => expected)))
+
+
+;(deftest should-delete
+;  (testing "should delete"
+;    ; given
+;    (let [model (gen/generate (s/gen :rss-feed-reader.domain.feed.logic/model))]
+;      ; when
+;      (let [expected (gen/generate (s/gen int?))]
+;        (with-redefs [rss-feed-reader.domain.feed.dao/delete (fn [_] expected)]
+;          ; then
+;          (let [actual (delete model)]
+;            (is (= actual expected))))))))
