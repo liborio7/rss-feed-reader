@@ -31,4 +31,4 @@ jobs:
       - name: Run migrations
         run: lein migrate
       - name: Run tests
-        run: lein test
+        run: lein midje
