@@ -1,4 +1,4 @@
-(ns rss-feed-reader.utils.sql
+(ns rss-feed-reader.db.sql
   (:refer-clojure :exclude [update])
   (:require [clojure.tools.logging :as log]
             [clojure.java.jdbc :as jdbc]
@@ -77,10 +77,11 @@
                             :values values)
                    (q/format))
          opts (merge (default-opts table) opts)
-         affected-rows (jdbc/with-db-connection [conn {:datasource ds}]
-                                                (jdbc/execute! conn query opts))]
+         sql-result (jdbc/with-db-connection [conn {:datasource ds}]
+                                             (jdbc/execute! conn query opts))
+         affected-rows (first sql-result)]
      (log/trace query "affects" affected-rows "row(s)")
-     (when (empty? affected-rows)
+     (when (zero? affected-rows)
        (throw (ex-info "no rows has been inserted"
                        {:cause   :sql-insert
                         :reason  :no-rows-affected
@@ -112,10 +113,11 @@
                                     [:= version-keyword (version-keyword model)]])
                    (q/format))
          opts (merge (default-opts table) opts)
-         affected-rows (jdbc/with-db-connection [conn {:datasource ds}]
-                                                (jdbc/execute! conn query opts))]
+         sql-result (jdbc/with-db-connection [conn {:datasource ds}]
+                                             (jdbc/execute! conn query opts))
+         affected-rows (first sql-result)]
      (log/trace query "affects" affected-rows "row(s)")
-     (when (empty? affected-rows)
+     (when (zero? affected-rows)
        (throw (ex-info "no rows has been updated"
                        {:cause   :sql-update
                         :reason  :no-rows-affected
@@ -134,8 +136,9 @@
                             :where [:in id-keyword ids])
                    (q/format))
          opts (merge (default-opts table) opts)
-         affected-rows (jdbc/with-db-connection [conn {:datasource ds}]
-                                                (jdbc/execute! conn query opts))]
+         sql-result (jdbc/with-db-connection [conn {:datasource ds}]
+                                             (jdbc/execute! conn query opts))
+         affected-rows (first sql-result)]
      (log/trace query "affects" affected-rows "row(s)")
      affected-rows)))
 
