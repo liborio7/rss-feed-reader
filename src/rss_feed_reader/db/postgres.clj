@@ -1,19 +1,26 @@
 (ns rss-feed-reader.db.postgres
   (:require [clj-time.jdbc]
-            [clojure.java.jdbc :refer [ISQLValue IResultSetReadColumn]]
+            [clojure.java.jdbc :refer [ISQLValue ISQLParameter IResultSetReadColumn]]
             [hikari-cp.core :as hikari]
             [cheshire.core :as json]
             [rss-feed-reader.env :refer [env]]
             [ragtime.jdbc :as jdbc]
             [ragtime.repl :as repl])
   (:import (org.postgresql.util PGobject)
-           (clojure.lang IPersistentMap)))
+           (clojure.lang IPersistentMap)
+           (java.sql PreparedStatement)
+           (java.util Date)))
 
 (extend-protocol ISQLValue
   IPersistentMap
   (sql-value [value] (doto (PGobject.)
                        (.setType "jsonb")
                        (.setValue (json/generate-string value)))))
+
+(extend-protocol ISQLParameter
+  Date
+  (set-parameter [value ^PreparedStatement ps ^long idx]
+    (.setObject ps idx (java.sql.Date. (.getTime value)))))
 
 (extend-protocol IResultSetReadColumn
   PGobject
