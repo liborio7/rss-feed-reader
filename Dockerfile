@@ -10,4 +10,4 @@ RUN lein with-profile $env uberjar &&\
 
 EXPOSE 3000
 
-CMD ["java", "-jar", "app-standalone.jar", "-m", "rss-feed-reader.app"]
+CMD ["java", "-jar", "-Xms256M", "-Xmx256M", "app-standalone.jar", "-m", "rss-feed-reader.app"]
