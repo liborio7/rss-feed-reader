@@ -36,6 +36,7 @@
                  [clj-http "3.10.0"]
                  [cheshire "5.10.0"]
                  ]
+  :jvm-opts ["-Xms256M" "-Xmx512M"]
   :plugins [[lein-ring "0.12.5"]
             [lein-environ "1.1.0"]]
   :aliases {"kondo"    ["run" "-m" "clj-kondo.main" "--lint" "src"]
@@ -55,15 +56,18 @@
              :project/dev        {:source-paths ["dev"]}
 
              :project/test       {:dependencies [[midje "1.9.9"]]
-                                  :plugins      [[lein-midje "3.1.3"]]}
+                                  :plugins      [[lein-midje "3.2.1"]
+                                                 [lein-eftest "0.5.9"]]}
 
              :repl               [:project/instrument
                                   :project/dev
+                                  :project/test
                                   {:env            {:environment "repl"}
                                    :resource-paths ["resources/repl"]}]
 
              :dev                [:project/instrument
                                   :project/dev
+                                  :project/test
                                   {:env            {:environment "dev"}
                                    :resource-paths ["resources/dev"]}]
 
