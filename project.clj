@@ -36,7 +36,7 @@
                  [clj-http "3.10.0"]
                  [cheshire "5.10.0"]
                  ]
-  :jvm-opts ["-Xms256M" "-Xmx512M"]
+  :jvm-opts ["-Xms256M" "-Xmx256M"]
   :plugins [[lein-ring "0.12.5"]
             [lein-environ "1.1.0"]]
   :aliases {"kondo"    ["run" "-m" "clj-kondo.main" "--lint" "src"]
