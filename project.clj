@@ -53,7 +53,8 @@
                                   :injections   [(require 'orchestra.spec.test)
                                                  (orchestra.spec.test/instrument)]}
 
-             :project/dev        {:source-paths ["dev"]}
+             :project/dev        {:source-paths ["dev"]
+                                  :jvm-opts     ["-Dport=3000"]}
 
              :project/test       {:dependencies [[midje "1.9.9"]]
                                   :plugins      [[lein-midje "3.2.1"]
@@ -76,12 +77,7 @@
                                   {:env            {:environment "test"}
                                    :resource-paths ["resources/test"]}]
 
-             :testing            {:env            {:environment "testing"}
-                                  :resource-paths ["resources/testing"]}
+             :release            {:resource-paths ["resources/release"]}
 
-             :staging            {:env            {:environment "staging"}
-                                  :resource-paths ["resources/staging"]}
-
-             :production         {:env            {:environment "production"}
-                                  :resource-paths ["resources/production"]}
+             :uberjar            [:release]
              })

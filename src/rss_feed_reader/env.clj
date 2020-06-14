@@ -4,7 +4,7 @@
             [clojure.edn :as edn]
             [clojure.java.io :as io]))
 
-(defn read-env-resources []
+(defn read-resources []
   (->> ["postgres.edn" "scheduler.edn" "telegram.edn"]
        (map io/resource)
        (filter identity)
@@ -17,5 +17,5 @@
 
 (def env
   (merge
-    (read-env-resources)
+    (read-resources)
     (read-environ)))

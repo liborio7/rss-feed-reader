@@ -1,12 +1,10 @@
 FROM clojure:latest
 
-ARG env=dev
-
 COPY . /usr/src/app
 WORKDIR /usr/src/app
 
-RUN lein with-profile $env uberjar &&\
-    mv target/uberjar/*standalone.jar app-standalone.jar
+RUN lein uberjar &&\
+    mv target/*standalone.jar app-standalone.jar
 
 EXPOSE $port
 
