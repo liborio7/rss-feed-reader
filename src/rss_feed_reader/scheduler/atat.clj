@@ -41,5 +41,4 @@
     (log/info "job" job "for env" (:environment env) "has the following configurations:" config)
     (when-not (empty? config)
       (let [{:keys [ms-period initial-delay]} config]
-        (prn ms-period initial-delay)
         (at/every ms-period handler @pool :initial-delay initial-delay)))))

@@ -9,5 +9,6 @@
 
 (defn -main [& _args]
   (cid/set-new)
-  (log/info "environment:" (:environment env)) +
-  (jetty/run-jetty handler {:port 3000}))
+  (log/info "environment:" (:environment env))
+  (log/info "port:" (:port env))
+  (jetty/run-jetty handler {:port (Integer/parseInt (:port env))}))

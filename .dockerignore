@@ -1,0 +1,9 @@
+/.idea
+/.pg-data
+/classes
+/dev
+/doc
+/logs
+/target
+/test
+*.iml

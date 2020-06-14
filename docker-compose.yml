@@ -4,7 +4,7 @@ services:
     build:
       context: .
       args:
-        - env=${ENV}
+        - env=${ENVIRONMENT}
     depends_on:
       - postgres
     env_file:
@@ -13,7 +13,7 @@ services:
       - POSTGRES_HOST=postgres
       - POSTGRES_PORT=5432
     ports:
-      - "3000:3000"
+      - "${PORT}:${PORT}"
 
   postgres:
     image: postgres:13
