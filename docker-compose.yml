@@ -1,12 +1,11 @@
-version: "3"
+version: "3.4"
 services:
-  server:
+  backend:
+    container_name: backend
     build:
       context: .
     depends_on:
       - postgres
-    env_file:
-      - .env
     environment:
       - POSTGRES_HOST=postgres
       - POSTGRES_PORT=5432
@@ -14,13 +13,10 @@ services:
       - "${PORT}:${PORT}"
 
   postgres:
+    container_name: postgres
     image: postgres:13
     environment:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-    ports:
-      - "32790:5432"
-    volumes:
-      - ./.pg-data:/var/lib/postgresql/data/
 

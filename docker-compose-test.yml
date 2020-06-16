@@ -1,0 +1,20 @@
+version: "3.4"
+services:
+  backend:
+    container_name: backend_test
+    build:
+      target: builder
+    command: lein do migrate, test
+    environment:
+      - PORT=8080
+      - POSTGRES_DB=rss_feed_reader_test
+      - POSTGRES_USER=rss_feed_reader_user
+      - POSTGRES_PASSWORD=rss_feed_reader_password
+
+  postgres:
+    container_name: postgres_test
+    environment:
+      - POSTGRES_DB=rss_feed_reader_test
+      - POSTGRES_USER=rss_feed_reader_user
+      - POSTGRES_PASSWORD=rss_feed_reader_password
+

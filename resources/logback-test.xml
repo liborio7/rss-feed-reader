@@ -20,9 +20,9 @@
         </encoder>
     </appender>
 
-    <logger name="rss-feed-reader" level="INFO"/>
+    <logger name="rss-feed-reader" level="WARN"/>
 
-    <root level="INFO">
+    <root level="WARN">
         <appender-ref ref="STDOUT"/>
         <appender-ref ref="FILE"/>
     </root>

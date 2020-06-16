@@ -1,18 +1,23 @@
-FROM clojure:latest as builder
+FROM clojure:openjdk-11-lein-slim-buster as builder
 
 WORKDIR /usr/src/app
+
+COPY project.clj project.clj
+
+RUN lein deps
 
 COPY . .
 
-RUN lein uberjar &&\
-    mv target/*standalone.jar app-standalone.jar
+FROM builder as release
 
-# use clean base image
-FROM openjdk:13-slim-buster
+RUN lein uberjar && \
+    mv target/uberjar/*standalone.jar app-standalone.jar
 
-WORKDIR /usr/src/app
+FROM openjdk:13-slim-buster as run
 
-COPY --from=builder /usr/src/app/app-standalone.jar ./app.jar
+WORKDIR /usr/app
+
+COPY --from=release /usr/src/app/app-standalone.jar ./app.jar
 
 EXPOSE $port
 

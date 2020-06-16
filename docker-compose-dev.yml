@@ -1,0 +1,14 @@
+version: "3.4"
+services:
+  backend:
+    container_name: backend_dev
+    env_file:
+      - .env
+
+  postgres:
+    container_name: postgres_dev
+    ports:
+      - "32790:5432"
+    volumes:
+      - ./.pg-data:/var/lib/postgresql/data/
+

@@ -5,30 +5,8 @@ on: [push]
 jobs:
   test:
     runs-on: ubuntu-latest
-
-    services:
-      postgres:
-        image: postgres:10.10
-        env:
-          POSTGRES_DB: postgres
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-        ports:
-          - 5432:5432
-        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
-
-    container:
-      image: clojure
-      env:
-        POSTGRES_HOST: postgres
-        POSTGRES_DB: postgres
-        POSTGRES_USER: postgres
-        POSTGRES_PASSWORD: postgres
-
     steps:
       - name: Check out repository code
         uses: actions/checkout@v1
-      - name: Run migrations
-        run: lein migrate
-      - name: Run tests
-        run: lein midje
+      - name: Build the stack
+        run: docker-compose -f docker-compose.yml -f docker-compose-test.yml up

@@ -1,6 +1,5 @@
 (ns repl)
 
-
 (defn transducer-debug []
   (fn [rf]
     (let [step (atom 0)]
