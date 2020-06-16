@@ -1,4 +1,4 @@
-FROM clojure:openjdk-11-lein-slim-buster as builder
+FROM clojure:openjdk-13-lein-slim-buster as builder
 
 WORKDIR /usr/src/app
 
