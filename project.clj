@@ -76,8 +76,4 @@
                                   :project/test
                                   {:env            {:environment "test"}
                                    :resource-paths ["resources/test"]}]
-
-             :release            {:resource-paths ["resources/release"]}
-
-             :uberjar            [:release]
              })
