@@ -5,13 +5,13 @@ on: [push]
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      PORT: 3000
+      POSTGRES_DB: rss_feed_reader
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
     steps:
       - name: Check out repository code
         uses: actions/checkout@v2
       - name: Build the stack
-        run: docker-compose -f docker-compose.yml -f docker-compose-test.yml up --build --abort-on-container-exit --exit-code-from backend
-        env:
-          PORT: 3000
-          POSTGRES_DB: rss_feed_reader
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
+        run: docker-compose -f docker-compose.yml -f docker-compose.ci.yml up --build --abort-on-container-exit --exit-code-from backend
