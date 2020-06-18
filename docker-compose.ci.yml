@@ -5,6 +5,8 @@ services:
     build:
       target: builder
     command: lein do migrate, test
+    environment:
+      - LOG_LEVEL=WARN
 
   postgres:
     container_name: postgres_test
