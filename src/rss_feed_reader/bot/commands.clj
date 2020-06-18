@@ -10,14 +10,14 @@
 
 (defmulti execute (fn [cmd & _] cmd))
 
-(defmethod execute "/help" [_ chat]
+(defmethod execute "/help" [_ chat _]
   (let [chat-id (:telegram.message.chat/id chat)]
     (bot/send-message chat-id "Available commands:
   /list        Show RSS feeds subscriptions
   /add [rss]   Subscribe to RSS feed URL
   /del [rss]   Unsubscribe to RSS feed URL")))
 
-(defmethod execute "/list" [_ chat]
+(defmethod execute "/list" [_ chat _]
   (log/trace "list" chat "subscriptions")
   (let [chat-id (:telegram.message.chat/id chat)
         feeds-links (->> chat-id
@@ -46,7 +46,7 @@
                                     :account.feed.logic/feed    feed})
         (bot/send-message chat-id (format "RSS %s added" rss))))))
 
-(defmethod execute "/del" [_ chat rss]
+(defmethod execute "/del" [_ chat [rss]]
   (log/trace "delete" rss " for chat" chat)
   (let [chat-id (:telegram.message.chat/id chat)
         link (uris/from-string rss)]
