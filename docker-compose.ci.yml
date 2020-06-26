@@ -10,4 +10,5 @@ services:
 
   postgres:
     container_name: postgres_test
-
+    tmpfs:
+      - /var/lib/postgresql/data
