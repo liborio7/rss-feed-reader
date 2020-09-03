@@ -10,16 +10,16 @@
             [clojure.tools.logging :as log])
   (:import (org.postgresql.util PGobject)
            (clojure.lang IPersistentMap)
-           (java.sql PreparedStatement)
+           (java.sql PreparedStatement Timestamp)
            (java.time Instant)))
 
 (extend-protocol ISQLParameter
   Instant
   (set-parameter [value ^PreparedStatement ps ^long idx]
-    (.setObject ps idx (java.sql.Timestamp. (.toEpochMilli value)))))
+    (.setObject ps idx (Timestamp/from value))))
 
 (extend-protocol IResultSetReadColumn
-  java.sql.Timestamp
+  Timestamp
   (result-set-read-column [d _ _]
     (.toInstant d)))
 

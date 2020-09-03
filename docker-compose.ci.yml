@@ -4,7 +4,7 @@ services:
     container_name: backend_test
     build:
       target: builder
-    command: lein do migrate, test
+    command: lein with-profile test do migrate, eftest
     environment:
       - LOG_LEVEL=WARN
 
