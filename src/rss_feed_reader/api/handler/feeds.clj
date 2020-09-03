@@ -1,14 +1,15 @@
-(ns rss-feed-reader.api.feeds.handler
+(ns rss-feed-reader.api.handler.feeds
   (:require [clojure.spec.alpha :as s]
-            [clojure.tools.logging :as log]
-            [rss-feed-reader.api.response :as response]
-            [rss-feed-reader.domain.feed.logic :as feed-logic]
-            [rss-feed-reader.domain.feed.item.logic :as feed-item-logic]
             [rss-feed-reader.utils.uuid :as uuids]
+            [rss-feed-reader.utils.int :as ints]
+            [clojure.tools.logging :as log]
+            [rss-feed-reader.domain.feed :as feeds]
+            [rss-feed-reader.api.response :as response]
             [rss-feed-reader.utils.uri :as uris]
-            [rss-feed-reader.utils.date :as dates]
-            [rss-feed-reader.utils.int :as ints])
+            [rss-feed-reader.utils.time :as t]
+            [rss-feed-reader.domain.feed-item :as feed-items])
   (:import (clojure.lang ExceptionInfo)))
+
 
 ;; model
 
@@ -31,18 +32,17 @@
                                   :feed.item.handler/description]))
 
 ;; conversion
-
-(defn feed-logic-model->handler-model [model]
-  (let [{:feed.logic/keys [id link]} model]
+(defn feed->response-body [model]
+  (let [{:feed.domain/keys [id link]} model]
     {:feed.handler/id   id
      :feed.handler/link (str link)}))
 
-(defn feed-item-logic-model->handler-model [model]
-  (let [{:feed.item.logic/keys [id title link pub-time description]} model]
+(defn feed-item->response-body [model]
+  (let [{:feed.item.domain/keys [id title link pub-time description]} model]
     {:feed.item.handler/id          id
      :feed.item.handler/title       title
      :feed.item.handler/link        (str link)
-     :feed.item.handler/pub-time    (dates/unparse-date pub-time)
+     :feed.item.handler/pub-time    (t/parse pub-time)
      :feed.item.handler/description description}))
 
 ;; get
@@ -54,16 +54,16 @@
         limit (ints/parse-int (:limit req-query))]
     (log/info "get feeds" req-path req-query)
     (let [starting-after-feed (when starting-after-id
-                                (feed-logic/get-by-id {:feed.logic/id starting-after-id}))
+                                (feeds/get-by-id {:feed.domain/id starting-after-id}))
           starting-after (if starting-after-feed
-                           (:feed.logic/order-id starting-after-feed)
+                           (:feed.domain/order-id starting-after-feed)
                            0)
           limit (if limit
                   (max 0 (min 40 limit))
                   20)
-          feeds (feed-logic/get-all :starting-after starting-after
-                                    :limit (+ 1 limit))]
-      (-> (response/paginate feeds feed-logic-model->handler-model limit)
+          feeds (feeds/get-all :starting-after starting-after
+                               :limit (+ 1 limit))]
+      (-> (response/paginate feeds feed->response-body limit)
           (response/ok)))))
 
 (defn get-feed [req]
@@ -72,11 +72,11 @@
     (log/info "get feed" req-path)
     (if (nil? id)
       (response/not-found)
-      (let [feed (feed-logic/get-by-id {:feed.logic/id id})]
+      (let [feed (feeds/get-by-id {:feed.domain/id id})]
         (if (nil? feed)
           (response/not-found)
           (-> feed
-              (feed-logic-model->handler-model)
+              (feed->response-body)
               (response/ok)))))))
 
 (defn get-feed-items [req]
@@ -88,21 +88,21 @@
     (log/info "get feed items" req-path req-query)
     (if (nil? feed-id)
       (response/not-found)
-      (let [feed (feed-logic/get-by-id {:feed.logic/id feed-id})]
+      (let [feed (feeds/get-by-id {:feed.domain/id feed-id})]
         (if (nil? feed)
           (response/not-found)
           (let [starting-after-feed-item (when starting-after-id
-                                           (feed-item-logic/get-by-id {:feed.item.logic/id starting-after-id}))
-                starting-after (when starting-after-feed-item
-                                 (:feed.item.logic/order-id starting-after-feed-item)
+                                           (feed-items/get-by-id {:feed.item.domain/id starting-after-id}))
+                starting-after (if starting-after-feed-item
+                                 (:feed.item.domain/order-id starting-after-feed-item)
                                  0)
                 limit (if limit
                         (max 0 (min 40 limit))
                         20)
-                feed-items (feed-item-logic/get-by-feed {:feed.item.logic/feed feed}
-                                                        :starting-after starting-after
-                                                        :limit (+ 1 limit))]
-            (-> (response/paginate feed-items feed-item-logic-model->handler-model limit)
+                feed-items (feed-items/get-by-feed {:feed.item.domain/feed feed}
+                                                   :starting-after starting-after
+                                                   :limit (+ 1 limit))]
+            (-> (response/paginate feed-items feed-item->response-body limit)
                 (response/ok))))))))
 
 ;; post
@@ -112,9 +112,9 @@
         link (uris/from-string (:link req-body))]
     (log/info "create feed" req-body)
     (try
-      (-> {:feed.logic/link link}
-          (feed-logic/create)
-          (feed-logic-model->handler-model)
+      (-> {:feed.domain/link link}
+          (feeds/create!)
+          (feed->response-body)
           (response/ok))
       (catch ExceptionInfo e
         (let [data (ex-data e)
@@ -132,5 +132,21 @@
     (if (nil? id)
       (response/no-content)
       (do
-        (feed-logic/delete {:feed.logic/id id})
+        (feeds/delete! {:feed.domain/id id})
         (response/no-content)))))
+
+;; routes
+
+(def routes
+  [["/feeds"
+    ["" {:name ::feeds
+         :get  get-feeds
+         :post create-feed}]
+    ["/:feed-id" {:name   ::feeds-id
+                  :get    get-feed
+                  :delete delete-feed
+                  }]
+    ["/:feed-id/items" {:name ::feed-items
+                        :get  get-feed-items
+                        }]
+    ]])

@@ -1,14 +1,31 @@
 (ns rss-feed-reader.app
-  (:require [rss-feed-reader.jobs]
-            [rss-feed-reader.bot.job]
+  (:gen-class)
+  (:require [mount.core :as mount :refer [defstate]]
             [rss-feed-reader.env :refer [env]]
+            [rss-feed-reader.db.postgres :refer [ds]]
+            [rss-feed-reader.scheduler.atat :refer [pool]]
+            [rss-feed-reader.bot.job]
+            [rss-feed-reader.rss.feeder]
             [ring.adapter.jetty :as jetty]
             [clojure.tools.logging :as log]
             [rss-feed-reader.utils.cid :as cid]
             [rss-feed-reader.api.router :refer [handler]]))
 
+(defn start-webserver [env]
+  (let [port (->> (or (:port env) "3000")
+                  (Integer/parseInt))]
+    (log/info "start web server")
+    (jetty/run-jetty handler {:port  port
+                              :join? false})))
+
+(defn stop-webserver [webserver]
+  (log/info "stop web server")
+  (.stop webserver))
+
+(defstate webserver
+  :start (start-webserver env)
+  :stop (stop-webserver webserver))
+
 (defn -main [& _args]
   (cid/set-new)
-  (log/info "environment:" (:environment env))
-  (log/info "port:" (:port env))
-  (jetty/run-jetty handler {:port (Integer/parseInt (:port env))}))
+  (mount/start))

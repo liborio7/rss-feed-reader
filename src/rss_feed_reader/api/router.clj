@@ -6,8 +6,8 @@
             [reitit.ring :as ring]
             [rss-feed-reader.env :refer [env]]
             [rss-feed-reader.api.middleware :refer :all]
-            [rss-feed-reader.api.accounts.router :as accounts]
-            [rss-feed-reader.api.feeds.router :as feeds]))
+            [rss-feed-reader.api.handler.accounts :as accounts]
+            [rss-feed-reader.api.handler.feeds :as feeds]))
 
 (def routes [accounts/routes
              feeds/routes])
@@ -21,11 +21,6 @@
            [wrap-json-response {:pretty true}]
            [wrap-json-response-body]]]
     (case (:environment env)
-      "repl"
-      (into [[wrap-cors
-              :access-control-allow-origin [#".*"]
-              :access-control-allow-methods [:get :post :put :delete]]]
-            m)
       "dev"
       (into [[wrap-cors
               :access-control-allow-origin [#".*"]

@@ -22,4 +22,4 @@ COPY --from=release /usr/src/app/app-standalone.jar ./app.jar
 EXPOSE $port
 
 ENTRYPOINT ["java", "-XX:+UseContainerSupport","-XX:MaxRAMPercentage=85","-XX:+UnlockExperimentalVMOptions","-XX:+UseZGC", \
-    "-jar", "-Xms256M", "-Xmx256M", "app.jar", "-m", "rss-feed-reader.app"]
+    "-jar", "-Xms256M", "-Xmx256M", "app.jar"]

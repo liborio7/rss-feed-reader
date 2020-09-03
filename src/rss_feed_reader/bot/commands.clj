@@ -1,8 +1,8 @@
 (ns rss-feed-reader.bot.commands
   (:require [rss-feed-reader.bot.client :as bot]
-            [rss-feed-reader.domain.feed.logic :as feed-logic]
-            [rss-feed-reader.domain.account.logic :as account-logic]
-            [rss-feed-reader.domain.account.feed.logic :as account-feed-logic]
+            [rss-feed-reader.domain.feed :as feeds]
+            [rss-feed-reader.domain.account :as accounts]
+            [rss-feed-reader.domain.account-feed :as account-feeds]
             [clojure.tools.logging :as log]
             [clojure.string :as string]
             [rss-feed-reader.utils.uri :as uris]
@@ -21,12 +21,12 @@
   (log/trace "list" chat "subscriptions")
   (let [chat-id (:telegram.message.chat/id chat)
         feeds-links (->> chat-id
-                         (assoc {} :account.logic/chat-id)
-                         (account-logic/get-by-chat-id)
-                         (assoc {} :account.feed.logic/account)
-                         (account-feed-logic/get-by-account)
-                         (map :account.feed.logic/feed)
-                         (map (comp str :feed.logic/link))
+                         (assoc {} :account.domain/chat-id)
+                         (accounts/get-by-chat-id)
+                         (assoc {} :account.feed.domain/account)
+                         (account-feeds/get-by-account)
+                         (map :account.feed.domain/feed)
+                         (map (comp str :feed.domain/link))
                          (reduce conj []))]
     (bot/send-message chat-id (str "RSS feed links:\n"
                                    (string/join "\n" feeds-links)))))
@@ -39,11 +39,11 @@
       (bot/send-message chat-id "Usage: /add [rss]
       - [rss] should be a valid RSS feed URL")
       (let [username (:telegram.message.chat/username chat)
-            account (account-logic/create {:account.logic/username username
-                                           :account.logic/chat-id  chat-id})
-            feed (feed-logic/create {:feed.logic/link link})]
-        (account-feed-logic/create {:account.feed.logic/account account
-                                    :account.feed.logic/feed    feed})
+            account (accounts/create! {:account.domain/username username
+                                       :account.domain/chat-id  chat-id})
+            feed (feeds/create! {:feed.domain/link link})]
+        (account-feeds/create! {:account.feed.domain/account account
+                                :account.feed.domain/feed    feed})
         (bot/send-message chat-id (format "RSS %s added" rss))))))
 
 (defmethod execute "/del" [_ chat [rss]]
@@ -54,11 +54,11 @@
       (bot/send-message chat-id "Usage: /del [rss]
       - [rss] should be a valid RSS feed URL")
       (let [username (:telegram.message.chat/username chat)
-            account (account-logic/create {:account.logic/username username
-                                           :account.logic/chat-id  chat-id})
-            feed (feed-logic/get-by-link {:feed.logic/link link})
-            account-feed (account-feed-logic/get-by-account-and-feed {:account.feed.logic/account account
-                                                                      :account.feed.logic/feed    feed})]
+            account (accounts/create! {:account.domain/username username
+                                       :account.domain/chat-id  chat-id})
+            feed (feeds/get-by-link {:feed.domain/link link})
+            account-feed (account-feeds/get-by-account-and-feed {:account.feed.domain/account account
+                                                                 :account.feed.domain/feed    feed})]
         (when account-feed
-          (account-feed-logic/delete account-feed))
+          (account-feeds/delete! account-feed))
         (bot/send-message chat-id (format "RSS %s deleted" rss))))))

@@ -1,13 +1,13 @@
-(ns rss-feed-reader.api.accounts.handler
+(ns rss-feed-reader.api.handler.accounts
   (:require [clojure.spec.alpha :as s]
+            [rss-feed-reader.utils.uuid :as uuids]
             [clojure.tools.logging :as log]
             [rss-feed-reader.api.response :as response]
-            [rss-feed-reader.domain.account.logic :as account-logic]
-            [rss-feed-reader.domain.account.feed.logic :as account-feed-logic]
-            [rss-feed-reader.domain.feed.logic :as feed-logic]
-            [rss-feed-reader.utils.uuid :as uuids]
-            [rss-feed-reader.utils.int :as ints]
-            [rss-feed-reader.utils.uri :as uris])
+            [rss-feed-reader.domain.account :as accounts]
+            [rss-feed-reader.domain.account-feed :as account-feeds]
+            [rss-feed-reader.domain.feed :as feeds]
+            [rss-feed-reader.utils.uri :as uris]
+            [rss-feed-reader.utils.int :as ints])
   (:import (clojure.lang ExceptionInfo)))
 
 ;; model
@@ -28,16 +28,16 @@
 
 ;; conversion
 
-(defn- account-logic-model->handler-model [model]
-  (let [{:account.logic/keys [id username chat-id]} model]
+(defn- account->response-body [model]
+  (let [{:account.domain/keys [id username chat-id]} model]
     {:account.handler/id       id
      :account.handler/username username
      :account.handler/chat-id  chat-id}))
 
-(defn- account-feed-logic-model->handler-model [model]
-  (let [{:account.feed.logic/keys [id feed]} model]
+(defn- account-feed->response-body [model]
+  (let [{:account.feed.domain/keys [id feed]} model]
     {:account.feed.handler/id   id
-     :account.feed.handler/link (str (:feed.logic/link feed))}))
+     :account.feed.handler/link (str (:feed.domain/link feed))}))
 
 ;; get
 
@@ -47,11 +47,11 @@
     (log/info "get account" req-path)
     (if (nil? id)
       (response/not-found)
-      (let [account (account-logic/get-by-id {:account.logic/id id})]
+      (let [account (accounts/get-by-id {:account.domain/id id})]
         (if (nil? account)
           (response/not-found)
           (-> account
-              (account-logic-model->handler-model)
+              (account->response-body)
               (response/ok)))))))
 
 (defn get-account-feeds [req]
@@ -63,21 +63,21 @@
     (log/info "get account feeds" req-path req-query)
     (if (nil? account-id)
       (response/not-found)
-      (let [account (account-logic/get-by-id {:account.logic/id account-id})]
+      (let [account (accounts/get-by-id {:account.domain/id account-id})]
         (if (nil? account)
           (response/not-found)
           (let [starting-after-account-feed (when starting-after-id
-                                              (account-feed-logic/get-by-id {:account.feed.logic/id starting-after-id}))
+                                              (account-feeds/get-by-id {:account.feed.domain/id starting-after-id}))
                 starting-after (if starting-after-account-feed
-                                 (:account.feed.logic/order-id starting-after-account-feed)
+                                 (:account.feed.domain/order-id starting-after-account-feed)
                                  0)
                 limit (if limit
                         (max 0 (min 40 limit))
                         20)
-                account-feeds (account-feed-logic/get-by-account {:account.feed.logic/account account}
-                                                                 :starting-after starting-after
-                                                                 :limit (+ 1 limit))]
-            (-> (response/paginate account-feeds account-feed-logic-model->handler-model limit)
+                account-feeds (account-feeds/get-by-account {:account.feed.domain/account account}
+                                                            :starting-after starting-after
+                                                            :limit (+ 1 limit))]
+            (-> (response/paginate account-feeds account-feed->response-body limit)
                 (response/ok))))))))
 
 (defn get-account-feed [req]
@@ -87,11 +87,11 @@
     (log/info "get account feed" req-path)
     (if (some nil? [account-id account-feed-id])
       (response/not-found)
-      (let [account-feed (account-feed-logic/get-by-id {:account.feed.logic/id account-feed-id})]
-        (if (not= account-id (:account.logic/id (:account.feed.logic/account account-feed)))
+      (let [account-feed (account-feeds/get-by-id {:account.feed.domain/id account-feed-id})]
+        (if (not= account-id (:account.domain/id (:account.feed.domain/account account-feed)))
           (response/not-found)
           (-> account-feed
-              (account-feed-logic-model->handler-model)
+              (account-feed->response-body)
               (response/ok)))))))
 
 ;; post
@@ -102,10 +102,10 @@
         chat-id (:chat_id req-body)]
     (log/info "create account" req-body)
     (try
-      (-> {:account.logic/username username
-           :account.logic/chat-id  chat-id}
-          (account-logic/create)
-          (account-logic-model->handler-model)
+      (-> {:account.domain/username username
+           :account.domain/chat-id  chat-id}
+          (accounts/create!)
+          (account->response-body)
           (response/ok))
       (catch ExceptionInfo e
         (let [data (ex-data e)
@@ -120,15 +120,15 @@
         account-id (uuids/from-string (:account-id req-path))
         link (uris/from-string (:link req-body))]
     (log/info "create account feed" req-path req-body)
-    (let [account (account-logic/get-by-id {:account.logic/id account-id})]
+    (let [account (accounts/get-by-id {:account.domain/id account-id})]
       (if (nil? account)
         (response/not-found)
         (try
-          (let [feed (feed-logic/create {:feed.logic/link link})]
-            (-> {:account.feed.logic/account account
-                 :account.feed.logic/feed    feed}
-                (account-feed-logic/create)
-                (account-feed-logic-model->handler-model)
+          (let [feed (feeds/create! {:feed.domain/link link})]
+            (-> {:account.feed.domain/account account
+                 :account.feed.domain/feed    feed}
+                (account-feeds/create!)
+                (account-feed->response-body)
                 (response/ok)))
           (catch ExceptionInfo e
             (let [data (ex-data e)
@@ -147,7 +147,7 @@
     (if (nil? account-id)
       (response/no-content)
       (do
-        (account-logic/delete {:account.logic/id account-id})
+        (accounts/delete! {:account.domain/id account-id})
         (response/no-content)))))
 
 (defn delete-account-feed [req]
@@ -157,9 +157,30 @@
     (log/info "delete account feed" req-path)
     (if (some nil? [account-id account-feed-id])
       (response/not-found)
-      (let [account-feed (account-feed-logic/get-by-id {:account.feed.logic/id account-feed-id})]
-        (if (not= account-id (:account.logic/id (:account.feed.logic/account account-feed)))
+      (let [account-feed (account-feeds/get-by-id {:account.feed.domain/id account-feed-id})]
+        (if (not= account-id (:account.domain/id (:account.feed.domain/account account-feed)))
           (response/no-content)
           (do
-            (account-feed-logic/delete account-feed)
+            (account-feeds/delete! account-feed)
             (response/no-content)))))))
+
+;; routes
+
+(def routes
+  [
+   ["/accounts"
+    ["" {:name ::accounts
+         :post create-account}]
+    ["/:account-id" {:name   ::account
+                     :get    get-account
+                     :delete delete-account
+                     }]
+    ["/:account-id/feeds" {:name ::account-feeds
+                           :post create-account-feed
+                           :get  get-account-feeds
+                           }]
+    ["/:account-id/feeds/:account-feed-id" {:name   ::account-feed
+                                            :get    get-account-feed
+                                            :delete delete-account-feed
+                                            }]]
+   ])

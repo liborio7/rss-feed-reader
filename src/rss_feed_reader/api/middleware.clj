@@ -1,20 +1,19 @@
 (ns rss-feed-reader.api.middleware
-  (:require [clj-time.coerce :as tc]
-            [rss-feed-reader.utils.cid :as cid]
+  (:require [rss-feed-reader.utils.cid :as cid]
             [clojure.tools.logging :as log]
-            [clj-time.core :as t]
+            [rss-feed-reader.utils.time :as t]
             [rss-feed-reader.utils.map :as maps]
             [rss-feed-reader.api.response :as response]))
 
 (defn wrap-logger [handler]
   (fn [request]
     (let [{:keys [uri request-method]} request
-          from (tc/to-long (t/now))]
+          from (t/instant->long (t/instant-now))]
       (cid/set-new)
       (log/info "[REQ]" request-method uri)
       (let [response (handler request)
             {:keys [status]} response
-            to (tc/to-long (t/now))]
+            to (t/instant->long (t/instant-now))]
         (log/info "[RES]" (format "%dms" (- to from)) status)
         response))))
 

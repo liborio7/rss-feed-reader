@@ -2,6 +2,8 @@ version: "3.4"
 services:
   backend:
     container_name: backend_dev
+    volumes:
+      - ./.logs:/usr/src/app/logs/
     env_file:
       - .env
 

@@ -6,10 +6,13 @@
   :dependencies [
                  [org.clojure/clojure "1.10.0"]
                  [clj-kondo "RELEASE"]
-                 [clj-time "0.15.2"]
+                 [clojure.java-time "0.3.2"]
 
                  ; env
                  [environ "1.1.0"]
+
+                 ; di
+                 [mount "0.1.16"]
 
                  ; logging
                  [org.clojure/tools.logging "0.5.0"]
@@ -41,39 +44,31 @@
             [lein-environ "1.1.0"]]
   :aliases {"kondo"    ["run" "-m" "clj-kondo.main" "--lint" "src"]
             "midje"    ["with-profile" "test" "midje"]
-            "dev"      ["with-profile" "dev" "run" "-m" "rss-feed-reader.app"]
             "migrate"  ["run" "-m" "rss-feed-reader.db.postgres/migrate"]
             "rollback" ["run" "-m" "rss-feed-reader.db.postgres/rollback"]}
-  :repl-options {:init-ns rss-feed-reader.app}
+  :main rss-feed-reader.app
   :target-path "target/%s"
   :resource-paths ["resources"]
+  :eftest {:multithread? :vars}
   :profiles {
              :project/instrument {:dependencies [[org.clojure/test.check "0.9.0"]
                                                  [orchestra "2018.12.06-2"]]
                                   :injections   [(require 'orchestra.spec.test)
                                                  (orchestra.spec.test/instrument)]}
 
-             :project/dev        {:source-paths ["dev"]
-                                  :jvm-opts     ["-Dport=3000"]}
+             :project/repl       {:dependencies   [[org.clojure/tools.namespace "1.0.0"]]
+                                  :source-paths   ["dev"]
+                                  :resource-paths ["resources/dev"]}
 
              :project/test       {:dependencies [[midje "1.9.9"]]
                                   :plugins      [[lein-midje "3.2.1"]
                                                  [lein-eftest "0.5.9"]]}
 
-             :repl               [:project/instrument
-                                  :project/dev
-                                  :project/test
-                                  {:env            {:environment "repl"}
-                                   :resource-paths ["resources/repl"]}]
-
              :dev                [:project/instrument
-                                  :project/dev
-                                  :project/test
-                                  {:env            {:environment "dev"}
-                                   :resource-paths ["resources/dev"]}]
+                                  :project/repl
+                                  {:env {:environment "dev"}}]
 
              :test               [:project/instrument
                                   :project/test
-                                  {:env            {:environment "test"}
-                                   :resource-paths ["resources/test"]}]
+                                  {:env {:environment "test"}}]
              })

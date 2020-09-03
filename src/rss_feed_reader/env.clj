@@ -1,5 +1,5 @@
 (ns rss-feed-reader.env
-  (:require [clojure.string :refer [ends-with?]]
+  (:require [mount.core :refer [defstate]]
             [environ.core :as environ]
             [clojure.edn :as edn]
             [clojure.java.io :as io]))

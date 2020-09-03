@@ -7,145 +7,150 @@
             [honeysql.core :as q]
             [honeysql.format :as qf]))
 
-(defn- default-opts [table]
+(defn default-opts [table]
   {:qualifier (str/replace (name table) "_" ".")})
 
-(defn- format-values [m]
+(defn format-values [m]
   (walk
     (fn [[k v]] [k (qf/value v)])
     identity
     m))
 
+;; execute
+
+(defn db-query [ds stm opts]
+  (jdbc/with-db-connection [conn {:datasource ds}]
+                           (jdbc/query conn stm opts)))
+
+(defn db-execute! [ds stm opts]
+  (jdbc/with-db-connection [conn {:datasource ds}]
+                           (jdbc/execute! conn stm opts)))
+
+;; pagination
+
+(defn paginate
+  ([select-fn sa-fn] (paginate select-fn sa-fn 0))
+  ([select-fn sa-fn initial-sa]
+   (sequence
+     (comp
+       (take-while seq)
+       cat)
+     (iterate
+       (fn [coll]
+         (when-not (empty? coll)
+           (let [sa (sa-fn (last coll))]
+             (select-fn sa))))
+       (select-fn initial-sa)))))
+
 ;; select
 
-(defn get-multi-by-id
-  ([ds table id-keyword models] (get-multi-by-id ds table id-keyword models {}))
-  ([ds table id-keyword models opts]
-   (log/trace "get by id" table id-keyword models)
-   (let [ids (->> models
-                  (map id-keyword))
-         query (-> (q/build :select :*
-                            :from table
-                            :where [:in id-keyword ids])
-                   (q/format))
-         opts (merge (default-opts table) opts)
-         result (jdbc/with-db-connection [conn {:datasource ds}]
-                                         (jdbc/query conn query opts))]
-     (log/trace query "returns" result)
-     result)))
-
-(defn get-by-id
-  ([ds table id-keyword model] (get-by-id ds table id-keyword model {}))
-  ([ds table id-keyword model opts]
-   (let [result (get-multi-by-id ds table id-keyword (conj [] model) opts)]
-     (when (> (count result) 1)
-       (log/warn "unexpected multiple results"))
-     (first result))))
-
-(defn get-multi-by-query
-  ([ds table where-clause] (get-multi-by-query ds table where-clause {}))
+(defn select-values
+  ([ds table where-clause] (select-values ds table where-clause {}))
   ([ds table where-clause opts]
-   (log/trace "get by query" table where-clause)
+   (log/debug "select from" table where-clause)
    (let [query (-> (q/build :select :*
                             :from table)
                    (merge where-clause)
                    (q/format))
          opts (merge (default-opts table) opts)
-         result (jdbc/with-db-connection [conn {:datasource ds}]
-                                         (jdbc/query conn query opts))]
-     (log/trace query "returns" (count result) "results")
-     result)))
+         db-result (db-query ds query opts)]
+     (log/trace query "returns" (count db-result) "results")
+     db-result)))
 
-(defn get-by-query
-  ([ds table clause] (get-by-query ds table clause {}))
+(defn select
+  ([ds table clause] (select ds table clause {}))
   ([ds table clause opts]
-   (let [result (get-multi-by-query ds table clause opts)]
+   (let [result (select-values ds table clause opts)]
      (when (> (count result) 1)
        (log/warn "unexpected multiple results"))
      (first result))))
 
 ;; insert
 
-(defn insert-multi
-  ([ds table id-keyword models] (insert-multi ds table id-keyword models {}))
-  ([ds table id-keyword models opts]
-   (log/trace "insert " table id-keyword models)
-   (let [values (->> models
+(defn insert-values!
+  ([ds table models] (insert-values! ds table models {}))
+  ([ds table models opts]
+   (log/debug "insert into" table models)
+   (let [values (->> (vec models)
                      (map format-values)
                      (reduce conj []))
          query (-> (q/build :insert-into table
                             :values values)
                    (q/format))
          opts (merge (default-opts table) opts)
-         sql-result (jdbc/with-db-connection [conn {:datasource ds}]
-                                             (jdbc/execute! conn query opts))
-         affected-rows (first sql-result)]
+         db-result (db-execute! ds query opts)
+         affected-rows (first db-result)]
      (log/trace query "affects" affected-rows "row(s)")
      (when (zero? affected-rows)
        (throw (ex-info "no rows has been inserted"
                        {:cause   :sql-insert
                         :reason  :no-rows-affected
-                        :details [ds table models]})))
-     (get-multi-by-id ds table id-keyword models))))
+                        :details [query]})))
+     (when (< affected-rows (count models))
+       (log/warn "expected to affect" (count models) "rows but was" affected-rows))
+     models)))
 
-(defn insert
-  ([ds table id-keyword model] (insert ds table id-keyword model {}))
-  ([ds table id-keyword model opts]
-   (let [result (insert-multi ds table id-keyword (conj [] model) opts)]
-     (when (> (count result) 1)
+(defn insert!
+  ([ds table model] (insert! ds table model {}))
+  ([ds table model opts]
+   (let [sql-result (insert-values! ds table (conj [] model) opts)]
+     (when (> (count sql-result) 1)
        (log/warn "unexpected multiple results"))
-     (first result))))
+     (first sql-result))))
 
 ;; update
 
-(defn update
-  ([ds table id-keyword version-keyword model] (update ds table id-keyword version-keyword model {}))
-  ([ds table id-keyword version-keyword model opts]
-   (log/trace "update" table id-keyword model)
-   (let [values (->> (update-in model [version-keyword] inc)
-                     (filter not-empty)
-                     (format-values)
-                     (into {}))
-         query (-> (q/build :update table
-                            :set values
-                            :where [:and
-                                    [:= id-keyword (id-keyword model)]
-                                    [:= version-keyword (version-keyword model)]])
+(defn update-values!
+  ([ds table where-clause model] (update-values! ds table where-clause model {}))
+  ([ds table where-clause model opts]
+   (log/debug "update" table model)
+   (let [query (-> (q/build :update table
+                            :set (format-values model))
+                   (merge where-clause)
                    (q/format))
          opts (merge (default-opts table) opts)
-         sql-result (jdbc/with-db-connection [conn {:datasource ds}]
-                                             (jdbc/execute! conn query opts))
-         affected-rows (first sql-result)]
+         db-result (db-execute! ds query opts)
+         affected-rows (first db-result)]
      (log/trace query "affects" affected-rows "row(s)")
      (when (zero? affected-rows)
        (throw (ex-info "no rows has been updated"
                        {:cause   :sql-update
                         :reason  :no-rows-affected
-                        :details [ds table model]})))
-     (get-by-id ds table id-keyword model opts))))
+                        :details [query]})))
+     affected-rows)))
+
+(defn update!
+  ([ds table where-clause model] (update! ds table where-clause model {}))
+  ([ds table where-clause model opts]
+   (log/debug "update" table model)
+   (let [query (-> (q/build :update table
+                            :set (format-values model))
+                   (merge where-clause)
+                   (q/format))
+         opts (merge (default-opts table) opts)
+         db-result (db-execute! ds query opts)
+         affected-rows (first db-result)]
+     (log/trace query "affects" affected-rows "row(s)")
+     (when (zero? affected-rows)
+       (throw (ex-info "no rows has been updated"
+                       {:cause   :sql-update
+                        :reason  :no-rows-affected
+                        :details [query]})))
+     (when (> affected-rows 1)
+       (log/warn "unexpected multiple results"))
+     model)))
 
 ;; delete
 
-(defn delete-multi
-  ([ds table id-keyword models] (delete-multi ds table id-keyword models {}))
-  ([ds table id-keyword models opts]
-   (log/trace "delete " table id-keyword models)
-   (let [ids (->> models
-                  (map id-keyword))
-         query (-> (q/build :delete-from table
-                            :where [:in id-keyword ids])
+(defn delete!
+  ([ds table where-clause] (delete! ds table where-clause {}))
+  ([ds table where-clause opts]
+   (log/debug "delete from" table where-clause)
+   (let [query (-> (q/build :delete-from table)
+                   (merge where-clause)
                    (q/format))
          opts (merge (default-opts table) opts)
-         sql-result (jdbc/with-db-connection [conn {:datasource ds}]
-                                             (jdbc/execute! conn query opts))
-         affected-rows (first sql-result)]
+         db-result (db-execute! ds query opts)
+         affected-rows (first db-result)]
      (log/trace query "affects" affected-rows "row(s)")
-     affected-rows)))
-
-(defn delete
-  ([ds table id-keyword model] (delete ds table id-keyword model {}))
-  ([ds table id-keyword model opts]
-   (let [affected-rows (delete-multi ds table id-keyword (conj [] model) opts)]
-     (when (> affected-rows 1)
-       (log/warn "unexpected multiple results"))
      affected-rows)))
