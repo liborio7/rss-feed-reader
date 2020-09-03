@@ -6,7 +6,7 @@
             [clojure.java.jdbc :as jdbc]
             [mount.core :as mount]))
 
-(defn do! [ds stm]
+(defn db-do! [ds stm]
   (jdbc/with-db-connection [conn {:datasource ds}]
                            (jdbc/db-do-commands conn false stm)))
 
@@ -23,15 +23,13 @@
                   (clojure.string/replace "-" ""))))
 
 (defn db-fixture [f]
-  (let [ds (start-ds)
-        db (random-db-name)]
-    (do! ds (str "CREATE DATABASE " db ";"))
-    (let [test-ds (start-ds (test-config db))]
-      (mount/start-with {#'rss-feed-reader.db.postgres/ds test-ds})
-      (migrate (ragtime-config test-ds))
-      (f)
-      (mount/stop)
-      (hikari/close-datasource test-ds)
-      (do! ds (str "REVOKE CONNECT ON DATABASE " db " FROM public;"))
-      (do! ds (str "DROP DATABASE " db ";"))
-      (hikari/close-datasource ds))))
+  (with-open [ds (start-ds)]
+    (let [db (random-db-name)]
+      (db-do! ds (str "CREATE DATABASE " db ";"))
+      (with-open [test-ds (start-ds (test-config db))]
+        (mount/start-with {#'rss-feed-reader.db.postgres/ds test-ds})
+        (migrate (ragtime-config test-ds))
+        (f)
+        (mount/stop))
+      (db-do! ds (str "REVOKE CONNECT ON DATABASE " db " FROM public;"))
+      (db-do! ds (str "DROP DATABASE " db ";")))))

@@ -74,14 +74,20 @@
   :stop (stop-ds ds))
 
 (defn ragtime-config
-  ([] (ragtime-config ds))
+  ([] (ragtime-config (start-ds)))
   ([ds] {:datastore  (jdbc/sql-database {:datasource ds})
          :migrations (jdbc/load-resources "migrations")}))
 
 (defn migrate
-  ([] (migrate ragtime-config))
-  ([ragtime-config] (repl/migrate ragtime-config)))
+  ([]
+   (with-open [ds (start-ds)]
+     (migrate (ragtime-config ds))))
+  ([ragtime-config]
+   (repl/migrate ragtime-config)))
 
 (defn rollback
-  ([] (rollback ragtime-config))
-  ([ragtime-config] (repl/rollback ragtime-config)))
+  ([]
+   (with-open [ds (start-ds)]
+     (rollback (ragtime-config ds))))
+  ([ragtime-config]
+   (repl/rollback ragtime-config)))
