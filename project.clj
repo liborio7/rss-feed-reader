@@ -43,13 +43,12 @@
   :plugins [[lein-ring "0.12.5"]
             [lein-environ "1.1.0"]]
   :aliases {"kondo"    ["run" "-m" "clj-kondo.main" "--lint" "src"]
-            "midje"    ["with-profile" "test" "midje"]
+            "kaocha"   ["run" "-m" "kaocha.runner"]
             "migrate"  ["run" "-m" "rss-feed-reader.db.postgres/migrate"]
             "rollback" ["run" "-m" "rss-feed-reader.db.postgres/rollback"]}
   :main rss-feed-reader.app
   :target-path "target/%s"
   :resource-paths ["resources"]
-  :eftest {:multithread? :vars}
   :profiles {
              :project/instrument {:dependencies [[org.clojure/test.check "0.9.0"]
                                                  [orchestra "2018.12.06-2"]]
@@ -60,9 +59,7 @@
                                   :source-paths   ["dev"]
                                   :resource-paths ["resources/dev"]}
 
-             :project/test       {:dependencies [[midje "1.9.9"]]
-                                  :plugins      [[lein-midje "3.2.1"]
-                                                 [lein-eftest "0.5.9"]]}
+             :project/test       {:dependencies [[lambdaisland/kaocha "1.0.672"]]}
 
              :dev                [:project/instrument
                                   :project/repl
