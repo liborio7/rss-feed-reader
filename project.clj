@@ -44,8 +44,8 @@
             [lein-environ "1.1.0"]]
   :aliases {"kondo"    ["run" "-m" "clj-kondo.main" "--lint" "src"]
             "kaocha"   ["run" "-m" "kaocha.runner"]
-            "migrate"  ["run" "-m" "rss-feed-reader.db.postgres/migrate"]
-            "rollback" ["run" "-m" "rss-feed-reader.db.postgres/rollback"]}
+            "migrate"  ["run" "-m" "rss-feed-reader.db.datasource/migrate"]
+            "rollback" ["run" "-m" "rss-feed-reader.db.datasource/rollback"]}
   :main rss-feed-reader.app
   :target-path "target/%s"
   :resource-paths ["resources"]

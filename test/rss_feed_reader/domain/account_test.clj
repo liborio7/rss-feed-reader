@@ -1,7 +1,7 @@
 (ns rss-feed-reader.domain.account-test
   (:require [clojure.test :refer :all]
             [rss-feed-reader.domain.account :refer :all]
-            [rss-feed-reader.db.postgres-test :refer [db-fixture]]
+            [rss-feed-reader.db.datasource-test :refer [db-fixture]]
             [clojure.spec.gen.alpha :as gen]
             [clojure.spec.alpha :as s])
   (:import (clojure.lang ExceptionInfo)))

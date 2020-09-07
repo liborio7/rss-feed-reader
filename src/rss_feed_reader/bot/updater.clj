@@ -1,14 +1,13 @@
-(ns rss-feed-reader.bot.job
+(ns rss-feed-reader.bot.updater
   (:require [mount.core :refer [defstate]]
             [clojure.tools.logging :as log]
-            [clojure.spec.alpha :as s]
             [rss-feed-reader.bot.client :as client]
             [rss-feed-reader.bot.commands :as commands]
-            [rss-feed-reader.scheduler.atat :refer [start stop]]
+            [rss-feed-reader.scheduler.executor :refer [start stop]]
             [clojure.string :as string]))
 
-(defn run
-  ([] (run {::last-offset 0}))
+(defn update
+  ([] (update {::last-offset 0}))
   ([payload]
    (log/trace "run bot" payload)
    (let [offset (::last-offset payload)
@@ -32,7 +31,7 @@
   (let [job-model {:job.domain/name        "telegram-get-messages"
                    :job.domain/description "Handle telegram updates"}]
     (log/info "start bot job")
-    (start :scheduler-bot job-model run)))
+    (start :scheduler-bot-updater job-model update)))
 
 (defn stop-job [job]
   (log/info "stop bot job")

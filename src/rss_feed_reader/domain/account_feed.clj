@@ -1,9 +1,8 @@
 (ns rss-feed-reader.domain.account-feed
-  (:require [rss-feed-reader.db.postgres :refer [ds]]
-            [rss-feed-reader.domain.feed :as feeds]
+  (:require [rss-feed-reader.domain.feed :as feeds]
             [rss-feed-reader.domain.account :as accounts]
             [rss-feed-reader.utils.spec :as specs]
-            [rss-feed-reader.db.sql :as sql]
+            [rss-feed-reader.db.client :as db]
             [clojure.spec.alpha :as s]
             [rss-feed-reader.utils.time :as t]
             [clojure.tools.logging :as log])
@@ -66,7 +65,7 @@
 (defn get-by-id [model]
   (log/debug "get by id" model)
   (let [id (:account.feed.domain/id model)
-        db-model (sql/select ds table {:where [:= :account.feed/id id]})]
+        db-model (db/select table {:where [:= :account.feed/id id]})]
     (when db-model
       (db->model db-model))))
 
@@ -75,8 +74,8 @@
   (log/debug "get by account" model "starting after" starting-after "limit" limit)
   (let [account (:account.feed.domain/account model)
         account-id (:account.domain/id account)
-        db-models (sql/paginate
-                    #(sql/select-values ds table {:where    [:and
+        db-models (db/paginate-select
+                    #(db/select-values table {:where     [:and
                                                              [:= :account.feed/account_id account-id]
                                                              [:> :account.feed/order_id %]]
                                                   :order-by [[:account.feed/order_id :asc]]
@@ -99,8 +98,8 @@
   (log/debug "get by feed" model "starting after" starting-after "limit" limit)
   (let [feed (:account.feed.domain/feed model)
         feed-id (:feed.domain/id feed)
-        db-models (sql/paginate
-                    #(sql/select-values ds table {:where    [:and
+        db-models (db/paginate-select
+                    #(db/select-values table {:where     [:and
                                                              [:= :account.feed/feed_id feed-id]
                                                              [:> :account.feed/order_id %]]
                                                   :order-by [[:account.feed/order_id :asc]]
@@ -122,7 +121,7 @@
   (log/debug "get by account and feed" model)
   (let [account-id (:account.domain/id (:account.feed.domain/account model))
         feed-id (:feed.domain/id (:account.feed.domain/feed model))
-        db-model (sql/select ds table {:where [:and
+        db-model (db/select table {:where [:and
                                                [:= :account.feed/account_id account-id]
                                                [:= :account.feed/feed_id feed-id]]})]
     (when db-model
@@ -148,7 +147,7 @@
           account-feed
           (->> model
                (model->db)
-               (sql/insert! ds table)
+               (db/insert! table)
                (db->model)))))))
 
 ;; delete
@@ -156,4 +155,4 @@
 (defn delete! [model]
   (log/info "delete" model)
   (let [id (:account.feed.domain/id model)]
-    (sql/delete! ds table {:where [:= :account.feed/id id]})))
+    (db/delete! table {:where [:= :account.feed/id id]})))

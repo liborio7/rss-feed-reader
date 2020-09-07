@@ -1,10 +1,9 @@
 (ns rss-feed-reader.domain.job
-  (:require [rss-feed-reader.db.postgres :refer [ds]]
-            [clojure.spec.alpha :as s]
+  (:require [clojure.spec.alpha :as s]
             [clojure.tools.logging :as log]
             [rss-feed-reader.utils.time :as t]
             [rss-feed-reader.utils.spec :as specs]
-            [rss-feed-reader.db.sql :as sql])
+            [rss-feed-reader.db.client :as db])
   (:import (java.util UUID)))
 
 (def table :job)
@@ -88,20 +87,20 @@
 
 (defn get-all []
   (log/debug "get all")
-  (let [db-models (sql/select-values ds table {})]
+  (let [db-models (db/select-values table {})]
     (map db->model db-models)))
 
 (defn get-by-id [model]
   (log/debug "get by id" model)
   (let [id (:job.domain/id model)
-        db-model (sql/select ds table {:where [:= :job/id id]})]
+        db-model (db/select table {:where [:= :job/id id]})]
     (when db-model
       (db->model db-model))))
 
 (defn get-by-name [model]
   (log/debug "get by name" model)
   (let [name (:job.domain/name model)
-        db-model (sql/select ds table {:where [:= :job/name name]})]
+        db-model (db/select table {:where [:= :job/name name]})]
     (when db-model
       (db->model db-model))))
 
@@ -121,7 +120,7 @@
         job
         (->> model
              (model->db)
-             (sql/insert! ds table)
+             (db/insert! table)
              (db->model))))))
 
 ;; update
@@ -142,7 +141,7 @@
                           (merge {:job/version     (inc version)
                                   :job/update_time (t/instant-now)}))]
         (->> new-model
-             (sql/update! ds table {:where [:and
+             (db/update! table {:where [:and
                                             [:= :job/id id]
                                             [:= :job/version version]]})
              (db->model))))))
@@ -161,4 +160,4 @@
 (defn delete! [model]
   (log/info "delete" model)
   (let [id (:job.domain/id model)]
-    (sql/delete! ds table {:where [:= :job/id id]})))
+    (db/delete! table {:where [:= :job/id id]})))

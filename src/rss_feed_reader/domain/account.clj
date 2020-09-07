@@ -1,7 +1,6 @@
 (ns rss-feed-reader.domain.account
-  (:require [rss-feed-reader.db.postgres :refer [ds]]
-            [rss-feed-reader.utils.spec :as specs]
-            [rss-feed-reader.db.sql :as sql]
+  (:require [rss-feed-reader.utils.spec :as specs]
+            [rss-feed-reader.db.client :as db]
             [rss-feed-reader.utils.time :as t]
             [clojure.tools.logging :as log]
             [clojure.spec.alpha :as s])
@@ -59,13 +58,13 @@
 
 (defn get-all []
   (log/debug "get all")
-  (let [db-models (sql/select-values ds table {})]
+  (let [db-models (db/select-values table {})]
     (map db->model db-models)))
 
 (defn get-by-id [model]
   (log/debug "get by id" model)
   (let [id (:account.domain/id model)
-        db-models (sql/select ds table {:where [:= :account/id id]})]
+        db-models (db/select table {:where [:= :account/id id]})]
     (when db-models
       (db->model db-models))))
 
@@ -73,13 +72,13 @@
   (log/debug "get by" (count models) "ids")
   (let [ids (map :account.domain/id models)
         db-models (when (not-empty ids)
-                    (sql/select-values ds table {:where [:in :account/id ids]}))]
+                    (db/select-values table {:where [:in :account/id ids]}))]
     (map db->model db-models)))
 
 (defn get-by-chat-id [model]
   (log/debug "get by chat id" model)
   (let [chat-id (:account.domain/chat-id model)
-        db-model (sql/select ds table {:where [:= :account/chat_id chat-id]})]
+        db-model (db/select table {:where [:= :account/chat_id chat-id]})]
     (when db-model
       (db->model db-model))))
 
@@ -99,7 +98,7 @@
         account
         (->> model
              (model->db)
-             (sql/insert! ds table)
+             (db/insert! table)
              (db->model))))))
 
 ;; delete
@@ -107,4 +106,4 @@
 (defn delete! [model]
   (log/info "delete" model)
   (let [id (:account.domain/id model)]
-    (sql/delete! ds table {:where [:= :account/id id]})))
+    (db/delete! table {:where [:= :account/id id]})))

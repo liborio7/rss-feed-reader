@@ -1,7 +1,6 @@
-(ns rss-feed-reader.db.postgres-test
-  (:require [rss-feed-reader.db.postgres :refer :all]
+(ns rss-feed-reader.db.datasource-test
+  (:require [rss-feed-reader.db.datasource :refer :all]
             [mount.core :refer [defstate]]
-            [hikari-cp.core :as hikari]
             [rss-feed-reader.env :refer [env]]
             [clojure.java.jdbc :as jdbc]
             [mount.core :as mount]))
@@ -27,7 +26,7 @@
     (let [db (random-db-name)]
       (db-do! ds (str "CREATE DATABASE " db ";"))
       (with-open [test-ds (start-ds (test-config db))]
-        (mount/start-with {#'rss-feed-reader.db.postgres/ds test-ds})
+        (mount/start-with {#'rss-feed-reader.db.datasource/ds test-ds})
         (migrate (ragtime-config test-ds))
         (f)
         (mount/stop))

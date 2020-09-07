@@ -1,4 +1,4 @@
-(ns rss-feed-reader.db.postgres
+(ns rss-feed-reader.db.datasource
   (:require [clj-time.jdbc]
             [mount.core :refer [defstate]]
             [rss-feed-reader.env :refer [env]]

@@ -1,8 +1,7 @@
 (ns rss-feed-reader.domain.feed-item
-  (:require [rss-feed-reader.db.postgres :refer [ds]]
-            [rss-feed-reader.domain.feed :as feeds]
+  (:require [rss-feed-reader.domain.feed :as feeds]
             [rss-feed-reader.utils.spec :as specs]
-            [rss-feed-reader.db.sql :as sql]
+            [rss-feed-reader.db.client :as db]
             [clojure.spec.alpha :as s]
             [clojure.tools.logging :as log]
             [rss-feed-reader.utils.time :as t]
@@ -82,8 +81,8 @@
 (defn get-all [& {:keys [starting-after limit]
                   :or   {starting-after 0 limit 20}}]
   (log/debug "get all starting-after" starting-after "limit" limit)
-  (let [db-models (sql/paginate
-                    #(sql/select-values ds table {:where    [:> :feed.item/order_id %]
+  (let [db-models (db/paginate-select
+                    #(db/select-values table {:where     [:> :feed.item/order_id %]
                                                   :order-by [[:feed.item/order_id :asc]]
                                                   :limit    20})
                     :feed.item/order_id
@@ -93,7 +92,7 @@
 (defn get-by-id [model]
   (log/debug "get by id" model)
   (let [id (:feed.item.domain/id model)
-        db-model (sql/select ds table {:where [:= :feed.item/id id]})]
+        db-model (db/select table {:where [:= :feed.item/id id]})]
     (when db-model
       (db->model db-model))))
 
@@ -102,8 +101,8 @@
   (log/debug "get by feed" model "starting-after" starting-after "limit" limit)
   (let [feed (:feed.item.domain/feed model)
         feed-id (:feed.domain/id feed)
-        db-models (sql/paginate
-                    #(sql/select-values ds table {:where    [:and
+        db-models (db/paginate-select
+                    #(db/select-values table {:where     [:and
                                                              [:= :feed.item/feed_id feed-id]
                                                              [:> :feed.item/order_id %]]
                                                   :order-by [[:feed.item/order_id :asc]]
@@ -117,7 +116,7 @@
 (defn get-by-link [model]
   (log/debug "get by link" model)
   (let [link (str (:feed.item.domain/link model))
-        db-model (sql/select ds table {:where [:= :feed.item/link link]})]
+        db-model (db/select table {:where [:= :feed.item/link link]})]
     (when db-model
       (db->model db-model))))
 
@@ -131,7 +130,7 @@
                              (mapcat (juxt :feed.domain/id identity))
                              (apply hash-map))
         db-models (when (not-empty links)
-                    (sql/select-values ds table {:where [:in :feed.item/link links]}))
+                    (db/select-values table {:where [:in :feed.item/link links]}))
         db->model* (fn [db-model]
                      (let [feed (get feed-by-feed-id (:feed.item/feed_id db-model))]
                        (db->model db-model feed)))]
@@ -153,7 +152,7 @@
         feed-item
         (->> model
              (model->db)
-             (sql/insert! ds table)
+             (db/insert! table)
              (db->model))))))
 
 (defn create-multi! [models]
@@ -185,7 +184,7 @@
             (when (not-empty missing-models)
               (->> missing-models
                    (map model->db)
-                   (sql/insert-values! ds table)
+                   (db/insert-values! table)
                    (map db->model*)))))))))
 
 ;; delete
@@ -193,4 +192,4 @@
 (defn delete! [model]
   (log/info "delete" model)
   (let [id (:feed.item.domain/id model)]
-    (sql/delete! ds table {:where [:= :feed.item/id id]})))
+    (db/delete! table {:where [:= :feed.item/id id]})))

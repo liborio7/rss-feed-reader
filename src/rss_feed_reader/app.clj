@@ -2,9 +2,9 @@
   (:gen-class)
   (:require [mount.core :as mount :refer [defstate]]
             [rss-feed-reader.env :refer [env]]
-            [rss-feed-reader.db.postgres :refer [ds]]
-            [rss-feed-reader.scheduler.atat :refer [pool]]
-            [rss-feed-reader.bot.job]
+            [rss-feed-reader.db.datasource :refer [ds]]
+            [rss-feed-reader.scheduler.executor :refer [pool]]
+            [rss-feed-reader.bot.updater]
             [rss-feed-reader.rss.feeder]
             [ring.adapter.jetty :as jetty]
             [clojure.tools.logging :as log]

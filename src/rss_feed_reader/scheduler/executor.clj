@@ -1,7 +1,7 @@
-(ns rss-feed-reader.scheduler.atat
+(ns rss-feed-reader.scheduler.executor
   (:require [mount.core :refer [defstate]]
             [rss-feed-reader.env :refer [env]]
-            [rss-feed-reader.db.postgres :refer [ds]]
+            [rss-feed-reader.db.datasource :refer [ds]]
             [rss-feed-reader.utils.cid :as cid]
             [rss-feed-reader.domain.job :as jobs]
             [overtone.at-at :as at]
@@ -44,10 +44,10 @@
             (jobs/get-by-name)
             (jobs/toggle-lock! false))))))
 
-(defn start [job model handler]
+(defn start [keyword model handler]
   (let [handler (wrap-handler model handler)
-        config (job env)]
-    (log/info "job" job "for env" (:environment env) "has the following configurations:" config)
+        config (keyword env)]
+    (log/info "job" keyword "for env" (:environment env) "has the following configurations:" config)
     (when-not (empty? config)
       (let [{:keys [ms-period initial-delay]} config]
         (at/every ms-period handler pool :initial-delay initial-delay)))))

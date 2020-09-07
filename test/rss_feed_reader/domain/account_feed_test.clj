@@ -3,7 +3,7 @@
             [rss-feed-reader.domain.account-feed :refer :all]
             [rss-feed-reader.domain.account :as accounts]
             [rss-feed-reader.domain.feed :as feeds]
-            [rss-feed-reader.db.postgres-test :refer [db-fixture]]
+            [rss-feed-reader.db.datasource-test :refer [db-fixture]]
             [clojure.spec.gen.alpha :as gen]
             [clojure.spec.alpha :as s])
   (:import (clojure.lang ExceptionInfo)))

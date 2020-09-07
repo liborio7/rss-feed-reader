@@ -1,6 +1,6 @@
 (ns rss-feed-reader.rss.feeder
   (:require [mount.core :refer [defstate]]
-            [rss-feed-reader.scheduler.atat :refer [start stop]]
+            [rss-feed-reader.scheduler.executor :refer [start stop]]
             [clojure.tools.logging :as log]
             [rss-feed-reader.domain.feed :as feeds]
             [rss-feed-reader.domain.feed-item :as feed-items]
@@ -92,7 +92,7 @@
   (let [job-model {:job.domain/name        "rss-feeder"
                    :job.domain/description "Fetch feed items"}]
     (log/info "start feeder job")
-    (start :scheduler-rss job-model feed)))
+    (start :scheduler-rss-feeder job-model feed)))
 
 (defn stop-job [job]
   (log/info "stop feeder job")

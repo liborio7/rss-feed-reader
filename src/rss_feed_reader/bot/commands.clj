@@ -8,7 +8,7 @@
             [rss-feed-reader.utils.uri :as uris]
             [rss-feed-reader.rss.parser :as rss]))
 
-(defmulti execute (fn [cmd & _] cmd))
+(defmulti execute (fn [cmd & _args] cmd))
 
 (defmethod execute "/help" [_ chat _]
   (let [chat-id (:telegram.message.chat/id chat)]
