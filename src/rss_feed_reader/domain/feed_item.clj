@@ -82,9 +82,9 @@
                   :or   {starting-after 0 limit 20}}]
   (log/debug "get all starting-after" starting-after "limit" limit)
   (let [db-models (db/paginate-select
-                    #(db/select-values table {:where     [:> :feed.item/order_id %]
-                                                  :order-by [[:feed.item/order_id :asc]]
-                                                  :limit    20})
+                    #(db/select-values table {:where    [:> :feed.item/order_id %]
+                                              :order-by [[:feed.item/order_id :asc]]
+                                              :limit    20})
                     :feed.item/order_id
                     starting-after)]
     (map db->model db-models)))
@@ -102,11 +102,11 @@
   (let [feed (:feed.item.domain/feed model)
         feed-id (:feed.domain/id feed)
         db-models (db/paginate-select
-                    #(db/select-values table {:where     [:and
-                                                             [:= :feed.item/feed_id feed-id]
-                                                             [:> :feed.item/order_id %]]
-                                                  :order-by [[:feed.item/order_id :asc]]
-                                                  :limit    20})
+                    #(db/select-values table {:where    [:and
+                                                         [:= :feed.item/feed_id feed-id]
+                                                         [:> :feed.item/order_id %]]
+                                              :order-by [[:feed.item/order_id :asc]]
+                                              :limit    20})
                     :feed.item/order_id
                     starting-after)
         db->model* (fn [db-model]
@@ -193,3 +193,8 @@
   (log/info "delete" model)
   (let [id (:feed.item.domain/id model)]
     (db/delete! table {:where [:= :feed.item/id id]})))
+
+(defn delete-older-than! [instant]
+  (log/info "delete older than" instant)
+  (let [order-id (t/instant->long instant)]
+    (db/delete! table {:where [:< :feed.item/order_id order-id]})))

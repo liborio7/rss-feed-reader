@@ -6,6 +6,7 @@
             [rss-feed-reader.scheduler.executor :refer [pool]]
             [rss-feed-reader.bot.updater]
             [rss-feed-reader.rss.feeder]
+            [rss-feed-reader.domain.feed.item.pruner]
             [ring.adapter.jetty :as jetty]
             [clojure.tools.logging :as log]
             [rss-feed-reader.utils.cid :as cid]

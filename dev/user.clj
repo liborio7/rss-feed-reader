@@ -4,7 +4,7 @@
             [mount.core :as mount :refer [defstate]]
             [mount.tools.graph :refer [states-with-deps]]))
 
-(def postgres-ds "#'rss-feed-reader.db.postgres/ds")
+(def postgres-ds "#'rss-feed-reader.db.datasource/ds")
 (def app-webserver "#'rss-feed-reader.app/webserver")
 (def atat-pool "#'rss-feed-reader.scheduler.atat/pool")
 
