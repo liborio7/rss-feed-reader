@@ -4,18 +4,19 @@
             [mount.core :as mount :refer [defstate]]
             [mount.tools.graph :refer [states-with-deps]]))
 
-(def postgres-ds "#'rss-feed-reader.db.datasource/ds")
 (def app-webserver "#'rss-feed-reader.app/webserver")
-(def atat-pool "#'rss-feed-reader.scheduler.atat/pool")
+(def postgres-ds "#'rss-feed-reader.db.datasource/ds")
+(def atat-pool "#'rss-feed-reader.scheduler.executor/pool")
 
 (def core-states
   [postgres-ds app-webserver atat-pool])
 
-(def bot-job "#'rss-feed-reader.bot.job/job")
-(def feeder-job "#'rss-feed-reader.rss.feeder/job")
+(def bot-updater "#'rss-feed-reader.bot.updater/job")
+(def rss-feeder "#'rss-feed-reader.rss.feeder/job")
+(def feed-items-pruner "#'rss-feed-reader.domain.feed.item.pruner/job")
 
 (def job-states
-  [bot-job feeder-job])
+  [bot-updater rss-feeder feed-items-pruner])
 
 (defn start
   ([] (start core-states))

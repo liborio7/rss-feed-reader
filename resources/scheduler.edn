@@ -1,4 +1,6 @@
-{:scheduler-bot-updater {:ms-period     5000
-                         :initial-delay 5000}
- :scheduler-rss-feeder  {:ms-period     15000
-                         :initial-delay 5000}}
+{:scheduler-bot-updater       {:ms-period     5000
+                               :initial-delay 5000}
+ :scheduler-rss-feeder        {:ms-period     15000
+                               :initial-delay 5000}
+ :scheduler-feed-items-pruner {:ms-period     3600000
+                               :initial-delay 5000}}
