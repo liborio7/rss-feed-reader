@@ -10,7 +10,7 @@
   ([] (update {::last-offset 0}))
   ([payload]
    (log/trace "run bot" payload)
-   (let [offset (::last-offset payload)
+   (let [offset (or (::last-offset payload) 0)
          updates (client/get-updates (inc offset))
          messages (map :telegram.update/message updates)]
      (doseq [message messages]

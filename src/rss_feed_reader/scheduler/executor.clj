@@ -39,7 +39,7 @@
         (log/info "job elapsed in" (format "%dms" execution-ms) execution-payload))
 
       (catch Exception e
-        (log/error "error while gathering feed items" e)
+        (log/error "error while executing job" job-model e)
         (-> job-model
             (jobs/get-by-name)
             (jobs/toggle-lock! false))))))
