@@ -10,8 +10,8 @@
   ([] (prune {}))
   ([_]
    (log/trace "prune old feed items")
-   (let [instant (doto (Instant/now)
-                   (.minus 2 ChronoUnit/DAYS))
+   (let [instant (-> (Instant/now)
+                     (.minus 2 ChronoUnit/DAYS))
          feed-items-count (feed-items/delete-older-than! instant)]
      {::old-feed-items-count feed-items-count})))
 
@@ -26,6 +26,6 @@
   (stop job))
 
 (defstate job
-          :start (start-job)
-          :stop (stop-job job))
+  :start (start-job)
+  :stop (stop-job job))
 
