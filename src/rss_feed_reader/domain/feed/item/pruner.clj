@@ -11,7 +11,7 @@
   ([_]
    (log/trace "prune old feed items")
    (let [instant (-> (Instant/now)
-                     (.minus 3 ChronoUnit/DAYS))
+                     (.minus 5 ChronoUnit/DAYS))
          feed-items-count (feed-items/delete-older-than! instant)]
      {::old-feed-items-count feed-items-count})))
 
