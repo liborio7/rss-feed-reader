@@ -8,7 +8,9 @@
             [rss-feed-reader.bot.client :as bot]
             [rss-feed-reader.rss.parser :as rss]
             [rss-feed-reader.utils.uri :as uris]
-            [rss-feed-reader.utils.time :as t]))
+            [rss-feed-reader.utils.time :as t])
+  (:import (java.time Instant)
+           (java.time.temporal ChronoUnit)))
 
 (defn ->feed-item [feed item]
   {:feed.item.domain/feed        feed
@@ -17,6 +19,21 @@
    :feed.item.domain/pub-time    (-> (first (:pubDate item))
                                      (t/parse))
    :feed.item.domain/description (first (:description item))})
+
+(defn parse-feed [feed]
+  (->> feed
+       (:feed.domain/link)
+       (rss/parse)
+       (flatten)
+       (map (partial ->feed-item feed))))
+
+(defn filter-old-feed-items [feed-items]
+  (let [threshold (-> (Instant/now)
+                      (.minus 2 ChronoUnit/DAYS))
+        is-old (fn [{:feed.item.domain/keys [pub-time]}]
+                 (.isBefore pub-time threshold))]
+    (->> feed-items
+         (remove is-old))))
 
 (defn filter-existing-feed-items [feed-items]
   (let [existing-links (->> feed-items
@@ -58,23 +75,21 @@
      (let [batch-size 10
            feeds (feeds/get-all :starting-after starting-after :limit batch-size)
            feeds-len (count feeds)
+           feeds-by-feed-id (->> feeds
+                                 (mapcat (juxt :feed.domain/id identity))
+                                 (apply hash-map))
            accounts-feeds-by-feed-id (->> feeds
-                                          (map (partial assoc {} :account.feed.domain/feed))
-                                          (map account-feeds/get-by-feed)
-                                          (flatten)
+                                          (map (partial hash-map :account.feed.domain/feed))
+                                          (mapcat account-feeds/get-by-feed)
                                           (group-by #(:feed.domain/id (:account.feed.domain/feed %))))
-           active-feeds (->> feeds
-                             (filter #(contains? accounts-feeds-by-feed-id (:feed.domain/id %)))
-                             (reduce conj []))
-           new-feeds-items (apply concat
-                                  (for [feed active-feeds]
-                                    (->> feed
-                                         (:feed.domain/link)
-                                         (rss/parse)
-                                         (flatten)
-                                         (map (partial ->feed-item feed))
-                                         (filter-existing-feed-items)
-                                         (feed-items/create-multi!))))
+           active-feeds (->> (keys accounts-feeds-by-feed-id)
+                             (select-keys feeds-by-feed-id)
+                             (vals))
+           new-feeds-items (->> active-feeds
+                                (mapcat parse-feed)
+                                (filter-old-feed-items)
+                                (filter-existing-feed-items)
+                                (feed-items/create-multi!))
            new-feeds-items-len (count new-feeds-items)
            feeds-count (+ feeds-cont feeds-len)
            new-feeds-items-count (+ new-feeds-items-count new-feeds-items-len)
