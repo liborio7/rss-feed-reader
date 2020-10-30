@@ -42,8 +42,9 @@
                                           :job.domain/description
                                           :job.domain/enabled]))
 
-(spec/def ::update-model (spec/keys :opt [:job.domain/name
-                                          :job.domain/execution-payload
+(spec/def ::update-model (spec/keys :opt [:job.domain/last-execution-payload
+                                          :job.domain/last-execution-ms
+                                          :job.domain/locked
                                           :job.domain/description
                                           :job.domain/enabled]))
 

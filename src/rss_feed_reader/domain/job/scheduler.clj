@@ -6,7 +6,7 @@
             [rss-feed-reader.utils.time :as time]
             [rss-feed-reader.utils.cid :as cid]))
 
-(defn- wrap-handler [jobs model handler]
+(defn wrap-handler [jobs model handler]
   (fn []
     (try
       (cid/set-new)

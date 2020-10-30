@@ -19,3 +19,4 @@ pom.xml.asc
 /resources/dev
 /resources/localhost
 /logs
+/repl/user.clj

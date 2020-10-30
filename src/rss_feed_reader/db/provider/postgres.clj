@@ -21,7 +21,10 @@
   (let [type (.getType v)
         value (.getValue v)]
     (if (#{"jsonb" "json"} type)
-      (with-meta (json/parse-string value) {:pgtype type})
+      (let [value (->> (json/parse-string value)
+                       (map (fn [[k v]] [(keyword k) v]))
+                       (into {}))]
+        (with-meta value {:pgtype type}))
       value)))
 
 (extend-protocol p/SettableParameter
