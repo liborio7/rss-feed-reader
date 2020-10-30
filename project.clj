@@ -12,7 +12,7 @@
                  [environ "1.1.0"]
 
                  ; di
-                 [mount "0.1.16"]
+                 [com.stuartsierra/component "1.0.0"]
 
                  ; logging
                  [org.clojure/tools.logging "0.5.0"]
@@ -28,6 +28,7 @@
                  ; db & migration
                  [hikari-cp "2.10.0"]
                  [org.clojure/java.jdbc "0.7.10"]
+                 [seancorfield/next.jdbc "1.1.610"]
                  [org.postgresql/postgresql "42.2.2"]
                  [honeysql/honeysql "0.9.8"]
                  [ragtime "0.8.0"]
@@ -42,11 +43,8 @@
   :jvm-opts ["-Xms256M" "-Xmx256M"]
   :plugins [[lein-ring "0.12.5"]
             [lein-environ "1.1.0"]]
-  :aliases {"kondo"    ["run" "-m" "clj-kondo.main" "--lint" "src"]
-            "kaocha"   ["run" "-m" "kaocha.runner"]
-            "migrate"  ["run" "-m" "rss-feed-reader.db.datasource/migrate"]
-            "rollback" ["run" "-m" "rss-feed-reader.db.datasource/rollback"]}
-  :main rss-feed-reader.app
+  :aliases {"kondo"  ["run" "-m" "clj-kondo.main" "--lint" "src"]
+            "kaocha" ["run" "-m" "kaocha.runner"]}
   :target-path "target/%s"
   :resource-paths ["resources"]
   :profiles {
@@ -55,17 +53,23 @@
                                   :injections   [(require 'orchestra.spec.test)
                                                  (orchestra.spec.test/instrument)]}
 
-             :project/repl       {:dependencies   [[org.clojure/tools.namespace "1.0.0"]]
-                                  :source-paths   ["dev"]
-                                  :resource-paths ["resources/dev"]}
+             :project/h2         {:dependencies [[io.eidel/h2-jdbc "1.0.0"]
+                                                 [com.h2database/h2 "1.4.199"]]}
 
-             :project/test       {:dependencies [[lambdaisland/kaocha "1.0.672"]]}
+             :project/repl       [:project/h2
+                                  {:dependencies [[org.clojure/tools.namespace "1.0.0"]
+                                                  [reloaded.repl "0.2.4"]]
+                                   :source-paths ["repl"]}]
 
-             :dev                [:project/instrument
+             :project/test       [:project/h2
+                                  {:dependencies [[lambdaisland/kaocha "1.0.672"]]}]
+
+             :repl               [:project/instrument
                                   :project/repl
-                                  {:env {:environment "dev"}}]
+                                  :project/test]
 
              :test               [:project/instrument
-                                  :project/test
-                                  {:env {:environment "test"}}]
+                                  :project/test]
+
+             :uberjar            {:main rss-feed-reader.app}
              })

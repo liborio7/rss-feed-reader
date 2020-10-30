@@ -1,6 +1,5 @@
 (ns rss-feed-reader.env
-  (:require [mount.core :refer [defstate]]
-            [environ.core :as environ]
+  (:require [environ.core :as environ]
             [clojure.edn :as edn]
             [clojure.java.io :as io]))
 
@@ -15,7 +14,9 @@
 (defn read-environ []
   (into {} environ/env))
 
-(def env
+(defn load-env []
   (merge
     (read-resources)
     (read-environ)))
+
+(defonce env (load-env))

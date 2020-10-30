@@ -11,11 +11,11 @@ pom.xml.asc
 /.lein-*
 /.nrepl-port
 /.logs
+/.h2-data
 /.pg-data
 .env
 .hgignore
 .hg/
-/resources/repl
 /resources/dev
-/resources/test
+/resources/localhost
 /logs

@@ -1,109 +1,128 @@
 (ns rss-feed-reader.domain.account
   (:require [rss-feed-reader.utils.spec :as specs]
             [rss-feed-reader.db.client :as db]
-            [rss-feed-reader.utils.time :as t]
+            [rss-feed-reader.utils.time :as time]
             [clojure.tools.logging :as log]
-            [clojure.spec.alpha :as s])
+            [clojure.spec.alpha :as spec])
   (:import (java.util UUID)))
 
 (def table :account)
 
 ;; model
 
-(s/def :account.domain/id uuid?)
-(s/def :account.domain/version nat-int?)
-(s/def :account.domain/order-id nat-int?)
-(s/def :account.domain/insert-time ::t/time)
-(s/def :account.domain/update-time (s/nilable ::t/time))
-(s/def :account.domain/username (s/nilable string?))
-(s/def :account.domain/chat-id int?)
+(spec/def :account.domain/id uuid?)
+(spec/def :account.domain/version nat-int?)
+(spec/def :account.domain/order-id nat-int?)
+(spec/def :account.domain/insert-time ::time/time)
+(spec/def :account.domain/update-time (spec/nilable ::time/time))
+(spec/def :account.domain/username (spec/nilable string?))
+(spec/def :account.domain/chat-id int?)
 
-(s/def ::model (s/keys :req [:account.domain/id
-                             :account.domain/version
-                             :account.domain/order-id
-                             :account.domain/insert-time
-                             :account.domain/update-time
-                             :account.domain/username
-                             :account.domain/chat-id]))
+(spec/def ::model (spec/keys :req [:account.domain/id
+                                   :account.domain/version
+                                   :account.domain/order-id
+                                   :account.domain/insert-time
+                                   :account.domain/update-time
+                                   :account.domain/username
+                                   :account.domain/chat-id]))
 
-(s/def ::create-model (s/keys :req [:account.domain/chat-id]
-                              :opt [:account.domain/id
-                                    :account.domain/username]))
+(spec/def ::create-model (spec/keys :req [:account.domain/chat-id]
+                                    :opt [:account.domain/id
+                                          :account.domain/username]))
 
 ;; conversion
 
 (defn model->db [model]
-  (let [now (t/instant-now)
+  (let [now (time/instant-now)
         {:account.domain/keys [id username chat-id]
          :or                  {id (UUID/randomUUID)}} model]
     {:account/id          id
      :account/version     0
-     :account/order_id    (t/instant->long now)
-     :account/insert_time now
-     :account/update_time nil
+     :account/order-id    (time/instant->long now)
+     :account/insert-time now
+     :account/update-time nil
      :account/username    username
-     :account/chat_id     chat-id}))
+     :account/chat-id     chat-id}))
 
 (defn db->model [model]
-  (let [{:account/keys [id version order_id insert_time update_time username chat_id]} model]
+  (let [{:account/keys [id version order-id insert-time update-time username chat-id]} model]
     {:account.domain/id          id
      :account.domain/version     version
-     :account.domain/order-id    order_id
-     :account.domain/insert-time insert_time
-     :account.domain/update-time update_time
+     :account.domain/order-id    order-id
+     :account.domain/insert-time insert-time
+     :account.domain/update-time update-time
      :account.domain/username    username
-     :account.domain/chat-id     chat_id}))
+     :account.domain/chat-id     chat-id}))
 
-;; get
+;; component
 
-(defn get-all []
-  (log/debug "get all")
-  (let [db-models (db/select-values table {})]
-    (map db->model db-models)))
+(defprotocol Accounts
+  (get-all [this])
+  (get-by-id [this model])
+  (get-by-ids [this models])
+  (get-by-chat-id [this model])
+  (create! [this model])
+  (delete! [this model]))
 
-(defn get-by-id [model]
-  (log/debug "get by id" model)
-  (let [id (:account.domain/id model)
-        db-models (db/select table {:where [:= :account/id id]})]
-    (when db-models
-      (db->model db-models))))
+(defrecord DbAccounts [datasource]
+  Accounts
 
-(defn get-by-ids [models]
-  (log/debug "get by" (count models) "ids")
-  (let [ids (map :account.domain/id models)
-        db-models (when (not-empty ids)
-                    (db/select-values table {:where [:in :account/id ids]}))]
-    (map db->model db-models)))
+  ;; get
 
-(defn get-by-chat-id [model]
-  (log/debug "get by chat id" model)
-  (let [chat-id (:account.domain/chat-id model)
-        db-model (db/select table {:where [:= :account/chat_id chat-id]})]
-    (when db-model
-      (db->model db-model))))
+  (get-all [_]
+    (log/debug "get all")
+    (db/with-connection [conn datasource]
+      (let [db-models (db/select-values conn table {})]
+        (map db->model db-models))))
 
-;; create
+  (get-by-id [_ model]
+    (log/debug "get by id" model)
+    (db/with-connection [conn datasource]
+      (let [id (:account.domain/id model)
+            db-models (db/select conn table {:where [:= :account/id id]})]
+        (when db-models
+          (db->model db-models)))))
 
-(defn create! [model]
-  (log/info "create" model)
-  (let [errors (specs/errors ::create-model model)]
-    (if (not-empty errors)
-      (do
-        (log/info "invalid request" errors)
-        (throw (ex-info "invalid request"
-                        {:cause   :account-create
-                         :reason  :invalid-spec
-                         :details errors})))
-      (if-let [account (get-by-chat-id model)]
-        account
-        (->> model
-             (model->db)
-             (db/insert! table)
-             (db->model))))))
+  (get-by-ids [_ models]
+    (log/debug "get by" (count models) "ids")
+    (db/with-connection [conn datasource]
+      (let [ids (map :account.domain/id models)
+            db-models (when (not-empty ids)
+                        (db/select-values conn table {:where [:in :account/id ids]}))]
+        (map db->model db-models))))
 
-;; delete
+  (get-by-chat-id [_ model]
+    (log/debug "get by chat id" model)
+    (db/with-connection [conn datasource]
+      (let [chat-id (:account.domain/chat-id model)
+            db-model (db/select conn table {:where [:= :account/chat-id chat-id]})]
+        (when db-model
+          (db->model db-model)))))
 
-(defn delete! [model]
-  (log/info "delete" model)
-  (let [id (:account.domain/id model)]
-    (db/delete! table {:where [:= :account/id id]})))
+  ;; create
+
+  (create! [this model]
+    (log/info "create" model)
+    (let [errors (specs/errors ::create-model model)]
+      (if (not-empty errors)
+        (do
+          (log/info "invalid request" errors)
+          (throw (ex-info "invalid request"
+                          {:cause   :account-create
+                           :reason  :invalid-spec
+                           :details errors})))
+        (if-let [account (get-by-chat-id this model)]
+          account
+          (db/with-transaction [tx datasource]
+            (->> model
+                 (model->db)
+                 (db/insert! tx table)
+                 (db->model)))))))
+
+  ;; delete
+
+  (delete! [_ model]
+    (log/info "delete" model)
+    (db/with-transaction [tx datasource]
+      (let [id (:account.domain/id model)]
+        (db/delete! tx table {:where [:= :account/id id]})))))

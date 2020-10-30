@@ -4,7 +4,7 @@ services:
     container_name: backend_test
     build:
       target: builder
-    command: lein with-profile +test do migrate, kaocha
+    command: lein with-profile +test kaocha
     environment:
       - LOG_LEVEL=WARN
 

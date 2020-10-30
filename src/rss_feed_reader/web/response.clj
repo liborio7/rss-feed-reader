@@ -1,4 +1,4 @@
-(ns rss-feed-reader.api.response)
+(ns rss-feed-reader.web.response)
 
 ;; pagination
 

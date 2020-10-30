@@ -1,14 +1,14 @@
 (ns rss-feed-reader.rss.feeder
-  (:require [mount.core :refer [defstate]]
-            [rss-feed-reader.scheduler.executor :refer [start stop]]
-            [clojure.tools.logging :as log]
-            [rss-feed-reader.domain.feed :as feeds]
-            [rss-feed-reader.domain.feed-item :as feed-items]
-            [rss-feed-reader.domain.account-feed :as account-feeds]
-            [rss-feed-reader.bot.client :as bot]
+  (:require [clojure.tools.logging :as log]
+            [rss-feed-reader.domain.feed :as feed]
+            [rss-feed-reader.domain.feed-item :as feed-item]
+            [rss-feed-reader.domain.account-feed :as account-feed]
             [rss-feed-reader.rss.parser :as rss]
             [rss-feed-reader.utils.uri :as uris]
-            [rss-feed-reader.utils.time :as t])
+            [rss-feed-reader.utils.time :as time]
+            [rss-feed-reader.domain.job.scheduler :as job-scheduler]
+            [rss-feed-reader.bot.client :as bot]
+            [com.stuartsierra.component :as component])
   (:import (java.time Instant)
            (java.time.temporal ChronoUnit)))
 
@@ -17,7 +17,7 @@
    :feed.item.domain/title       (first (:title item))
    :feed.item.domain/link        (uris/from-string (first (:link item)))
    :feed.item.domain/pub-time    (-> (first (:pubDate item))
-                                     (t/parse))
+                                     (time/parse))
    :feed.item.domain/description (first (:description item))})
 
 (defn parse-feed [feed]
@@ -27,26 +27,22 @@
        (flatten)
        (map (partial ->feed-item feed))))
 
-(defn filter-old-feed-items [feed-items]
+(defn remove-old-feed-items [feed-items]
   (let [threshold (-> (Instant/now)
                       (.minus 2 ChronoUnit/DAYS))
-        is-old (fn [{:feed.item.domain/keys [pub-time]}]
-                 (.isBefore pub-time threshold))]
-    (->> feed-items
-         (remove is-old))))
+        old (fn [{:feed.item.domain/keys [pub-time]}]
+              (.isBefore pub-time threshold))]
+    (remove old feed-items)))
 
-(defn filter-existing-feed-items [feed-items]
+(defn remove-existing-feed-items [feeds-items feed-items]
   (let [existing-links (->> feed-items
-                            (feed-items/get-by-links)
-                            (map :feed.item.domain/link))]
-    (let [missing-links (->> feed-items
-                             (remove (fn [feed-item]
-                                       (some #(= % (:feed.item.domain/link feed-item)) existing-links)
-                                       )))]
-      (log/trace "missing" (count missing-links) "link(s) out of" (count feed-items))
-      missing-links)))
+                            (feed-item/get-by-links feeds-items)
+                            (map :feed.item.domain/link))
+        existing (fn [feed-item]
+                   (some #(= % (:feed.item.domain/link feed-item)) existing-links))]
+    (remove existing feed-items)))
 
-(defn publish [feed-items accounts-feeds-by-feed-id]
+(defn publish-feed-items [bot feed-items accounts-feeds-by-feed-id]
   (doseq [feed-item feed-items
           account-feed (->> feed-item
                             (:feed.item.domain/feed)
@@ -63,58 +59,56 @@
                                     (:feed.item.domain/link)
                                     (str))
                 msg (format "From %s:\n\n%s" feed-link feed-item-link)]]
-    (bot/send-message chat-id msg)))
+    (bot/send-message bot chat-id msg))
+  (log/trace (count feed-items) "feed(s) item(s) published"))
 
-(defn feed
-  ([] (feed {}))
-  ([_]
-   (log/trace "start feeding")
-   (loop [starting-after 0
-          feeds-cont 0
-          new-feeds-items-count 0]
-     (let [batch-size 10
-           feeds (feeds/get-all :starting-after starting-after :limit batch-size)
-           feeds-len (count feeds)
-           feeds-by-feed-id (->> feeds
-                                 (mapcat (juxt :feed.domain/id identity))
-                                 (apply hash-map))
-           accounts-feeds-by-feed-id (->> feeds
-                                          (map (partial hash-map :account.feed.domain/feed))
-                                          (mapcat account-feeds/get-by-feed)
-                                          (group-by #(:feed.domain/id (:account.feed.domain/feed %))))
-           active-feeds (->> (keys accounts-feeds-by-feed-id)
-                             (select-keys feeds-by-feed-id)
-                             (vals))
-           new-feeds-items (->> active-feeds
-                                (mapcat parse-feed)
-                                (filter-old-feed-items)
-                                (filter-existing-feed-items)
-                                (feed-items/create-multi!))
-           new-feeds-items-len (count new-feeds-items)
-           feeds-count (+ feeds-cont feeds-len)
-           new-feeds-items-count (+ new-feeds-items-count new-feeds-items-len)
-           last-feed-order-id (:feed.domain/order-id (last feeds))]
-       (publish new-feeds-items accounts-feeds-by-feed-id)
-       (log/trace new-feeds-items-len "new feed(s) item(s) created and published")
-       (if (or (empty? feeds) (< feeds-len batch-size))
-         {::feeds-count           feeds-count
-          ::new-feeds-items-count new-feeds-items-count}
-         (recur last-feed-order-id
-                feeds-count
-                new-feeds-items-count))))))
+(defn handler [bot accounts-feeds feeds feeds-items]
+  (fn [_payload]
+    (log/trace "start feeding")
+    (loop [starting-after 0
+           result {::feeds-count       0
+                   ::feeds-items-count 0}]
+      (let [all-feeds (feed/get-all feeds {:starting-after starting-after :limit 10})]
+        (if (empty? all-feeds)
+          result
+          (let [feeds-by-feed-id (->> all-feeds
+                                      (mapcat (juxt :feed.domain/id identity))
+                                      (apply hash-map))
+                accounts-feeds-by-feed-id (->> all-feeds
+                                               (map (partial hash-map :account.feed.domain/feed))
+                                               (mapcat (partial account-feed/get-by-feed accounts-feeds))
+                                               (group-by #(:feed.domain/id (:account.feed.domain/feed %))))
+                active-feeds (->> (keys accounts-feeds-by-feed-id)
+                                  (select-keys feeds-by-feed-id)
+                                  (vals))
+                new-feeds-items (->> active-feeds
+                                     (mapcat parse-feed)
+                                     (remove-old-feed-items)
+                                     (remove-existing-feed-items feeds-items)
+                                     (feed-item/create-multi! feeds-items))]
+            (publish-feed-items bot new-feeds-items accounts-feeds-by-feed-id)
+            (recur (:feed.domain/order-id (last all-feeds))
+                   (-> result
+                       (update ::feeds-count + (count all-feeds))
+                       (update ::feeds-items-count + (count new-feeds-items))))))))))
 
-(defn start-job []
-  (let [job-model {:job.domain/name        "rss-feeder"
+;; component
+
+(defrecord Feeder [config
+                   job-scheduler bot accounts-feeds feeds feeds-items
+                   job]
+  component/Lifecycle
+  (start [this]
+    (log/info "start feeder")
+    (if job
+      this
+      (let [model {:job.domain/name        "rss-feeder"
                    :job.domain/description "Fetch feed items"}]
-    (log/info "start feeder job")
-    (start :scheduler-rss-feeder job-model feed)))
-
-(defn stop-job [job]
-  (log/info "stop feeder job")
-  (stop job))
-
-(defstate job
-  :start (start-job)
-  :stop (stop-job job))
-
-
+        (assoc this :job (job-scheduler/schedule job-scheduler config model (handler bot accounts-feeds feeds feeds-items))))))
+  (stop [this]
+    (log/info "stop feeder")
+    (if job
+      (do
+        (job-scheduler/cancel job-scheduler job)
+        (assoc this :job nil))
+      this)))

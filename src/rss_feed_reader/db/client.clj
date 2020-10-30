@@ -1,31 +1,45 @@
 (ns rss-feed-reader.db.client
   (:refer-clojure :exclude [update])
-  (:require [rss-feed-reader.db.datasource :refer [ds]]
-            [clojure.tools.logging :as log]
-            [clojure.java.jdbc :as jdbc]
+  (:require [clojure.tools.logging :as log]
+            [next.jdbc :as jdbc]
+            [next.jdbc.result-set :as result-set]
             [clojure.walk :refer [walk]]
             [clojure.string :as str]
-            [honeysql.core :as q]
-            [honeysql.format :as qf]))
+            [honeysql.core :as sql]
+            [honeysql.format :as sql-format]))
 
-(defn default-opts [table]
-  {:qualifier (str/replace (name table) "_" ".")})
+(defn builder-fn [rs opts]
+  (let [kebab #(str/replace % #"_" "-")
+        dot #(str/replace % #"_" ".")
+        lower #(str/lower-case %)]
+    (result-set/as-modified-maps rs (assoc opts
+                                      :qualifier-fn (comp lower dot)
+                                      :label-fn (comp lower kebab)))))
+
+(defn default-opts []
+  {:builder-fn builder-fn})
 
 (defn format-values [m]
   (walk
-    (fn [[k v]] [k (qf/value v)])
+    (fn [[k v]] [k (sql-format/value v)])
     identity
     m))
 
-;; execute
+;; jdbc
 
-(defn db-query [stm opts]
-  (jdbc/with-db-connection [conn {:datasource ds}]
-                           (jdbc/query conn stm opts)))
+(defn db-execute! [connectable query opts]
+  (jdbc/execute! connectable query opts))
 
-(defn db-execute! [stm opts]
-  (jdbc/with-db-connection [conn {:datasource ds}]
-                           (jdbc/execute! conn stm opts)))
+(defn db-execute-one! [connectable query opts]
+  (jdbc/execute-one! connectable query opts))
+
+(defmacro with-connection [[sym connectable] & body]
+  `(with-open [~sym (jdbc/get-connection (:datasource ~connectable))]
+     ~@body))
+
+(defmacro with-transaction [[sym transactable] & body]
+  `(jdbc/with-transaction [~sym (:datasource ~transactable)]
+                          ~@body))
 
 ;; pagination
 
@@ -46,22 +60,22 @@
 ;; select
 
 (defn select-values
-  ([table where-clause] (select-values table where-clause {}))
-  ([table where-clause opts]
+  ([connectable table where-clause] (select-values connectable table where-clause {}))
+  ([connectable table where-clause opts]
    (log/debug "select from" table where-clause)
-   (let [query (-> (q/build :select :*
-                            :from table)
+   (let [query (-> (sql/build :select :*
+                              :from table)
                    (merge where-clause)
-                   (q/format))
-         opts (merge (default-opts table) opts)
-         db-result (db-query query opts)]
+                   (sql/format))
+         opts (merge (default-opts) opts)
+         db-result (db-execute! connectable query opts)]
      (log/trace query "returns" (count db-result) "results")
      db-result)))
 
 (defn select
-  ([table clause] (select table clause {}))
-  ([table clause opts]
-   (let [result (select-values table clause opts)]
+  ([connectable table clause] (select connectable table clause {}))
+  ([connectable table clause opts]
+   (let [result (select-values connectable table clause opts)]
      (when (> (count result) 1)
        (log/warn "unexpected multiple results"))
      (first result))))
@@ -69,18 +83,18 @@
 ;; insert
 
 (defn insert-values!
-  ([table models] (insert-values! table models {}))
-  ([table models opts]
+  ([connectable table models] (insert-values! connectable table models {}))
+  ([connectable table models opts]
    (log/debug "insert into" table models)
    (let [values (->> (vec models)
                      (map format-values)
                      (reduce conj []))
-         query (-> (q/build :insert-into table
-                            :values values)
-                   (q/format))
-         opts (merge (default-opts table) opts)
-         db-result (db-execute! query opts)
-         affected-rows (first db-result)]
+         query (-> (sql/build :insert-into table
+                              :values values)
+                   (sql/format))
+         opts (merge (default-opts) opts)
+         db-result (db-execute! connectable query opts)
+         affected-rows (:next.jdbc/update-count (first db-result))]
      (log/trace query "affects" affected-rows "row(s)")
      (when (zero? affected-rows)
        (throw (ex-info "no rows has been inserted"
@@ -92,9 +106,9 @@
      models)))
 
 (defn insert!
-  ([table model] (insert! table model {}))
-  ([table model opts]
-   (let [sql-result (insert-values! table (conj [] model) opts)]
+  ([connectable table model] (insert! connectable table model {}))
+  ([connectable table model opts]
+   (let [sql-result (insert-values! connectable table (conj [] model) opts)]
      (when (> (count sql-result) 1)
        (log/warn "unexpected multiple results"))
      (first sql-result))))
@@ -102,16 +116,16 @@
 ;; update
 
 (defn update-values!
-  ([table where-clause model] (update-values! table where-clause model {}))
-  ([table where-clause model opts]
+  ([connectable table where-clause model] (update-values! connectable table where-clause model {}))
+  ([connectable table where-clause model opts]
    (log/debug "update" table model)
-   (let [query (-> (q/build :update table
-                            :set (format-values model))
+   (let [query (-> (sql/build :update table
+                              :set (format-values model))
                    (merge where-clause)
-                   (q/format))
-         opts (merge (default-opts table) opts)
-         db-result (db-execute! query opts)
-         affected-rows (first db-result)]
+                   (sql/format))
+         opts (merge (default-opts) opts)
+         db-result (db-execute! connectable query opts)
+         affected-rows (:next.jdbc/update-count (first db-result))]
      (log/trace query "affects" affected-rows "row(s)")
      (when (zero? affected-rows)
        (throw (ex-info "no rows has been updated"
@@ -121,16 +135,16 @@
      affected-rows)))
 
 (defn update!
-  ([table where-clause model] (update! table where-clause model {}))
-  ([table where-clause model opts]
+  ([connectable table where-clause model] (update! connectable table where-clause model {}))
+  ([connectable table where-clause model opts]
    (log/debug "update" table model)
-   (let [query (-> (q/build :update table
-                            :set (format-values model))
+   (let [query (-> (sql/build :update table
+                              :set (format-values model))
                    (merge where-clause)
-                   (q/format))
-         opts (merge (default-opts table) opts)
-         db-result (db-execute! query opts)
-         affected-rows (first db-result)]
+                   (sql/format))
+         opts (merge (default-opts) opts)
+         db-result (db-execute! connectable query opts)
+         affected-rows (:next.jdbc/update-count (first db-result))]
      (log/trace query "affects" affected-rows "row(s)")
      (when (zero? affected-rows)
        (throw (ex-info "no rows has been updated"
@@ -144,14 +158,14 @@
 ;; delete
 
 (defn delete!
-  ([table where-clause] (delete! table where-clause {}))
-  ([table where-clause opts]
+  ([connectable table where-clause] (delete! connectable table where-clause {}))
+  ([connectable table where-clause opts]
    (log/debug "delete from" table where-clause)
-   (let [query (-> (q/build :delete-from table)
+   (let [query (-> (sql/build :delete-from table)
                    (merge where-clause)
-                   (q/format))
-         opts (merge (default-opts table) opts)
-         db-result (db-execute! query opts)
-         affected-rows (first db-result)]
+                   (sql/format))
+         opts (merge (default-opts) opts)
+         db-result (db-execute! connectable query opts)
+         affected-rows (:next.jdbc/update-count (first db-result))]
      (log/trace query "affects" affected-rows "row(s)")
      affected-rows)))

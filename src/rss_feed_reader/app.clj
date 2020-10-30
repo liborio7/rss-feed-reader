@@ -1,32 +1,80 @@
 (ns rss-feed-reader.app
   (:gen-class)
-  (:require [mount.core :as mount :refer [defstate]]
-            [rss-feed-reader.env :refer [env]]
-            [rss-feed-reader.db.datasource :refer [ds]]
-            [rss-feed-reader.scheduler.executor :refer [pool]]
-            [rss-feed-reader.bot.updater]
-            [rss-feed-reader.rss.feeder]
-            [rss-feed-reader.domain.feed.item.pruner]
-            [ring.adapter.jetty :as jetty]
-            [clojure.tools.logging :as log]
+  (:require [rss-feed-reader.env :refer [env]]
             [rss-feed-reader.utils.cid :as cid]
-            [rss-feed-reader.api.router :refer [handler]]))
+            [rss-feed-reader.web.server :as web-server]
+            [rss-feed-reader.db.provider.postgres :as datasource]
+            [rss-feed-reader.bot.client :as bot]
+            [com.stuartsierra.component :as component]
+            [rss-feed-reader.domain.account :as account]
+            [rss-feed-reader.domain.account-feed :as account-feed]
+            [rss-feed-reader.domain.feed :as feed]
+            [rss-feed-reader.domain.feed-item :as feed-item]
+            [rss-feed-reader.domain.job :as job]
+            [rss-feed-reader.domain.job.scheduler :as job-scheduler]
+            [rss-feed-reader.domain.feed.item.pruner :as pruner]
+            [rss-feed-reader.rss.feeder :as feeder]
+            [rss-feed-reader.bot.server :as bot-server]))
 
-(defn start-webserver [env]
-  (let [port (->> (or (:port env) "3000")
-                  (Integer/parseInt))]
-    (log/info "start web server")
-    (jetty/run-jetty handler {:port  port
-                              :join? false})))
+(defn filter-config [config prefix]
+  (let [with-prefix (fn [[k _]] (clojure.string/starts-with? (name k) prefix))]
+    (->> config
+         (filter with-prefix)
+         (into {}))))
 
-(defn stop-webserver [webserver]
-  (log/info "stop web server")
-  (.stop webserver))
+(defn system-map []
+  {
+   ;; db
 
-(defstate webserver
-  :start (start-webserver env)
-  :stop (stop-webserver webserver))
+   :datasource        (datasource/map->PostgresDatasource {:config (filter-config env "postgres")})
+
+   ;; bot
+
+   :bot               (bot/map->TelegramBot {:config (filter-config env "telegram")})
+
+   ;; domain
+
+   :accounts          (component/using
+                        (account/map->DbAccounts {})
+                        [:datasource])
+   :accounts-feeds    (component/using
+                        (account-feed/map->DbAccountsFeeds {})
+                        [:datasource :accounts :feeds])
+   :feeds             (component/using
+                        (feed/map->DbFeeds {})
+                        [:datasource])
+   :feeds-items       (component/using
+                        (feed-item/map->DbFeedsItems {})
+                        [:datasource :feeds])
+   :jobs              (component/using
+                        (job/map->DbJobs {})
+                        [:datasource])
+
+   ;; scheduler
+
+   :job-scheduler     (component/using
+                        (job-scheduler/map->JobScheduler {})
+                        [:jobs])
+   :feed-items-pruner (component/using
+                        (pruner/map->FeedsItemsPruner {:config (:scheduler-feed-items-pruner env)})
+                        [:job-scheduler :feeds-items])
+   :rss-feeder        (component/using
+                        (feeder/map->Feeder {:config (:scheduler-rss-feeder env)})
+                        [:job-scheduler :bot :accounts-feeds :feeds :feeds-items])
+   :bot-server        (component/using
+                        (bot-server/map->BotServer {:config (:scheduler-bot-server env)})
+                        [:job-scheduler :bot :accounts :accounts-feeds :feeds])
+
+   ;; api
+
+   :web-server        (component/using
+                        (web-server/map->WebServer {:config (select-keys env [:port])})
+                        [:accounts :accounts-feeds :feeds :feeds-items])
+   })
 
 (defn -main [& _args]
   (cid/set-new)
-  (mount/start))
+  (->> (system-map)
+       (mapcat identity)
+       (apply component/system-map)
+       (component/start-system)))

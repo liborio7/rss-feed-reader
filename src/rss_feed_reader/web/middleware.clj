@@ -1,9 +1,9 @@
-(ns rss-feed-reader.api.middleware
+(ns rss-feed-reader.web.middleware
   (:require [rss-feed-reader.utils.cid :as cid]
             [clojure.tools.logging :as log]
             [rss-feed-reader.utils.time :as t]
             [rss-feed-reader.utils.map :as maps]
-            [rss-feed-reader.api.response :as response]))
+            [rss-feed-reader.web.response :as response]))
 
 (defn wrap-logger [handler]
   (fn [request]

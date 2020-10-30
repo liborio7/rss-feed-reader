@@ -1,31 +1,36 @@
 (ns rss-feed-reader.domain.feed.item.pruner
   (:require [clojure.tools.logging :as log]
-            [rss-feed-reader.domain.feed-item :as feed-items]
-            [mount.core :refer [defstate]]
-            [rss-feed-reader.scheduler.executor :refer [start stop]])
+            [rss-feed-reader.domain.feed-item :as feed-item]
+            [rss-feed-reader.domain.job.scheduler :as job-scheduler]
+            [com.stuartsierra.component :as component])
   (:import (java.time Instant)
            (java.time.temporal ChronoUnit)))
 
-(defn prune
-  ([] (prune {}))
-  ([_]
-   (log/trace "prune old feed items")
-   (let [instant (-> (Instant/now)
-                     (.minus 5 ChronoUnit/DAYS))
-         feed-items-count (feed-items/delete-older-than! instant)]
-     {::old-feed-items-count feed-items-count})))
+(defn handler [feeds-items]
+  (fn [_payload]
+    (log/trace "prune old feed items")
+    (let [instant (-> (Instant/now)
+                      (.minus 5 ChronoUnit/DAYS))
+          feed-items-count (feed-item/delete-older-than! feeds-items instant)]
+      {::old-feed-items-count feed-items-count})))
 
-(defn start-job []
-  (let [job-model {:job.domain/name        "feed-items-pruner"
+;; component
+
+(defrecord FeedsItemsPruner [config
+                             job-scheduler feeds-items
+                             job]
+  component/Lifecycle
+  (start [this]
+    (log/info "start pruner")
+    (if job
+      this
+      (let [model {:job.domain/name        "feed-items-pruner"
                    :job.domain/description "Prune old feed items"}]
-    (log/info "start pruner job")
-    (start :scheduler-feed-items-pruner job-model prune)))
-
-(defn stop-job [job]
-  (log/info "stop feeder job")
-  (stop job))
-
-(defstate job
-  :start (start-job)
-  :stop (stop-job job))
-
+        (assoc this :job (job-scheduler/schedule job-scheduler config model (handler feeds-items))))))
+  (stop [this]
+    (log/info "stop pruner")
+    (if job
+      (do
+        (job-scheduler/cancel job-scheduler job)
+        (assoc this :job nil))
+      this)))

@@ -1,12 +1,8 @@
 (ns rss-feed-reader.bot.client
-  (:require [rss-feed-reader.env :refer [env]]
-            [cheshire.core :as json]
+  (:require [cheshire.core :as json]
             [clj-http.client :as http]
             [clojure.tools.logging :as log]
             [clojure.spec.alpha :as s]))
-
-
-(def url (format "https://api.telegram.org/bot%s" (:telegram-token env)))
 
 ;; model
 
@@ -14,7 +10,7 @@
 (s/def :telegram.message.from/is-bot boolean?)
 (s/def :telegram.message.from/first-name string?)
 (s/def :telegram.message.from/username string?)
-(s/def :telegram.message.from/language_code string?)
+(s/def :telegram.message.from/language-code string?)
 
 (s/def :telegram.message.chat/id int?)
 (s/def :telegram.message.chat/first-name string?)
@@ -91,25 +87,35 @@
     {:telegram.update/update-id update_id
      :telegram.update/message   (telegram-message->model message)}))
 
-;; api
+;; component
 
-(defn get-updates [offset]
-  (log/trace "get updates with offset" offset)
-  (let [http-response (http/post (str url "/getUpdates")
-                                 {:query-params {"offset" offset}
-                                  :content-type :json})
-        json-body (:body http-response)]
-    (->> (json/parse-string json-body true)
-         (:result)
-         (map telegram-update->model))))
+(defn url [token path]
+  (format "https://api.telegram.org/bot%s%s" token path))
 
-(defn send-message [chat-id text]
-  (log/trace "send message to" chat-id ":" text)
-  (let [http-response (http/post (str url "/sendMessage")
-                                 {:body         (json/generate-string {:chat_id chat-id
-                                                                       :text    text})
-                                  :content-type :json})
-        json-body (:body http-response)]
-    (->> (json/parse-string json-body true)
-         (:result)
-         (telegram-message->model))))
+(defprotocol Bot
+  (get-updates [this offset])
+  (send-message [this chat-id text]))
+
+(defrecord TelegramBot [config]
+  Bot
+
+  (get-updates [_ offset]
+    (log/trace "get updates with offset" offset)
+    (let [http-response (http/post (url (:telegram-token config) "/getUpdates")
+                                   {:query-params {"offset" offset}
+                                    :content-type :json})
+          json-body (:body http-response)]
+      (->> (json/parse-string json-body true)
+           (:result)
+           (map telegram-update->model))))
+
+  (send-message [_ chat-id text]
+    (log/trace "send message to" chat-id ":" text)
+    (let [http-response (http/post (url (:telegram-token config) "/sendMessage")
+                                   {:body         (json/generate-string {:chat_id chat-id
+                                                                         :text    text})
+                                    :content-type :json})
+          json-body (:body http-response)]
+      (->> (json/parse-string json-body true)
+           (:result)
+           (telegram-message->model)))))

@@ -1,13 +1,13 @@
-(ns rss-feed-reader.api.handler.feeds
+(ns rss-feed-reader.web.handler.feeds
   (:require [clojure.spec.alpha :as s]
             [rss-feed-reader.utils.uuid :as uuids]
             [rss-feed-reader.utils.int :as ints]
             [clojure.tools.logging :as log]
-            [rss-feed-reader.domain.feed :as feeds]
-            [rss-feed-reader.api.response :as response]
+            [rss-feed-reader.domain.feed :as feed]
+            [rss-feed-reader.web.response :as response]
             [rss-feed-reader.utils.uri :as uris]
             [rss-feed-reader.utils.time :as t]
-            [rss-feed-reader.domain.feed-item :as feed-items])
+            [rss-feed-reader.domain.feed-item :as feed-item])
   (:import (clojure.lang ExceptionInfo)))
 
 
@@ -47,39 +47,39 @@
 
 ;; get
 
-(defn get-feeds [req]
+(defn get-feeds [feeds req]
   (let [req-path (:path-params req)
         req-query (:params req)
         starting-after-id (uuids/from-string (:starting-after req-query))
         limit (ints/parse-int (:limit req-query))]
     (log/info "get feeds" req-path req-query)
     (let [starting-after-feed (when starting-after-id
-                                (feeds/get-by-id {:feed.domain/id starting-after-id}))
+                                (feed/get-by-id feeds {:feed.domain/id starting-after-id}))
           starting-after (if starting-after-feed
                            (:feed.domain/order-id starting-after-feed)
                            0)
           limit (if limit
                   (max 0 (min 40 limit))
                   20)
-          feeds (feeds/get-all :starting-after starting-after
-                               :limit (+ 1 limit))]
-      (-> (response/paginate feeds feed->response-body limit)
-          (response/ok)))))
+          feeds (feed/get-all feeds {:starting-after starting-after
+                                      :limit         (+ 1 limit)})]
+      (->> (response/paginate feeds feed->response-body limit)
+           (response/ok)))))
 
-(defn get-feed [req]
+(defn get-feed [feeds req]
   (let [req-path (:path-params req)
         id (uuids/from-string (:feed-id req-path))]
     (log/info "get feed" req-path)
     (if (nil? id)
       (response/not-found)
-      (let [feed (feeds/get-by-id {:feed.domain/id id})]
+      (let [feed (feed/get-by-id feeds {:feed.domain/id id})]
         (if (nil? feed)
           (response/not-found)
-          (-> feed
-              (feed->response-body)
-              (response/ok)))))))
+          (->> feed
+               (feed->response-body)
+               (response/ok)))))))
 
-(defn get-feed-items [req]
+(defn get-feed-items [feeds feeds-items req]
   (let [req-path (:path-params req)
         req-query (:params req)
         feed-id (uuids/from-string (:feed-id req-path))
@@ -88,34 +88,34 @@
     (log/info "get feed items" req-path req-query)
     (if (nil? feed-id)
       (response/not-found)
-      (let [feed (feeds/get-by-id {:feed.domain/id feed-id})]
+      (let [feed (feed/get-by-id feeds {:feed.domain/id feed-id})]
         (if (nil? feed)
           (response/not-found)
           (let [starting-after-feed-item (when starting-after-id
-                                           (feed-items/get-by-id {:feed.item.domain/id starting-after-id}))
+                                           (feed-item/get-by-id feeds-items {:feed.item.domain/id starting-after-id}))
                 starting-after (if starting-after-feed-item
                                  (:feed.item.domain/order-id starting-after-feed-item)
                                  0)
                 limit (if limit
                         (max 0 (min 40 limit))
                         20)
-                feed-items (feed-items/get-by-feed {:feed.item.domain/feed feed}
-                                                   :starting-after starting-after
-                                                   :limit (+ 1 limit))]
-            (-> (response/paginate feed-items feed-item->response-body limit)
-                (response/ok))))))))
+                feed-items (feed-item/get-by-feed feeds-items {:feed.item.domain/feed feed}
+                                                  {:starting-after starting-after
+                                                    :limit          (+ 1 limit)})]
+            (->> (response/paginate feed-items feed-item->response-body limit)
+                 (response/ok))))))))
 
 ;; post
 
-(defn create-feed [req]
+(defn create-feed [feeds req]
   (let [req-body (:body req)
         link (uris/from-string (:link req-body))]
     (log/info "create feed" req-body)
     (try
-      (-> {:feed.domain/link link}
-          (feeds/create!)
-          (feed->response-body)
-          (response/ok))
+      (->> {:feed.domain/link link}
+           (feed/create! feeds)
+           (feed->response-body)
+           (response/ok))
       (catch ExceptionInfo e
         (let [data (ex-data e)
               {:keys [cause reason]} data]
@@ -125,28 +125,28 @@
 
 ;; delete
 
-(defn delete-feed [req]
+(defn delete-feed [feeds req]
   (let [req-path (:path-params req)
         id (uuids/from-string (:feed-id req-path))]
     (log/info "delete feed" req-path)
     (if (nil? id)
       (response/no-content)
       (do
-        (feeds/delete! {:feed.domain/id id})
+        (feed/delete! feeds {:feed.domain/id id})
         (response/no-content)))))
 
 ;; routes
 
-(def routes
+(defn routes [feeds feeds-items]
   [["/feeds"
     ["" {:name ::feeds
-         :get  get-feeds
-         :post create-feed}]
+         :get  (partial get-feeds feeds)
+         :post (partial create-feed feeds)}]
     ["/:feed-id" {:name   ::feeds-id
-                  :get    get-feed
-                  :delete delete-feed
+                  :get    (partial get-feed feeds)
+                  :delete (partial delete-feed feeds)
                   }]
     ["/:feed-id/items" {:name ::feed-items
-                        :get  get-feed-items
+                        :get  (partial get-feed-items feeds feeds-items)
                         }]
     ]])
